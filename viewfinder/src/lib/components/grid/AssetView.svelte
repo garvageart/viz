@@ -91,7 +91,7 @@
     let containerWidth = $state(0);
     let viewportHeight = $state(800);
 
-    const virtualizer = new PhotoGridVirtualizer({ bufferPx: 600 });
+    const virtualizer = new PhotoGridVirtualizer<T>({ bufferPx: 600 });
 
     let allAssetsData = $derived(data);
 
@@ -134,7 +134,7 @@
                 continue;
             }
             const gridRow = row.items.map((item, col) => ({
-                asset: item.asset as T,
+                asset: item.asset,
                 row: rowIndex,
                 column: col,
                 columnSize: item.width,
@@ -462,7 +462,7 @@
             }
 
             for (const item of row.items) {
-                const asset = item.asset as T;
+                const asset = item.asset;
                 if (disabledUids.has(asset.uid)) {
                     continue;
                 }
@@ -513,7 +513,7 @@
             return;
         }
 
-        const rowData = virtualizer.getRowForAsset(asset.uid);
+        const rowData = virtualizer.getRowForAsset((item) => item.uid === asset.uid);
         if (!rowData) {
             return;
         }
@@ -765,7 +765,7 @@
             }
         }
 
-        const targetAsset = closestItem.asset as T;
+        const targetAsset = closestItem.asset;
         handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
         scrollToAsset(targetAsset, false);
         focusAssetElement(targetAsset.uid);
@@ -1040,7 +1040,7 @@
                                 class="grid-item"
                                 style="position: absolute; left: {item.left}px; width: {item.width}px; height: {row.height}px;"
                             >
-                                {@render assetComponentCard(item.asset as T)}
+                                {@render assetComponentCard(item.asset)}
                             </div>
                         {/each}
                     </div>

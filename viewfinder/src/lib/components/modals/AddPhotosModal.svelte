@@ -106,7 +106,7 @@
     let filteredImages = $derived(galleryState.images);
     let groups: DateGroup[] = $derived(groupImagesByDate(filterManager.apply(filteredImages)) ?? []);
     let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
-    let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
+    let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages.map((x) => x.image)));
 
     async function handleAdd() {
         const selectedUids = selectionScope.selectedItems.map((img) => img.uid);

@@ -218,7 +218,7 @@
         return getConsolidatedGroups(groups);
     });
 
-    let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages));
+    let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages.map((x) => x.image)));
 
     // Grid props for Collections (using AssetsShell/AssetGrid)
     let collectionsGrid: ComponentProps<typeof AssetGrid<Collection>> = $derived({

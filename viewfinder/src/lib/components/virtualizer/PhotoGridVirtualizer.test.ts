@@ -1,9 +1,17 @@
 import { createTestImageObject } from "#lib/data/test.js";
+import type { GridImage } from "#lib/photo-layout/index.js";
 import { beforeEach, describe, expect, it } from "vitest";
 import { PhotoGridVirtualizer } from "./PhotoGridVirtualizer.svelte";
 
 function makeItems(count: number) {
     return Array.from({ length: count }, () => createTestImageObject());
+}
+
+function makeGridItems(count: number): GridImage[] {
+    return Array.from({ length: count }, () => ({
+        image: createTestImageObject(),
+        metadata: {}
+    }));
 }
 
 describe("PhotoGridVirtualizer", () => {
@@ -269,7 +277,7 @@ describe("PhotoGridVirtualizer", () => {
                 {
                     label: "Today",
                     totalCount: 10,
-                    allImages: makeItems(10),
+                    allImages: makeGridItems(10),
                     isConsolidated: false,
                     startDate: { toJSDate: () => new Date(), toISO: () => "2026-01-01" },
                     endDate: { toJSDate: () => new Date(), toISO: () => "2026-01-01" }
@@ -289,7 +297,7 @@ describe("PhotoGridVirtualizer", () => {
                 {
                     label: "Group A",
                     totalCount: 3,
-                    allImages: makeItems(3),
+                    allImages: makeGridItems(3),
                     isConsolidated: false,
                     startDate: { toJSDate: () => new Date(), toISO: () => "2026-01-01" },
                     endDate: { toJSDate: () => new Date(), toISO: () => "2026-01-01" }

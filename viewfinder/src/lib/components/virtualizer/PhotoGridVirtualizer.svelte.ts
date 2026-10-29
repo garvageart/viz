@@ -1,43 +1,40 @@
-import type { ConsolidatedGroup, ImageWithDateLabel } from "#lib/photo-layout/index.js";
-import { getTakenAt } from "#lib/utils/images.js";
+import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
 import { JustifiedLayout } from "@immich/justified-layout-wasm";
 import type { ImageAsset } from "@viz/api";
-import { DateTime } from "luxon";
 
-export type GridItem = {
-    asset: { uid: string } & Record<string, any>;
+export type GridItem<T = any> = {
+    asset: T;
     width: number;
     height: number;
     left: number;
 };
 
-export type GridRowHeader = {
+export type BaseGridRow = {
+    id: string;
+    top: number;
+    height: number;
+    groupId: string;
+};
+
+export type GridRowHeader = BaseGridRow & {
     type: "header";
-    id: string;
     label: string;
-    top: number;
-    height: number;
     date: Date;
-    groupId: string;
 };
 
-export type GridRowImages = {
+export type GridRowImages<T = any> = BaseGridRow & {
     type: "images";
-    id: string;
-    items: GridItem[];
-    top: number;
-    height: number;
-    groupId: string;
+    items: GridItem<T>[];
 };
 
-export type GridRow = GridRowHeader | GridRowImages;
+export type GridRow<T = any> = GridRowHeader | GridRowImages<T>;
 
 // Cached row stores relativeTop (y-pos relative to the group start)
-type CachedRow =
-    (Omit<GridRowHeader, "top"> & { relativeTop: number }) | (Omit<GridRowImages, "top"> & { relativeTop: number });
+type CachedRow<T = any> =
+    (Omit<GridRowHeader, "top"> & { relativeTop: number }) | (Omit<GridRowImages<T>, "top"> & { relativeTop: number });
 
-type GroupCacheEntry = {
-    rows: CachedRow[];
+type GroupCacheEntry<T = any> = {
+    rows: CachedRow<T>[];
     height: number; // Total height of this group (header + images)
 };
 
@@ -48,10 +45,10 @@ export type PhotoGridConfig = {
     bufferPx?: number;
 };
 
-export class PhotoGridVirtualizer {
+export class PhotoGridVirtualizer<T = any> {
     // Reactive State
-    rows = $state<GridRow[]>([]);
-    visibleRows = $state<GridRow[]>([]);
+    rows = $state<GridRow<T>[]>([]);
+    visibleRows = $state<GridRow<T>[]>([]);
     totalHeight = $state(0);
     loadedHeight = $state(0);
 
@@ -62,7 +59,7 @@ export class PhotoGridVirtualizer {
     headerHeight = $state(40);
 
     // Internal
-    private groupCache = new Map<string, GroupCacheEntry>();
+    private groupCache = new Map<string, GroupCacheEntry<T>>();
 
     // Scroll State
     scrollTop = $state(0);
@@ -143,7 +140,7 @@ export class PhotoGridVirtualizer {
         this.containerWidth = width;
 
         let currentTop = 0;
-        const allRows: GridRow[] = [];
+        const allRows: GridRow<T>[] = [];
         let smallGroupBatch: ConsolidatedGroup[] = [];
         const SMALL_GROUP_THRESHOLD = 6;
 
@@ -154,18 +151,22 @@ export class PhotoGridVirtualizer {
 
             // Compute Layout for this batch of small groups
             // We create a mixed list of items: [Header, ...Images, Header, ...Images]
-            const mixedItems: ImageWithDateLabel[] = [];
+            const mixedItems: GridImage[] = [];
 
             for (const g of smallGroupBatch) {
                 // Inject Header Item
-                const headerItem = {
-                    uid: `header-item-${g.label}`,
-                    isHeaderItem: true,
-                    headerLabel: g.label,
-                    width: 100,
-                    height: 100,
-                    taken_at: g.startDate.toISO()
-                } as unknown as ImageWithDateLabel;
+                const headerItem: GridImage = {
+                    image: {
+                        uid: `header-item-${g.label}`,
+                        width: 100,
+                        height: 100,
+                        taken_at: g.startDate.toISO()
+                    } as unknown as ImageAsset,
+                    metadata: {
+                        isHeaderItem: true,
+                        headerLabel: g.label
+                    }
+                };
                 mixedItems.push(headerItem);
                 mixedItems.push(...g.allImages);
             }
@@ -178,7 +179,7 @@ export class PhotoGridVirtualizer {
                 allRows.push({
                     ...r,
                     top: currentTop + r.relativeTop
-                } as GridRow);
+                } as GridRow<T>);
             }
 
             currentTop += height;
@@ -196,7 +197,7 @@ export class PhotoGridVirtualizer {
                 // Check Cache for large group
                 const uidsSignature =
                     group.allImages.length > 0
-                        ? `${group.allImages[0].uid}-${group.allImages[group.allImages.length - 1].uid}`
+                        ? `${group.allImages[0].image.uid}-${group.allImages[group.allImages.length - 1].image.uid}`
                         : "";
                 const cacheKey = `${group.label}-${group.allImages.length}-${width}-${uidsSignature}`;
                 let cached = this.groupCache.get(cacheKey);
@@ -207,9 +208,9 @@ export class PhotoGridVirtualizer {
                 } else {
                     let imageIdx = 0;
                     for (const row of cached.rows) {
-                        if (row.type === "images") {
+                        if (row.type === "images" && row.items) {
                             for (const item of row.items) {
-                                item.asset = group.allImages[imageIdx++];
+                                item.asset = group.allImages[imageIdx++] as unknown as T;
                             }
                         }
                     }
@@ -219,7 +220,7 @@ export class PhotoGridVirtualizer {
                     allRows.push({
                         ...r,
                         top: currentTop + r.relativeTop
-                    } as GridRow);
+                    } as GridRow<T>);
                 }
 
                 currentTop += cached.height;
@@ -244,18 +245,28 @@ export class PhotoGridVirtualizer {
      * Updates layout for flat list of images (no groups).
      * We treat this as a single unnamed group without a header.
      */
-    updateFlat(images: ImageAsset[], width: number) {
+    updateFlat(images: (ImageAsset | GridImage)[], width: number) {
         if (width <= 0) {
             return;
         }
         this.containerWidth = width;
 
-        const { rows, height } = this.computeImages(images as ImageWithDateLabel[], width, "flat");
+        const gridImages: GridImage[] = images.map((img) => {
+            if ("image" in img && "metadata" in img) {
+                return img as GridImage;
+            }
+            return {
+                image: img as ImageAsset,
+                metadata: {}
+            };
+        });
 
-        const finalRows: GridRow[] = rows.map((r) => ({
+        const { rows, height } = this.computeImages(gridImages, width, "flat");
+
+        const finalRows: GridRow<T>[] = rows.map((r) => ({
             ...r,
             top: r.relativeTop
-        })) as unknown as GridRow[];
+        })) as unknown as GridRow<T>[];
 
         this.rows = finalRows;
         this.totalHeight = this.computeStableTotalHeight(height, images.length);
@@ -267,8 +278,8 @@ export class PhotoGridVirtualizer {
      * Computes columns from container width and item width, then creates
      * evenly-spaced rows with absolute positioning.
      */
-    updateGrid<T extends { uid: string }>(
-        items: T[],
+    updateGrid<TItem extends { uid: string }>(
+        items: TItem[],
         width: number,
         config: {
             columns?: number;
@@ -313,16 +324,16 @@ export class PhotoGridVirtualizer {
             rowHeight = 260;
         }
 
-        const allRows: GridRow[] = [];
+        const allRows: GridRow<T>[] = [];
         let currentTop = 0;
 
         for (let i = 0; i < items.length; i += columns) {
-            const rowItems: GridItem[] = [];
+            const rowItems: GridItem<T>[] = [];
             const count = Math.min(columns, items.length - i);
 
             for (let col = 0; col < count; col++) {
                 rowItems.push({
-                    asset: items[i + col],
+                    asset: items[i + col] as unknown as T,
                     width: columnWidth,
                     height: rowHeight,
                     left: Math.round(startLeft + col * (columnWidth + gap))
@@ -351,14 +362,14 @@ export class PhotoGridVirtualizer {
      * Updates layout for a single-column list (table/list view).
      * Each item occupies a full-width row.
      */
-    updateList<T extends { uid: string }>(items: T[], width: number, rowHeight: number) {
+    updateList<TItem extends { uid: string }>(items: TItem[], width: number, rowHeight: number) {
         if (width <= 0) {
             return;
         }
         this.containerWidth = width;
         this.groupCache.clear();
 
-        const allRows: GridRow[] = [];
+        const allRows: GridRow<T>[] = [];
         let currentTop = 0;
 
         for (let i = 0; i < items.length; i++) {
@@ -367,7 +378,7 @@ export class PhotoGridVirtualizer {
                 id: `list-row-${i}`,
                 items: [
                     {
-                        asset: items[i],
+                        asset: items[i] as unknown as T,
                         width: width,
                         height: rowHeight,
                         left: 0
@@ -456,13 +467,13 @@ export class PhotoGridVirtualizer {
         return Math.max(0, low);
     }
 
-    private computeGroup(group: ConsolidatedGroup, width: number): GroupCacheEntry {
-        const rows: CachedRow[] = [];
+    private computeGroup(group: ConsolidatedGroup, width: number): GroupCacheEntry<T> {
+        const rows: CachedRow<T>[] = [];
         let cursorY = 0;
 
         // 1. Add Header Row
         const headerHeight = this.headerHeight;
-        const headerRow: CachedRow = {
+        const headerRow: CachedRow<T> = {
             type: "header",
             id: `header-${group.label}`,
             label: group.label,
@@ -482,7 +493,7 @@ export class PhotoGridVirtualizer {
             rows.push({
                 ...r,
                 relativeTop: r.relativeTop + cursorY
-            });
+            } as CachedRow<T>);
         }
 
         cursorY += imageResult.height;
@@ -497,7 +508,7 @@ export class PhotoGridVirtualizer {
      * Scales an image row proportionally to span the full container width if it has leftover space.
      * Returns the difference in row height caused by scaling.
      */
-    private stretchRowToFitWidth(row: CachedRow, containerWidth: number): number {
+    private stretchRowToFitWidth(row: CachedRow<T>, containerWidth: number): number {
         if (row.type !== "images" || row.items.length === 0) {
             return 0;
         }
@@ -541,7 +552,7 @@ export class PhotoGridVirtualizer {
         return heightDiff;
     }
 
-    private computeImages(items: ImageWithDateLabel[], width: number, groupId: string) {
+    private computeImages(items: GridImage[], width: number, groupId: string) {
         if (items.length === 0) {
             return { rows: [], height: 0 };
         }
@@ -550,11 +561,11 @@ export class PhotoGridVirtualizer {
         const aspectRatios = new Float32Array(items.length);
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            if (item.isHeaderItem) {
+            if (item.metadata?.isHeaderItem) {
                 // Use a fixed aspect ratio for inline headers (e.g. narrow vertical strip)
                 aspectRatios[i] = 0.5;
             } else {
-                aspectRatios[i] = (item.width || 4) / (item.height || 3);
+                aspectRatios[i] = (item.image.width || 4) / (item.image.height || 3);
             }
         }
 
@@ -568,10 +579,10 @@ export class PhotoGridVirtualizer {
             heightTolerance: tolerance
         });
 
-        const rows: CachedRow[] = [];
+        const rows: CachedRow<GridImage>[] = [];
         let rowIndex = 0;
 
-        let currentRowItems: GridItem[] = [];
+        let currentRowItems: GridItem<GridImage>[] = [];
         let currentRowTop = -1;
         let currentRowHeight = 0;
 
@@ -629,11 +640,11 @@ export class PhotoGridVirtualizer {
             }
 
             if (isMobileWidth) {
-                const heightDiff = this.stretchRowToFitWidth(row, width);
+                const heightDiff = this.stretchRowToFitWidth(row as unknown as CachedRow<T>, width);
                 cummulativeOffset += heightDiff;
             }
 
-            const hasHeader = row.items.some((item) => (item.asset as ImageWithDateLabel).isHeaderItem);
+            const hasHeader = row.items.some((item) => item.asset.metadata?.isHeaderItem);
             if (hasHeader) {
                 row.relativeTop += GAP_ABOVE_HEADER;
                 cummulativeOffset += GAP_ABOVE_HEADER;
@@ -680,7 +691,7 @@ export class PhotoGridVirtualizer {
         for (let i = idx; i < this.rows.length; i++) {
             const row = this.rows[i];
             if (row.type === "header" && row.top > scrollTop) {
-                return row;
+                return row as GridRowHeader;
             }
         }
 
@@ -689,28 +700,19 @@ export class PhotoGridVirtualizer {
 
     getDateLabel(scrollTop: number): string {
         const header = this.getActiveHeader(scrollTop);
-        if (header) {
+        if (header?.label) {
             return header.label;
         }
 
-        if (this.rows.length > 0) {
-            const idx = Math.max(0, Math.min(this.findStartIndex(scrollTop), this.rows.length - 1));
-            const row = this.rows[idx];
-            if (row.type === "images" && row.items.length > 0) {
-                const asset = row.items[0].asset as ImageWithDateLabel;
-                if (asset.isHeaderItem && asset.headerLabel) {
-                    return asset.headerLabel;
-                }
-                return DateTime.fromJSDate(getTakenAt(asset)).toFormat("LLL yyyy");
-            }
-        }
         return "";
     }
 
     /**
-     * Finds the grid row containing an asset by UID and returns its top position, height, and group header top.
+     * Finds the grid row containing an asset matching the predicate and returns its top position, height, and group header top.
      */
-    getRowForAsset(assetUid: string): { rowTop: number; rowHeight: number; groupHeaderTop: number } | null {
+    getRowForAsset(
+        predicate: (asset: T) => boolean
+    ): { rowTop: number; rowHeight: number; groupHeaderTop: number } | null {
         let currentGroupHeaderTop = 0;
         for (const row of this.rows) {
             if (row.type === "header") {
@@ -718,7 +720,7 @@ export class PhotoGridVirtualizer {
                 continue;
             }
 
-            const hasAsset = row.type === "images" && row.items.some((item) => item.asset.uid === assetUid);
+            const hasAsset = row.type === "images" && row.items.some((item) => predicate(item.asset));
             if (hasAsset) {
                 return {
                     rowTop: row.top,

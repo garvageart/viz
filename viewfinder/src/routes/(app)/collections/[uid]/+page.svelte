@@ -248,7 +248,7 @@
 
     let allImagesFlat = $derived.by(() => {
         if (viewSettings.showDates) {
-            return consolidatedGroups.flatMap((g) => g.allImages);
+            return consolidatedGroups.flatMap((g) => g.allImages.map((x) => x.image));
         }
     });
 

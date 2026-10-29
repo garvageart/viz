@@ -17,7 +17,7 @@
         KeybindAction,
         keyboardManager
     } from "#lib/keyboard/keyboard.svelte.js";
-    import type { ConsolidatedGroup, ImageWithDateLabel } from "#lib/photo-layout/index.js";
+    import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import { type ImageScopeId, SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
@@ -88,7 +88,13 @@
     let selection = $derived(selectionManager.getScope(scopeId));
 
     // Sync data source to selection scope so filters can access it
+    // Set source as the exact image objects to ensure object equality for selection tracking outside of the grid
     $effect(() => {
+        if (groupedData && groupedData.length > 0) {
+            selection.setSource(groupedData.flatMap((g) => g.allImages.map((x) => x.image)));
+            return;
+        }
+
         const source = allData || data;
         if (source) {
             selection.setSource(source);
@@ -144,11 +150,11 @@
             }
 
             for (const item of row.items) {
-                const asset = item.asset as ImageWithDateLabel;
-                if (asset.isHeaderItem || disabledUids.has(asset.uid)) {
+                const gridImage = item.asset;
+                if (gridImage.metadata?.isHeaderItem || disabledUids.has(gridImage.image.uid)) {
                     continue;
                 }
-                list.push(asset as ImageAsset);
+                list.push(gridImage.image);
             }
         }
 
@@ -170,7 +176,7 @@
 
             for (let i = 0; i < row.items.length; i++) {
                 const item = row.items[i];
-                if (item.asset.uid === assetId) {
+                if (item.asset.image.uid === assetId) {
                     return {
                         rowIndex: r,
                         centerX: item.left + item.width / 2
@@ -266,7 +272,7 @@
             }
 
             const hasRealAsset = row.items.some(
-                (item) => !(item.asset as ImageWithDateLabel).isHeaderItem && !disabledUids.has(item.asset.uid)
+                (item) => !item.asset.metadata?.isHeaderItem && !disabledUids.has(item.asset.image.uid)
             );
             if (hasRealAsset) {
                 break;
@@ -301,7 +307,7 @@
         }
 
         const realItems = targetRow.items.filter(
-            (item) => !(item.asset as ImageWithDateLabel).isHeaderItem && !disabledUids.has(item.asset.uid)
+            (item) => !item.asset.metadata?.isHeaderItem && !disabledUids.has(item.asset.image.uid)
         );
 
         if (realItems.length === 0) {
@@ -320,7 +326,7 @@
             }
         }
 
-        const targetAsset = closestItem.asset as ImageWithDateLabel;
+        const targetAsset = closestItem.asset.image;
         handleImageCardSelect(targetAsset, e);
         scrollToAsset(targetAsset, false);
         focusAssetElement(targetAsset.uid);
@@ -466,7 +472,10 @@
         const map = new Map<string, ImageAsset[]>();
         if (groupedData) {
             for (const g of groupedData) {
-                map.set(g.label, g.allImages);
+                map.set(
+                    g.label,
+                    g.allImages.map((x) => x.image)
+                );
             }
         }
         return map;
@@ -550,7 +559,7 @@
     // Virtualized photo-grid state
     // We use a stable instance and update its config via effect to avoid recreation and potential scroll jumps.
     // svelte-ignore state_referenced_locally
-    const virtualizer = new PhotoGridVirtualizer(gridConfig);
+    const virtualizer = new PhotoGridVirtualizer<GridImage>(gridConfig);
     $effect(() => {
         virtualizer.updateConfig(gridConfig);
     });
@@ -644,7 +653,7 @@
             return;
         }
 
-        const rowData = virtualizer.getRowForAsset(asset.uid);
+        const rowData = virtualizer.getRowForAsset((gridImage) => gridImage.image.uid === asset.uid);
         if (!rowData) {
             return;
         }
@@ -1036,7 +1045,8 @@
     </div>
 {/snippet}
 
-{#snippet defaultPhotoCard(asset: ImageWithDateLabel)}
+{#snippet defaultPhotoCard(gridImage: GridImage)}
+    {@const asset = gridImage.image}
     {@const isSelected = selection.has(asset) || selection.active === asset}
     {@const isCached = loadedImageUIDs.has(asset.uid)}
     {@const isDisabled = disabledUids.has(asset.uid)}
@@ -1228,15 +1238,15 @@
                         class="justified-row"
                         style={`position:absolute; top:${row.top}px; left:0; right:0; height:${row.height}px;`}
                     >
-                        {#each row.items as item (item.asset.uid)}
+                        {#each row.items as item (item.asset.image.uid)}
                             <div
                                 style={`position: absolute; left: ${item.left}px; width: ${item.width}px; height:${row.height}px;`}
                                 class="justified-item"
                             >
-                                {#if (item.asset as ImageWithDateLabel).isHeaderItem}
-                                    {@render inlineDateTile((item.asset as ImageWithDateLabel).headerLabel || "")}
+                                {#if item.asset.metadata?.isHeaderItem}
+                                    {@render inlineDateTile(item.asset.metadata.headerLabel || "")}
                                 {:else}
-                                    {@render defaultPhotoCard(item.asset as ImageWithDateLabel)}
+                                    {@render defaultPhotoCard(item.asset)}
                                 {/if}
                             </div>
                         {/each}

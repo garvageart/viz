@@ -2,19 +2,22 @@ import { getTakenAt } from "#lib/utils/images.js";
 import type { ImageAsset } from "@viz/api";
 import { DateTime } from "luxon";
 
-export type ImageWithDateLabel = ImageAsset & {
-    dateLabel?: string;
-    isFirstOfDate?: boolean;
-    isFirstOfConsolidatedGroup?: boolean;
-    isHeaderItem?: boolean;
-    headerLabel?: string;
-};
+export interface GridImage {
+    image: ImageAsset;
+    metadata: {
+        dateLabel?: string;
+        isFirstOfDate?: boolean;
+        isFirstOfConsolidatedGroup?: boolean;
+        isHeaderItem?: boolean;
+        headerLabel?: string;
+    };
+}
 
 // Consolidated groups: merge small consecutive date groups into visual sections
 export type ConsolidatedGroup = {
     label: string; // Combined label like "8 Mar - 26 Aug 2025"
     totalCount: number;
-    allImages: ImageWithDateLabel[]; // All images merged together with date labels and in-flow headers
+    allImages: GridImage[]; // All images merged together with date labels and in-flow headers
     isConsolidated: boolean; // true if multiple date groups merged
     startDate: DateTime; // newest date in this consolidated block
     endDate: DateTime; // oldest date in this consolidated block
@@ -71,10 +74,12 @@ export function getConsolidatedGroups(groups: DateGroup[]) {
     const consolidated: ConsolidatedGroup[] = groups.map((group) => {
         // Prepare images with their individual date labels
         // No header item injection here.
-        const imagesWithLabels: ImageWithDateLabel[] = group.items.map((img, idx) => ({
-            ...img,
-            dateLabel: group.label,
-            isFirstOfDate: idx === 0
+        const imagesWithLabels: GridImage[] = group.items.map((img, idx) => ({
+            image: img,
+            metadata: {
+                dateLabel: group.label,
+                isFirstOfDate: idx === 0
+            }
         }));
 
         return {
