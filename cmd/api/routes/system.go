@@ -197,42 +197,20 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 
 	// For authenticated users, check 'onboarding_complete'
 	// Since this endpoint is public, we must manually check for a session
-	var user *entities.User
-	if cookie, err := req.Cookie(libhttp.AuthTokenCookie); err == nil && cookie.Value != "" {
-		if cachedUser, ok := libhttp.GetSessionCache(cookie.Value); ok {
-			user = cachedUser
-		} else {
-			var sess entities.Session
-			if err := db.Where("token = ?", cookie.Value).First(&sess).Error; err == nil {
-				if sess.ExpiresAt == nil || sess.ExpiresAt.IsZero() || time.Now().Before(*sess.ExpiresAt) {
-					var dbUser entities.User
-					if err := db.Where("uid = ?", sess.UserUid).First(&dbUser).Error; err == nil {
-						user = &dbUser
-						libhttp.SetSessionCache(cookie.Value, user, sess.ExpiresAt)
-					}
-				}
-			}
-		}
-	}
+	user := getAuthenticatedUser(db, req)
 
+	// User onboarding is not applicable unless a valid session is present.
+	userOnboardingRequired = false
 	if user != nil {
 		onboardingCompleteStr, err := settings.GetSetting(db, settings.SettingNameOnboardingComplete, &user.Uid)
 		if err != nil {
 			logger.Warn("could not retrieve 'onboarding_complete' setting for user, assuming true", slog.String("user_id", user.Uid), slog.Any("error", err))
 			// If setting not found for user, assume onboarding is NOT required to avoid blocking
-			userOnboardingRequired = false
+		} else if onboardingComplete, err := strconv.ParseBool(onboardingCompleteStr); err != nil {
+			logger.Error("failed to parse 'onboarding_complete' setting to bool, assuming true", slog.String("value", onboardingCompleteStr), slog.Any("error", err))
 		} else {
-			onboardingComplete, err := strconv.ParseBool(onboardingCompleteStr)
-			if err != nil {
-				logger.Error("failed to parse 'onboarding_complete' setting to bool, assuming true", slog.String("value", onboardingCompleteStr), slog.Any("error", err))
-				userOnboardingRequired = false
-			} else {
-				userOnboardingRequired = !onboardingComplete
-			}
+			userOnboardingRequired = !onboardingComplete
 		}
-	} else {
-		// Not authenticated, so user onboarding not applicable
-		userOnboardingRequired = false
 	}
 
 	return &dto.SystemStatusResponse{
@@ -241,6 +219,38 @@ func GetSystemStatus(db *gorm.DB, logger *slog.Logger, req *http.Request) (*dto.
 		NeedsSuperadmin:         needsSuperadmin,
 		AllowManualRegistration: config.AppConfig.Users.AllowManualRegistration,
 	}, nil
+}
+
+func getAuthenticatedUser(db *gorm.DB, req *http.Request) *entities.User {
+	cookie, err := req.Cookie(libhttp.AuthTokenCookie)
+	if err != nil || cookie == nil || cookie.Value == "" {
+		return nil
+	}
+
+	if cachedUser, ok := libhttp.GetSessionCache(cookie.Value); ok {
+		return cachedUser
+	}
+
+	var sess entities.Session
+	if err := db.Where("token = ?", cookie.Value).First(&sess).Error; err != nil {
+		return nil
+	}
+
+	if sess.ExpiresAt != nil && !sess.ExpiresAt.IsZero() && !time.Now().Before(*sess.ExpiresAt) {
+		return nil
+	}
+
+	if sess.UserUid == "" {
+		return nil
+	}
+
+	var user entities.User
+	if err := db.Where("uid = ?", sess.UserUid).First(&user).Error; err != nil {
+		return nil
+	}
+
+	libhttp.SetSessionCache(cookie.Value, &user, sess.ExpiresAt)
+	return &user
 }
 
 func systemCacheMiddleware(next http.Handler) http.Handler {
