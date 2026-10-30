@@ -11,6 +11,7 @@ import {
     formatShutterSpeed,
     getByteUnitString,
     getBytesWithUnit,
+    getCommonValue,
     getFlashMode,
     getImageLabel,
     getImageMegapixels,
@@ -455,5 +456,40 @@ describe("getSelectionKeywords", () => {
 
         // withoutKeywords is at index 0, but withKeywords is passed as primaryImage
         expect(getSelectionKeywords([withoutKeywords, withKeywords], withKeywords)).toEqual(["forest", "fog"]);
+    });
+});
+
+describe("getCommonValue", () => {
+    it("returns value=undefined and isMixed=false when array is empty", () => {
+        expect(getCommonValue<ImageAsset, string>([], (img) => img.uid)).toEqual({
+            isMixed: false,
+            value: undefined
+        });
+    });
+
+    it("returns single item value and isMixed=false", () => {
+        const img = assetFixture({ uid: "one" });
+        expect(getCommonValue([img], (i) => i.uid)).toEqual({
+            isMixed: false,
+            value: "one"
+        });
+    });
+
+    it("returns common value when all items have the same value", () => {
+        const img1 = assetFixture({ exif: { make: "Canon" } });
+        const img2 = assetFixture({ exif: { make: "Canon" } });
+        expect(getCommonValue([img1, img2], (i) => i.exif?.make)).toEqual({
+            isMixed: false,
+            value: "Canon"
+        });
+    });
+
+    it("returns isMixed=true and value=undefined when values differ", () => {
+        const img1 = assetFixture({ exif: { make: "Canon" } });
+        const img2 = assetFixture({ exif: { make: "Nikon" } });
+        expect(getCommonValue([img1, img2], (i) => i.exif?.make)).toEqual({
+            isMixed: true,
+            value: undefined
+        });
     });
 });

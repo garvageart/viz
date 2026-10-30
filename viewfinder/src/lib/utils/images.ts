@@ -912,3 +912,16 @@ export function getSelectionKeywords(images: ImageAsset[], primaryImage?: ImageA
 
     return Array.from(resultSet);
 }
+
+export function getCommonValue<T, V>(items: T[], getter: (item: T) => V): { isMixed: boolean; value: V | undefined } {
+    if (items.length === 0) {
+        return { isMixed: false, value: undefined };
+    }
+
+    const unique = new Set(items.map(getter));
+    if (unique.size > 1) {
+        return { isMixed: true, value: undefined };
+    }
+
+    return { isMixed: false, value: unique.values().next().value };
+}

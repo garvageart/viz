@@ -22,6 +22,7 @@
         formatMeteringMode,
         formatOrientation,
         getCameraName,
+        getCommonValue,
         getFlashInfo,
         getImageLabel,
         getImageMegapixels,
@@ -35,6 +36,8 @@
     } from "#lib/utils/images.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
     import { type ImageAsset, type Label, batchUpdateImages, updateImage } from "@viz/api";
+
+    const MIXED_VALUES = "Mixed Values";
 
     interface Props {
         asset?: ImageAsset;
@@ -80,6 +83,12 @@
             : currentAsset?.name || currentAsset?.image_metadata.file_name || ""
     );
     let calendarOpen = $state(false);
+
+    let activeMetadata = $derived({
+        artist: getCommonValue(selectedImages, (img) => img.exif?.artist?.trim() || ""),
+        copyright: getCommonValue(selectedImages, (img) => img.exif?.copyright?.trim() || ""),
+        description: getCommonValue(selectedImages, (img) => img.description?.trim() || "")
+    });
 
     let rawExifEntries = $derived.by(() => {
         const raw = currentAsset?.exif?.raw;
@@ -583,9 +592,24 @@
         -->
         <div class="metadata-exif-container">
             <div class="exif-cards">
+                {#snippet metaValue(
+                    getter: (img: ImageAsset) => string | number | null | undefined,
+                    size: "big" | "sub" = "sub"
+                )}
+                    {@const result = getCommonValue(selectedImages, (img) => {
+                        const val = getter(img);
+                        return val != null ? String(val).trim() : "";
+                    })}
+                    {#if result.isMixed}
+                        <div class="value-{size} multiple-values">{MIXED_VALUES}</div>
+                    {:else if result.value}
+                        <div class="value-{size}">{result.value}</div>
+                    {/if}
+                {/snippet}
+
                 <!-- File Name & Date Card -->
                 <div class="exif-card">
-                    <div class="card-row main-row">
+                    <div class="card-row main-row center">
                         <MaterialIcon iconName="image" class="exif-material-icon" />
                         <div class="card-values">
                             <div class="name-row">
@@ -625,23 +649,30 @@
                         onchange={(d) => handleDateChange(d)}
                     >
                         {#snippet children()}
+                            {@const dateResult = getCommonValue(selectedImages, (img) =>
+                                getTakenAt(img).toDateString()
+                            )}
                             <div class="card-row meta-row" role="button">
                                 <MaterialIcon iconName="calendar_today" class="exif-material-icon" />
                                 <div class="card-values">
-                                    <div class="value-big">
-                                        {getTakenAt(currentAsset).toLocaleDateString(undefined, {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric"
-                                        })}
-                                    </div>
-                                    <div class="value-sub">
-                                        {getTakenAt(currentAsset).toLocaleTimeString(undefined, {
-                                            hour: "numeric",
-                                            minute: "numeric"
-                                        })}
-                                        {getTimezoneAbbreviation()}
-                                    </div>
+                                    {#if dateResult.isMixed}
+                                        <div class="value-big multiple-values">{MIXED_VALUES}</div>
+                                    {:else}
+                                        <div class="value-big">
+                                            {getTakenAt(currentAsset).toLocaleDateString(undefined, {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric"
+                                            })}
+                                        </div>
+                                        <div class="value-sub">
+                                            {getTakenAt(currentAsset).toLocaleTimeString(undefined, {
+                                                hour: "numeric",
+                                                minute: "numeric"
+                                            })}
+                                            {getTimezoneAbbreviation()}
+                                        </div>
+                                    {/if}
                                 </div>
                             </div>
                         {/snippet}
@@ -653,18 +684,15 @@
                     <div class="card-row main-row">
                         <MaterialIcon iconName="photo_camera" class="exif-material-icon" />
                         <div class="card-values">
-                            <div class="value-big">{getCameraName(currentAsset)}</div>
-                            {#if getLensName(currentAsset)}
-                                <div class="value-sub">{getLensName(currentAsset)}</div>
-                            {/if}
-                            <div class="value-big">
-                                {[
-                                    currentAsset.exif?.f_number ?? currentAsset.exif?.aperture,
-                                    formatFocalLengthInfo(currentAsset).focalLength
-                                ]
-                                    .filter(Boolean)
-                                    .join("  ·  ")}
-                            </div>
+                            {@render metaValue(getCameraName, "big")}
+                            {@render metaValue(getLensName, "sub")}
+                            {@render metaValue(
+                                (img) =>
+                                    [img.exif?.f_number ?? img.exif?.aperture, formatFocalLengthInfo(img).focalLength]
+                                        .filter(Boolean)
+                                        .join("  ·  "),
+                                "big"
+                            )}
                         </div>
                     </div>
                 </div>
@@ -674,76 +702,61 @@
                     <div class="card-row main-row">
                         <MaterialIcon iconName="camera" class="exif-material-icon" />
                         <div class="card-values">
-                            <div class="value-big">
-                                {[
-                                    currentAsset.exif?.exposure_time,
-                                    currentAsset.exif?.iso ? `ISO ${currentAsset.exif.iso}` : null,
-                                    currentAsset.exif?.exposure_bias_value ?? currentAsset.exif?.exposure_value
-                                ]
-                                    .filter(Boolean)
-                                    .join("  ·  ")}
-                            </div>
+                            {@render metaValue(
+                                (img) =>
+                                    [
+                                        img.exif?.exposure_time,
+                                        img.exif?.iso ? `ISO ${img.exif.iso}` : null,
+                                        img.exif?.exposure_bias_value ?? img.exif?.exposure_value
+                                    ]
+                                        .filter(Boolean)
+                                        .join("  ·  "),
+                                "big"
+                            )}
                         </div>
                     </div>
-                    {#if getShootingMode(currentAsset)}
+                    {#if selectedImages.some((img) => getShootingMode(img))}
                         <div class="card-row meta-row">
                             <MaterialIcon iconName="settings_photo_camera" class="exif-material-icon" />
                             <div class="card-values">
-                                <div class="value-sub">
-                                    {getShootingMode(currentAsset)}
-                                </div>
+                                {@render metaValue(getShootingMode, "sub")}
                             </div>
                         </div>
                     {/if}
-                    {#if formatMeteringMode(currentAsset.exif?.metering_mode)}
+                    {#if selectedImages.some((img) => formatMeteringMode(img.exif?.metering_mode))}
                         <div class="card-row meta-row">
                             <MaterialIcon iconName="hdr_auto" class="exif-material-icon" />
                             <div class="card-values">
-                                <div class="value-sub">
-                                    {formatMeteringMode(currentAsset.exif?.metering_mode)}
-                                </div>
+                                {@render metaValue((img) => formatMeteringMode(img.exif?.metering_mode), "sub")}
                             </div>
                         </div>
                     {/if}
-                    {#if getFlashInfo(currentAsset)}
+                    {#if selectedImages.some((img) => getFlashInfo(img))}
                         {@const flash = getFlashInfo(currentAsset)}
-                        {#if flash}
-                            <div class="card-row meta-row">
-                                <MaterialIcon
-                                    iconName={flash.fired ? "flash_on" : "flash_off"}
-                                    class="exif-material-icon"
-                                />
-                                <div class="card-values">
-                                    <div class="value-sub">
-                                        {flash.label}
-                                    </div>
-                                </div>
+                        <div class="card-row meta-row">
+                            <MaterialIcon
+                                iconName={flash?.fired ? "flash_on" : "flash_off"}
+                                class="exif-material-icon"
+                            />
+                            <div class="card-values">
+                                {@render metaValue((img) => getFlashInfo(img)?.label, "sub")}
                             </div>
-                        {/if}
+                        </div>
                     {/if}
-                    {#if getWhiteBalanceInfo(currentAsset)}
+                    {#if selectedImages.some((img) => getWhiteBalanceInfo(img))}
                         {@const wb = getWhiteBalanceInfo(currentAsset)}
-                        {#if wb}
-                            <div class="card-row meta-row">
-                                <MaterialIcon
-                                    iconName={wb.isAuto ? "wb_auto" : "wb_sunny"}
-                                    class="exif-material-icon"
-                                />
-                                <div class="card-values">
-                                    <div class="value-sub">
-                                        {wb.label}
-                                    </div>
-                                </div>
+                        <div class="card-row meta-row">
+                            <MaterialIcon iconName={wb?.isAuto ? "wb_auto" : "wb_sunny"} class="exif-material-icon" />
+                            <div class="card-values">
+                                {@render metaValue((img) => getWhiteBalanceInfo(img)?.label, "sub")}
                             </div>
-                        {/if}
+                        </div>
                     {/if}
-                    {#if getLightSourceDescription(currentAsset)}
+                    {#if selectedImages.some((img) => getLightSourceDescription(img))}
                         <div class="card-row meta-row">
                             <MaterialIcon iconName="light_mode" class="exif-material-icon" />
                             <div class="card-values">
-                                <div class="value-sub">
-                                    {getLightSourceDescription(currentAsset)}
-                                </div>
+                                {@render metaValue(getLightSourceDescription, "sub")}
                             </div>
                         </div>
                     {/if}
@@ -754,26 +767,33 @@
                     <div class="card-row main-row">
                         <MaterialIcon iconName="aspect_ratio" class="exif-material-icon" />
                         <div class="card-values">
-                            <div class="value-big">
-                                {currentAsset?.width} × {currentAsset?.height}
-                                {" "}· {getImageMegapixels(currentAsset)} MP {" "}· {formatBytes(
-                                    currentAsset.image_metadata.file_size
-                                ) ?? "—"}
-                            </div>
+                            {@render metaValue(
+                                (img) =>
+                                    [
+                                        img.width && img.height ? `${img.width} × ${img.height}` : null,
+                                        getImageMegapixels(img) ? `${getImageMegapixels(img)} MP` : null,
+                                        formatBytes(img.image_metadata.file_size)
+                                    ]
+                                        .filter(Boolean)
+                                        .join("  ·  "),
+                                "big"
+                            )}
                         </div>
                     </div>
                     <div class="card-row meta-row">
                         <MaterialIcon iconName="palette" class="exif-material-icon" />
                         <div class="card-values">
-                            <div class="value-sub">
-                                {currentAsset?.image_metadata.color_space}
-                                {#if currentAsset?.exif?.resolution}
-                                    {" "}· {currentAsset.exif.resolution}
-                                {/if}
-                                {#if currentAsset?.exif?.orientation}
-                                    {" "}· {formatOrientation(currentAsset.exif.orientation)}
-                                {/if}
-                            </div>
+                            {@render metaValue(
+                                (img) =>
+                                    [
+                                        img.image_metadata.color_space,
+                                        img.exif?.resolution,
+                                        img.exif?.orientation ? formatOrientation(img.exif.orientation) : null
+                                    ]
+                                        .filter(Boolean)
+                                        .join("  ·  "),
+                                "sub"
+                            )}
                         </div>
                     </div>
                 </div>
@@ -856,7 +876,7 @@
                         <MaterialIcon iconName="sell" class="exif-material-icon" />
                         <div class="keywords-list">
                             {#each currentKeywords as keyword (keyword)}
-                                <Badge variant="neutral" size="small" class="keyword-badge">
+                                <Badge size="small" class="keyword-badge">
                                     <Button
                                         variant="ghost"
                                         size="mini"
@@ -877,7 +897,7 @@
                                     <InputText
                                         bind:value={newKeywordInput}
                                         focused={isAddingKeyword}
-                                        placeholder="Add keyword..."
+                                        placeholder="Add Keyword..."
                                         class="keyword-input"
                                         onkeydown={handleKeywordKeydown}
                                         onblur={handleKeywordBlur}
@@ -889,12 +909,12 @@
                                         iconName="add"
                                         iconSize="1rem"
                                         class="add-keyword-btn"
-                                        title="Add keyword"
+                                        title="Add Keyword"
                                         onclick={() => {
                                             isAddingKeyword = true;
                                         }}
                                     >
-                                        {currentKeywords.length === 0 ? "Add keyword" : "Add"}
+                                        {currentKeywords.length === 0 ? "Add Keyword" : "Add"}
                                     </Button>
                                 {/if}
                             </div>
@@ -903,20 +923,19 @@
                 </div>
 
                 <!-- Software & Integrity Card -->
-                {#if currentAsset?.exif?.software || currentAsset?.exif?.exif_version || currentAsset?.image_metadata.checksum}
+                {#if selectedImages.some((img) => img.exif?.software || img.exif?.exif_version || img.image_metadata?.checksum)}
                     <div class="exif-card horizontal">
-                        {#if currentAsset.exif?.software || currentAsset.exif?.exif_version}
+                        {#if selectedImages.some((img) => img.exif?.software || img.exif?.exif_version)}
                             <div class="card-row meta-row center">
                                 <MaterialIcon iconName="desktop_landscape" class="exif-material-icon" />
                                 <div class="card-values">
-                                    <div class="value-sub" title={currentAsset.exif?.software}>
-                                        {[
-                                            currentAsset.exif?.software,
-                                            formatExifVersion(currentAsset.exif?.exif_version)
-                                        ]
-                                            .filter(Boolean)
-                                            .join("  ·  ")}
-                                    </div>
+                                    {@render metaValue(
+                                        (img) =>
+                                            [img.exif?.software, formatExifVersion(img.exif?.exif_version)]
+                                                .filter(Boolean)
+                                                .join("  ·  "),
+                                        "sub"
+                                    )}
                                 </div>
                             </div>
                         {/if}
@@ -930,8 +949,8 @@
                         <div class="card-values">
                             <div class="name-row">
                                 <EditableText
-                                    value={currentAsset?.exif?.artist ?? ""}
-                                    placeholder="Add artist"
+                                    value={activeMetadata.artist.isMixed ? "" : (activeMetadata.artist.value ?? "")}
+                                    placeholder={activeMetadata.artist.isMixed ? MIXED_VALUES : "Add artist"}
                                     class="value-big-wrapper"
                                     inputClass="value-big"
                                     textClass="value-big"
@@ -945,8 +964,10 @@
                         <div class="card-values">
                             <div class="name-row">
                                 <EditableText
-                                    value={currentAsset?.exif?.copyright ?? ""}
-                                    placeholder="Add copyright"
+                                    value={activeMetadata.copyright.isMixed
+                                        ? ""
+                                        : (activeMetadata.copyright.value ?? "")}
+                                    placeholder={activeMetadata.copyright.isMixed ? MIXED_VALUES : "Add copyright"}
                                     class="value-big-wrapper"
                                     inputClass="value-big"
                                     textClass="value-big"
@@ -961,15 +982,26 @@
                             <div class="name-row">
                                 <TextArea
                                     class="exif-description"
-                                    placeholder="Add a description"
-                                    title={currentAsset.description}
-                                    bind:value={currentAsset.description}
+                                    placeholder={activeMetadata.description.isMixed
+                                        ? MIXED_VALUES
+                                        : "Add a description"}
+                                    title={activeMetadata.description.value ?? ""}
+                                    value={activeMetadata.description.isMixed
+                                        ? ""
+                                        : (activeMetadata.description.value ?? "")}
                                     spellcheck="false"
                                     rows={3}
                                     minHeight="3.5rem"
                                     maxHeight="16rem"
                                     resize="none"
-                                    onblur={saveDescription}
+                                    onblur={(e) => {
+                                        const newVal = (e.currentTarget as HTMLTextAreaElement).value.trim();
+                                        if (activeMetadata.description.isMixed && newVal === "") {
+                                            return;
+                                        }
+                                        currentAsset.description = newVal;
+                                        saveDescription();
+                                    }}
                                     onkeydown={handleDescriptionKeydown}
                                 />
                             </div>
@@ -1214,6 +1246,11 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .multiple-values {
+        color: var(--viz-text-secondary);
+        font-style: italic;
     }
 
     .rating-container {
