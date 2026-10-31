@@ -85,9 +85,9 @@ export { default as IconCancelPresentation } from './IconCancelPresentation.svel
 export { default as IconOpenInFull } from './IconOpenInFull.svelte';
 export { default as IconChecklist } from './IconChecklist.svelte';
 export { default as IconChecklistRtl } from './IconChecklistRtl.svelte';
+export { default as IconKeyboardArrowDown } from './IconKeyboardArrowDown.svelte';
 export { default as IconTableChart } from './IconTableChart.svelte';
 export { default as IconKeyboardArrowUp } from './IconKeyboardArrowUp.svelte';
-export { default as IconKeyboardArrowDown } from './IconKeyboardArrowDown.svelte';
 export { default as IconFolderOpen } from './IconFolderOpen.svelte';
 export { default as IconEditCalendar } from './IconEditCalendar.svelte';
 export { default as IconChevronLeft } from './IconChevronLeft.svelte';
@@ -113,6 +113,7 @@ export { default as IconKeyboardDoubleArrowRight } from './IconKeyboardDoubleArr
 export { default as IconArrowDownwardAlt } from './IconArrowDownwardAlt.svelte';
 export { default as IconCancel } from './IconCancel.svelte';
 export { default as IconPhotoCamera } from './IconPhotoCamera.svelte';
+export { default as IconCenterFocusStrong } from './IconCenterFocusStrong.svelte';
 export { default as IconCamera } from './IconCamera.svelte';
 export { default as IconSettingsPhotoCamera } from './IconSettingsPhotoCamera.svelte';
 export { default as IconHdrAuto } from './IconHdrAuto.svelte';

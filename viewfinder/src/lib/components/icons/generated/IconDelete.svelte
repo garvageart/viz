@@ -10,7 +10,7 @@
     let { size = "1.5em", className = "", title = "delete", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
-    const inner = $derived(activeMap[String(weight)] || activeMap["400"] || Object.values(activeMap)[0]);
+    const inner = $derived(activeMap[String(weight)] || Object.values(activeMap)[0]);
 </script>
 
 <svg

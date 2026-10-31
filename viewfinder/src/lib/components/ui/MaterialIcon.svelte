@@ -53,7 +53,7 @@
         iconName,
         iconStyle = "sharp",
         fill = false,
-        weight = 300,
+        weight = 400,
         grade = 0,
         opticalSize = 24,
         size = "1.5em",
