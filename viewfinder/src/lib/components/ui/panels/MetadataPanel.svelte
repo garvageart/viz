@@ -36,6 +36,7 @@
     } from "#lib/utils/images.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
     import { type ImageAsset, type Label, batchUpdateImages, updateImage } from "@viz/api";
+    import type { KeyboardEventHandler } from "svelte/elements";
 
     const MIXED_VALUES = "Mixed Values";
 
@@ -305,8 +306,10 @@
     let starRating = $derived<number | null>(currentAsset?.image_metadata.rating ?? null);
     let updatingRating = $state(false);
 
-    let isAddingKeyword = $state(false);
+    // Keyword stuff
+    let keywordEditing = $state(false);
     let newKeywordInput = $state("");
+    let draftKeywords = $state<string[] | null>(null);
 
     let currentKeywords = $derived.by(() => {
         if (!isMultiSelection) {
@@ -316,11 +319,14 @@
         return getSelectionKeywords(selectedImages, currentAsset);
     });
 
+    let displayedKeywords = $derived(draftKeywords ?? currentKeywords);
+
     $effect(() => {
         // Track current asset UID to reset keyword input state on image switch
         void currentAsset?.uid;
-        isAddingKeyword = false;
+        keywordEditing = false;
         newKeywordInput = "";
+        draftKeywords = null;
     });
 
     async function saveKeywords(newKeywords: string[]) {
@@ -355,6 +361,7 @@
                         onImageUpdated?.(img);
                     }
                 }
+
                 const keywordErr = err as Error;
                 toasts.add({
                     type: "error",
@@ -362,6 +369,7 @@
                     message: keywordErr.message
                 });
             }
+
             return;
         }
 
@@ -389,7 +397,7 @@
         }
     }
 
-    async function addKeywordsFromInput(keepOpen = false) {
+    function addKeywordsFromInput() {
         if (!currentAsset) {
             return;
         }
@@ -397,7 +405,6 @@
         const trimmed = newKeywordInput.trim();
         if (!trimmed) {
             newKeywordInput = "";
-            isAddingKeyword = false;
             return;
         }
 
@@ -412,11 +419,10 @@
 
         if (parts.length === 0) {
             newKeywordInput = "";
-            isAddingKeyword = false;
             return;
         }
 
-        const existing = currentKeywords;
+        const existing = draftKeywords ?? currentKeywords;
         const lowerExisting = new Set(
             existing.map((k) => {
                 return k.toLowerCase();
@@ -428,13 +434,9 @@
         });
 
         newKeywordInput = "";
-        if (!keepOpen) {
-            isAddingKeyword = false;
-        }
 
         if (toAdd.length > 0) {
-            const updatedKeywords = [...existing, ...toAdd];
-            await saveKeywords(updatedKeywords);
+            draftKeywords = [...existing, ...toAdd];
         }
     }
 
@@ -443,30 +445,53 @@
             return;
         }
 
-        const existing = currentKeywords;
-        const updatedKeywords = existing.filter((k) => {
+        const base = draftKeywords ?? currentKeywords;
+        const updatedKeywords = base.filter((k) => {
             return k !== keywordToRemove;
         });
+
+        if (draftKeywords !== null) {
+            draftKeywords = updatedKeywords;
+        }
 
         await saveKeywords(updatedKeywords);
     }
 
-    function handleKeywordKeydown(e: KeyboardEvent) {
-        if (e.key === "Enter") {
+    const handleKeywordKeydown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+        if (e.key === "Enter" || e.key === ",") {
             e.preventDefault();
-            addKeywordsFromInput(true);
-        } else if (e.key === ",") {
-            e.preventDefault();
-            addKeywordsFromInput(true);
+            addKeywordsFromInput();
         } else if (e.key === "Escape") {
             e.preventDefault();
-            newKeywordInput = "";
-            isAddingKeyword = false;
+            e.currentTarget.blur();
         }
-    }
+    };
 
-    function handleKeywordBlur() {
-        addKeywordsFromInput(false);
+    async function handleKeywordBlur() {
+        if (!keywordEditing) {
+            return;
+        }
+
+        if (newKeywordInput.trim()) {
+            addKeywordsFromInput();
+        }
+
+        const keywordsToSave = draftKeywords;
+        draftKeywords = null;
+        keywordEditing = false;
+        newKeywordInput = "";
+
+        if (keywordsToSave !== null) {
+            const hasChanged =
+                keywordsToSave.length !== currentKeywords.length ||
+                keywordsToSave.some((k, i) => {
+                    return k !== currentKeywords[i];
+                });
+
+            if (hasChanged) {
+                await saveKeywords(keywordsToSave);
+            }
+        }
     }
 
     async function saveLabel(labelToSend: Label | null) {
@@ -685,6 +710,11 @@
                         <MaterialIcon iconName="photo_camera" class="exif-material-icon" />
                         <div class="card-values">
                             {@render metaValue(getCameraName, "big")}
+                        </div>
+                    </div>
+                    <div class="card-row main-row">
+                        <MaterialIcon iconName="center_focus_strong" class="exif-material-icon" />
+                        <div class="card-values">
                             {@render metaValue(getLensName, "sub")}
                             {@render metaValue(
                                 (img) =>
@@ -875,7 +905,7 @@
                     <div class="card-row main-row center">
                         <MaterialIcon iconName="sell" class="exif-material-icon" />
                         <div class="keywords-list">
-                            {#each currentKeywords as keyword (keyword)}
+                            {#each displayedKeywords as keyword (keyword)}
                                 <Badge size="small" class="keyword-badge">
                                     <Button
                                         variant="ghost"
@@ -893,10 +923,10 @@
                                 </Badge>
                             {/each}
                             <div class="keyword-action-slot">
-                                {#if isAddingKeyword}
+                                {#if keywordEditing}
                                     <InputText
                                         bind:value={newKeywordInput}
-                                        focused={isAddingKeyword}
+                                        focused={keywordEditing}
                                         placeholder="Add Keyword..."
                                         class="keyword-input"
                                         onkeydown={handleKeywordKeydown}
@@ -911,10 +941,11 @@
                                         class="add-keyword-btn"
                                         title="Add Keyword"
                                         onclick={() => {
-                                            isAddingKeyword = true;
+                                            keywordEditing = true;
+                                            draftKeywords = [...currentKeywords];
                                         }}
                                     >
-                                        {currentKeywords.length === 0 ? "Add Keyword" : "Add"}
+                                        {displayedKeywords.length === 0 ? "Add Keyword" : "Add"}
                                     </Button>
                                 {/if}
                             </div>
@@ -1265,7 +1296,7 @@
 
     /* Not a big fan of these large ass overides but I can live with it for now */
     .keywords-list {
-        display: flex;
+        display: inline-flex;
         flex-wrap: wrap;
         gap: var(--viz-spacing-sm);
         align-items: center;
@@ -1283,8 +1314,6 @@
         .keyword-action-slot {
             display: inline-flex;
             align-items: center;
-            flex: 1 1 40%;
-            min-width: 40%;
 
             :global(.add-keyword-btn) {
                 font-size: var(--viz-font-size-sm);
@@ -1297,6 +1326,8 @@
 
             :global(.input-container) {
                 width: 100%;
+                flex: 1 1 40%;
+                min-width: 40%;
             }
 
             :global(.input-container input:not([type="submit"])) {
