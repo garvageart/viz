@@ -1,9 +1,9 @@
 <script lang="ts">
+    import Accordion from "#lib/components/ui/Accordion.svelte";
     import Calendar from "#lib/components/ui/DatePicker.svelte";
     import type { ImageFacets, ImageFilters } from "#lib/states/filter.svelte.js";
     import { formatShutterSpeed } from "#lib/utils/images.js";
     import { type Snippet } from "svelte";
-    import { slide } from "svelte/transition";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";
@@ -25,13 +25,8 @@
         }
     }
 
-    async function toggleSection(section: keyof typeof uiState.expanded, sectionEl?: HTMLElement | null) {
-        uiState.expanded[section] = !uiState.expanded[section];
+    function handleSectionToggle() {
         save();
-
-        if (!uiState.expanded[section] && sectionEl) {
-            await scrollSectionIntoView(sectionEl);
-        }
     }
 
     // Convert an ISO date string from criteria to a JS Date for the Calendar.
@@ -87,18 +82,18 @@
 </script>
 
 {#snippet filterSection(key: keyof typeof uiState.expanded, title: string, content: Snippet)}
-    {@const isExpanded = uiState.expanded[key]}
-    <div class="filter-section">
-        <button class="section-header" onclick={(e) => toggleSection(key, e.currentTarget.closest(".filter-section"))}>
-            <span>{title}</span>
-            <MaterialIcon iconName={isExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} class="arrow-icon" />
-        </button>
-        {#if isExpanded}
-            <div class="section-content" transition:slide={{ duration: 200 }}>
-                {@render content()}
-            </div>
-        {/if}
-    </div>
+    <Accordion
+        class="filter-section"
+        headerClass="section-header"
+        {title}
+        variant="default"
+        iconPosition="right"
+        iconType="arrow"
+        bind:open={uiState.expanded[key]}
+        ontoggle={handleSectionToggle}
+    >
+        {@render content()}
+    </Accordion>
 {/snippet}
 
 <!-- Rating -->
@@ -296,42 +291,6 @@
 {@render filterSection("date", "Date Taken", dateContent)}
 
 <style lang="scss">
-    .filter-section {
-        border-bottom: var(--viz-border-thin);
-
-        &:last-child {
-            border-bottom: none;
-        }
-    }
-
-    .section-header {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: transparent;
-        border: none;
-        padding: var(--viz-spacing-xxs);
-        cursor: pointer;
-        color: var(--viz-text-primary);
-        font-weight: 600;
-        font-size: var(--viz-font-size-std);
-        text-align: left;
-        transition: color 0.2s;
-
-        &:hover {
-            color: var(--viz-text-secondary);
-            background-color: var(--viz-surface-panel);
-        }
-    }
-
-    .section-content {
-        padding: 0.5rem 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-sm);
-    }
-
     .rating-row {
         display: flex;
         align-items: center;

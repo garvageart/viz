@@ -32,14 +32,13 @@
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
-    import { slide } from "svelte/transition";
     import { modalsManager } from "../../modals/manager/ModalManager.svelte";
+    import Accordion from "../Accordion.svelte";
     import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";
     import Checkbox from "../Checkbox.svelte";
     import InputSelect from "../InputSelect.svelte";
     import InputText from "../InputText.svelte";
-    import MaterialIcon from "../MaterialIcon.svelte";
     import Slider from "../Slider.svelte";
 
     export interface SavedExportSettings {
@@ -94,10 +93,6 @@
         watermarking: false,
         ...savedExport?.sections
     });
-
-    function toggleSection(name: SectionName) {
-        sections[name] = !sections[name];
-    }
 
     // Export Settings State
     let settings = $state<SavedExportSettings>({
@@ -512,17 +507,16 @@
 
 <div id="viz-export-panel" class="export-panel">
     {#snippet panelSection(name: SectionName, label: string, children: Snippet)}
-        <div class="section" class:expanded={sections[name]}>
-            <button class="section-header" onclick={() => toggleSection(name)}>
-                <MaterialIcon iconName={sections[name] ? "keyboard_arrow_down" : "chevron_right"} />
-                <span>{label}</span>
-            </button>
-            {#if sections[name]}
-                <div class="section-content" transition:slide>
-                    {@render children()}
-                </div>
-            {/if}
-        </div>
+        <Accordion
+            title={label}
+            variant="subtle"
+            size="large"
+            iconPosition="left"
+            iconType="chevron"
+            bind:open={sections[name]}
+        >
+            {@render children()}
+        </Accordion>
     {/snippet}
 
     <div class="export-body">
@@ -707,55 +701,6 @@
         flex: 1;
         overflow-y: auto;
         padding: 0;
-    }
-
-    .section {
-        border: none;
-
-        & + .section {
-            border-top: 1px solid var(--viz-surface-hover);
-        }
-
-        &.expanded {
-            background-color: var(--viz-surface-base);
-
-            .section-header {
-                border-bottom: 1px solid var(--viz-surface-hover);
-            }
-        }
-    }
-
-    .section-header {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-        background: none;
-        border: none;
-        border-bottom: 1px solid transparent;
-        color: var(--viz-text-primary);
-        cursor: pointer;
-        font-weight: 600;
-        font-size: var(--viz-font-size-lg);
-        text-align: left;
-        transition:
-            background-color 0.2s,
-            border-bottom-color 0.2s;
-
-        &:hover {
-            background-color: var(--viz-surface-panel);
-        }
-
-        span {
-            margin-left: var(--viz-spacing-sm);
-        }
-    }
-
-    .section-content {
-        padding: var(--viz-spacing-md) var(--viz-spacing-std);
-        display: flex;
-        flex-direction: column;
-        gap: var(--viz-spacing-md);
     }
 
     .control-row {

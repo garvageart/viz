@@ -1,63 +1,23 @@
 <script lang="ts">
+    import Accordion from "#lib/components/ui/Accordion.svelte";
     import type { Snippet } from "svelte";
-    import { slide } from "svelte/transition";
 
     interface Props {
         heading: string;
         expanded: boolean;
-        header: Snippet;
+        header?: Snippet;
         content: Snippet;
-        onToggle: (expanded: boolean) => void;
+        onToggle?: (expanded: boolean) => void;
     }
 
     let { heading, expanded = $bindable(), header, content, onToggle }: Props = $props();
 </script>
 
-<div class="filter-section">
-    <button class="section-header" onclick={() => onToggle(expanded)}>
-        <span>{heading}</span>
-        {@render header()}
-    </button>
-    {#if expanded}
-        <div class="section-content" transition:slide={{ duration: 200 }}>
-            {@render content()}
-        </div>
-    {/if}
-</div>
+{#snippet customHeader()}
+    <span>{heading}</span>
+    {@render header?.()}
+{/snippet}
 
-<style lang="scss">
-    .filter-section {
-        border-bottom: 1px solid var(--viz-surface-hover);
-
-        &:last-child {
-            border-bottom: none;
-        }
-    }
-
-    .section-header {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: transparent;
-        border: none;
-        padding: 0.2rem;
-        cursor: pointer;
-        color: var(--viz-text-primary);
-        font-weight: 600;
-        text-align: left;
-        transition: color 0.2s;
-
-        &:hover {
-            color: var(--viz-text-secondary);
-            background-color: var(--viz-surface-panel);
-        }
-    }
-
-    .section-content {
-        padding: 0.5rem 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-</style>
+<Accordion class="filter-section" bind:open={expanded} variant="subtle" header={customHeader} ontoggle={onToggle}>
+    {@render content()}
+</Accordion>

@@ -1,11 +1,12 @@
 <script lang="ts">
+    import Accordion from "#lib/components/ui/Accordion.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
     import { initDB } from "#lib/db/client.js";
     import { DragData } from "#lib/drag-drop/data.js";
     import { type Collection, type ImageAsset, api, executeSearch } from "@viz/api";
     import { onMount } from "svelte";
-    import { fade, slide } from "svelte/transition";
+    import { fade } from "svelte/transition";
     import CompactListItem from "./CompactListItem.svelte";
 
     let favouriteImages = $state<ImageAsset[]>([]);
@@ -189,52 +190,44 @@
 >
     <div class="favourites-panel">
         <!-- Collections Section -->
-        <div class="section">
-            <button class="section-header" onclick={() => (showCollections = !showCollections)}>
-                <div class="header-content">
-                    <MaterialIcon iconName={showCollections ? "keyboard_arrow_down" : "chevron_right"} />
-                    <span>Collections</span>
-                    <span class="count">({favouriteCollections.length})</span>
-                </div>
-            </button>
-            {#if showCollections}
-                <div class="list-container" transition:slide>
-                    {#if favouriteCollections.length === 0 && !loading}
-                        <div class="empty-state">No favourite collections</div>
-                    {:else}
-                        <div class="list">
-                            {#each favouriteCollections as collection (collection.uid)}
-                                <CompactListItem item={collection} type="collection" />
-                            {/each}
-                        </div>
-                    {/if}
+        <Accordion
+            title={`Collections (${favouriteCollections.length})`}
+            variant="flush"
+            size="compact"
+            iconPosition="left"
+            iconType="chevron"
+            bind:open={showCollections}
+        >
+            {#if favouriteCollections.length === 0 && !loading}
+                <div class="empty-state">No favourite collections</div>
+            {:else}
+                <div class="list">
+                    {#each favouriteCollections as collection (collection.uid)}
+                        <CompactListItem item={collection} type="collection" />
+                    {/each}
                 </div>
             {/if}
-        </div>
+        </Accordion>
 
         <!-- Images Section -->
-        <div class="section">
-            <button class="section-header" onclick={() => (showImages = !showImages)}>
-                <div class="header-content">
-                    <MaterialIcon iconName={showImages ? "keyboard_arrow_down" : "chevron_right"} />
-                    <span>Images</span>
-                    <span class="count">({favouriteImages.length})</span>
-                </div>
-            </button>
-            {#if showImages}
-                <div class="list-container" transition:slide>
-                    {#if favouriteImages.length === 0 && !loading}
-                        <div class="empty-state">No favourite images</div>
-                    {:else}
-                        <div class="list">
-                            {#each favouriteImages as image (image.uid)}
-                                <CompactListItem item={image} type="image" />
-                            {/each}
-                        </div>
-                    {/if}
+        <Accordion
+            title={`Images (${favouriteImages.length})`}
+            variant="flush"
+            size="compact"
+            iconPosition="left"
+            iconType="chevron"
+            bind:open={showImages}
+        >
+            {#if favouriteImages.length === 0 && !loading}
+                <div class="empty-state">No favourite images</div>
+            {:else}
+                <div class="list">
+                    {#each favouriteImages as image (image.uid)}
+                        <CompactListItem item={image} type="image" />
+                    {/each}
                 </div>
             {/if}
-        </div>
+        </Accordion>
     </div>
 
     {#if isDraggingOver}
@@ -271,49 +264,6 @@
         padding: 0.5rem;
         gap: 0.75rem;
         box-sizing: border-box;
-    }
-
-    .section {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        background: none;
-        border: none;
-        color: var(--viz-text-primary);
-        cursor: pointer;
-        padding: 0.25rem;
-        font-family: inherit;
-        font-size: 0.9rem;
-        font-weight: 600;
-        text-align: left;
-        border-radius: 0.25rem;
-
-        &:hover {
-            background-color: var(--viz-surface-panel);
-            opacity: 0.9;
-        }
-    }
-
-    .header-content {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .count {
-        font-weight: normal;
-        opacity: 0.5;
-        font-size: 0.8em;
-    }
-
-    .list-container {
-        overflow: hidden;
     }
 
     .list {
