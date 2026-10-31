@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.5] - 2026-10-31
+
+* fix(viewfinder): improve keyword editing flow and layout in MetadataPanel (9d144d36)
+* style(viewfinder): remove inline font-size style on collection detail page (bfd41053)
+* feat(viewfinder): add Accordion component and replace handwritten accordions (02995630)
+* refactor(viewfinder): update default icon weight and regenerate icons (7a0674d6)
+* ci: update Playwright browser cache path in Forgejo workflow (4b0ac220)
+* feat(viewfinder): display mixed values for multi-image selection in metadata panel (928601da)
+
 ## [0.36.4] - 2026-10-29
 
 * refactor(viewfinder): encapsulate grid layout metadata and genericize photo virtualizer (66472991)
