@@ -241,6 +241,8 @@ jobs:
         name: "Frontend E2E Tests (Playwright)"
         needs: [build-images, test-frontend, test-backend]
         runs-on: ubuntu-latest
+        env:
+            PLAYWRIGHT_BROWSERS_PATH: /opt/ms-playwright
         steps:
             - name: Extract Workspace Files from Frontend Builder
               run: |
@@ -258,23 +260,19 @@ jobs:
             - name: Get Playwright version
               id: pw-version
               run: |
-                  PW_VERSION=$(node -p "require('./viewfinder/package.json').devDependencies['@playwright/test'].replace(/[\^~]/g, '')")
+                  PW_VERSION=$(pnpm --filter @viz/viewfinder exec playwright --version | awk '{print $2}')
                   echo "version=$PW_VERSION" >> "$GITHUB_OUTPUT"
 
             - name: Cache Playwright browsers
               id: playwright-cache
               uses: actions/cache@v4
               with:
-                  path: ~/.cache/ms-playwright
+                  path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
                   key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}
 
             - name: Install Playwright Chromium
               if: steps.playwright-cache.outputs.cache-hit != 'true'
               run: pnpm --filter @viz/viewfinder exec playwright install --with-deps chromium
-
-            - name: Install Playwright system dependencies
-              if: steps.playwright-cache.outputs.cache-hit == 'true'
-              run: pnpm --filter @viz/viewfinder exec playwright install-deps chromium
 
             - name: Run E2E Test Suite (Containerised)
               env:
