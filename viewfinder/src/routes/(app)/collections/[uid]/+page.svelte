@@ -998,7 +998,7 @@
     {/if}
 </svelte:head>
 
-<div class="collection-detail-page" style="font-size: {isLayoutPage() ? '0.9em' : 'inherit'};">
+<div class="collection-detail-page">
     <AssetsShell
         {grid}
         {noAssetsSnippet}
