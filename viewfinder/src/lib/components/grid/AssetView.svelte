@@ -82,7 +82,7 @@
     // Sync data source
     $effect(() => {
         if (data) {
-            selection.setSource(data);
+            selection.setSource(data, (item) => item.uid);
         }
     });
 

@@ -1,4 +1,5 @@
 import type { Collection, ImageAsset } from "@viz/api";
+import { untrack } from "svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 export enum SelectionScopeNames {
@@ -65,8 +66,42 @@ export class SelectionScope<T> {
         this.id = id;
     }
 
-    setSource(items: T[]) {
-        this.source = items;
+    setSource(items: T[], getKey: (item: T) => unknown = (item) => item) {
+        untrack(() => {
+            const itemsByKey = new Map(items.map((item) => [getKey(item), item]));
+            const refreshReference = (item: T) => {
+                return itemsByKey.get(getKey(item)) ?? item;
+            };
+
+            this.source = items;
+
+            const selectedItems = Array.from(this.selected);
+            const refreshedSelectedItems = selectedItems.map(refreshReference);
+            if (refreshedSelectedItems.some((item, index) => item !== selectedItems[index])) {
+                this.selected.clear();
+                for (const item of refreshedSelectedItems) {
+                    this.selected.add(item);
+                }
+            }
+
+            const excludedItems = Array.from(this.excluded);
+            const refreshedExcludedItems = excludedItems.map(refreshReference);
+            if (refreshedExcludedItems.some((item, index) => item !== excludedItems[index])) {
+                this.excluded.clear();
+                for (const item of refreshedExcludedItems) {
+                    this.excluded.add(item);
+                }
+            }
+
+            this.baseSelection = new Set(Array.from(this.baseSelection, refreshReference));
+
+            if (this.active) {
+                this.active = refreshReference(this.active);
+            }
+            if (this.anchor) {
+                this.anchor = refreshReference(this.anchor);
+            }
+        });
     }
 
     add(item: T) {

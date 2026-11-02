@@ -86,18 +86,23 @@
 
     // Selection Management
     let selection = $derived(selectionManager.getScope(scopeId));
+    let selectedItems = $derived(selection.selectedItems);
 
     // Sync data source to selection scope so filters can access it
     // Set source as the exact image objects to ensure object equality for selection tracking outside of the grid
     $effect(() => {
         if (groupedData && groupedData.length > 0) {
-            selection.setSource(groupedData.flatMap((g) => g.allImages.map((x) => x.image)));
+            selection.setSource(
+                groupedData.flatMap((g) => g.allImages.map((x) => x.image)),
+                (image) => image.uid
+            );
+
             return;
         }
 
         const source = allData || data;
         if (source) {
-            selection.setSource(source);
+            selection.setSource(source, (image) => image.uid);
         }
     });
 
@@ -1047,16 +1052,17 @@
 
 {#snippet defaultPhotoCard(gridImage: GridImage)}
     {@const asset = gridImage.image}
-    {@const isSelected = selection.has(asset) || selection.active === asset}
+    {@const isActive = selection.active?.uid === asset.uid}
+    {@const isSelected = selectedItems.includes(asset)}
     {@const isCached = loadedImageUIDs.has(asset.uid)}
     {@const isDisabled = disabledUids.has(asset.uid)}
-    <!-- {@const isFocusedAsset = selection.active ? selection.active.uid === asset.uid : data[0]?.uid === asset.uid} -->
     <div
         class="asset-photo"
         class:disabled-asset={isDisabled}
         class:selected-photo={isSelected}
         class:multi-selected-photo={isSelected && isMultiSelecting}
         data-asset-id={asset.uid}
+        aria-current={isActive ? "true" : undefined}
         role="button"
         tabindex={0}
         onfocus={onFocus}

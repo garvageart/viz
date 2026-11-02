@@ -38,7 +38,8 @@
                     const images = res.data.items.map((i) => {
                         return i.image;
                     });
-                    scope.setSource(images);
+
+                    scope.setSource(images, (image) => image.uid);
                 }
             });
         }
@@ -57,7 +58,6 @@
     );
 
     let selectionAnchor = $state<ImageAsset>();
-
     let collection = $derived(isCollectionData(activeEntity) ? activeEntity : undefined);
 
     function handleImageClick(image: ImageAsset, e: MouseEvent | KeyboardEvent) {
@@ -280,7 +280,7 @@
     {:else}
         {#each filmstripImages as image, i (image.uid)}
             {@const isActive = activeItem?.uid === image.uid}
-            {@const isSelected = targetScope?.has(image)}
+            {@const isSelected = selectedItems.includes(image)}
             <button
                 class="filmstrip-item"
                 class:active={isActive}

@@ -114,4 +114,38 @@ describe("SelectionScope selection behaviour", () => {
         expect(scope.anchor).toBeUndefined();
         expect(scope.selected.size).toBe(0);
     });
+
+    it("reconciles selected item references when the source refreshes", () => {
+        scope.select(items[1]);
+        scope.toggle(items[3]);
+
+        const refreshedItems = items.map((item) => {
+            return { ...item };
+        });
+        scope.setSource(refreshedItems, (item) => item.uid);
+
+        expect(scope.selected.has(refreshedItems[1])).toBe(true);
+        expect(scope.selected.has(refreshedItems[3])).toBe(true);
+        expect(scope.selected.has(items[1])).toBe(false);
+        expect(scope.selected.has(items[3])).toBe(false);
+        expect(scope.active?.uid).toBe(refreshedItems[3].uid);
+        expect(scope.anchor?.uid).toBe(refreshedItems[3].uid);
+        expect(scope.baseSelection.has(refreshedItems[1])).toBe(true);
+        expect(scope.baseSelection.has(refreshedItems[3])).toBe(true);
+    });
+
+    it("reconciles exclusions when the source refreshes after select all", () => {
+        scope.selectAll();
+        scope.remove(items[2]);
+
+        const refreshedItems = items.map((item) => {
+            return { ...item };
+        });
+        scope.setSource(refreshedItems, (item) => item.uid);
+
+        expect(scope.excluded.has(refreshedItems[2])).toBe(true);
+        expect(scope.excluded.has(items[2])).toBe(false);
+        expect(scope.has(refreshedItems[2])).toBe(false);
+        expect(scope.size).toBe(items.length - 1);
+    });
 });
