@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-    <title>viz</title>
+    <title>viewfinder</title>
 </svelte:head>
 
 <div class="viz-content-container">
