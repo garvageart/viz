@@ -63,4 +63,15 @@ describe("DragCoordinator", () => {
         expect(dragCoordinator.isDragging).toBe(false);
         expect(dragCoordinator.session).toBeNull();
     });
+
+    it("ends the session on drop when dragend never fires", async () => {
+        dragCoordinator.startDrag([{ mimeType: VizMimeTypes.TAB_VIEW, payload: { viewId: 1 } }], createDragEvent());
+
+        expect(dragCoordinator.isDragging).toBe(true);
+        window.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true }));
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(dragCoordinator.isDragging).toBe(false);
+        expect(dragCoordinator.session).toBeNull();
+    });
 });

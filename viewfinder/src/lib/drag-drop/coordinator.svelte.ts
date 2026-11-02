@@ -79,10 +79,21 @@ class DragCoordinator {
         };
 
         window.addEventListener("dragover", this.handleGlobalDragOver, true);
+        window.addEventListener("drop", this.handleGlobalDrop, true);
         window.addEventListener("dragend", this.endDrag);
         window.addEventListener("keydown", this.handleKeyModifier);
         window.addEventListener("keyup", this.handleKeyModifier);
     }
+
+    // Moving a tab re-renders its group, which can detach the dragged element
+    // before the browser dispatches `dragend`. When that happens the session
+    // never ends and the drag tooltip lingers. `drop` always fires on a
+    // successful drop, so end the session from there instead. Defer it until
+    // after the current event dispatch so drop handlers can still read the
+    // active session.
+    private handleGlobalDrop = () => {
+        queueMicrotask(() => this.endDrag());
+    };
 
     private handleGlobalDragOver = (e: DragEvent) => {
         if (!this.session) {
@@ -127,6 +138,7 @@ class DragCoordinator {
 
         DragData.clear();
         window.removeEventListener("dragover", this.handleGlobalDragOver, true);
+        window.removeEventListener("drop", this.handleGlobalDrop, true);
         window.removeEventListener("dragend", this.endDrag);
         window.removeEventListener("keydown", this.handleKeyModifier);
         window.removeEventListener("keyup", this.handleKeyModifier);
