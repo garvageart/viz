@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"viz/internal/entities"
+	"viz/internal/uid"
 )
 
 // BackfillRecord tracks executed database backfills to ensure run-once semantics.
@@ -40,6 +42,7 @@ var DefaultBackfills = []BackfillFn{
 	BackfillOriginalFileName,
 	TrimImageNameExtensions,
 	BackfillCollectionImageCounts,
+	MigrateImageKeywords,
 }
 
 // RunBackfills executes all data backfills and post-migration data transformations sequentially inside a transaction.
@@ -337,5 +340,82 @@ func RecoverImageNameExtensions(tx *gorm.DB, logger *slog.Logger) error {
 		logger.Info("Recovered extensions for existing image names", slog.Int("count", updatedCount))
 	}
 
+	return nil
+}
+
+// MigrateImageKeywords moves legacy keywords from image_metadata JSON
+// to the keywords table and image_keywords many-to-many join table.
+func MigrateImageKeywords(tx *gorm.DB, logger *slog.Logger) error {
+	logger.Info("Starting migration of image keywords from image_metadata to keywords table...")
+
+	keywordCache := make(map[string]entities.Keyword)
+	const batchSize = 100
+	var images []entities.ImageAsset
+
+	err := tx.Model(&entities.ImageAsset{}).
+		Preload("Keywords").
+		FindInBatches(&images, batchSize, func(batchTx *gorm.DB, batch int) error {
+			for i := range images {
+				img := &images[i]
+
+				var rawMeta []byte
+				row := batchTx.Table("images").Where("id = ?", img.ID).Select("image_metadata").Row()
+				if err := row.Scan(&rawMeta); err != nil || len(rawMeta) == 0 {
+					continue
+				}
+
+				var meta struct {
+					Keywords []string `json:"keywords"`
+				}
+				if err := json.Unmarshal(rawMeta, &meta); err != nil || len(meta.Keywords) == 0 {
+					continue
+				}
+
+				var kwsToAssociate []entities.Keyword
+				for _, kwName := range meta.Keywords {
+					kwName = strings.TrimSpace(kwName)
+					if kwName == "" {
+						continue
+					}
+
+					kw, found := keywordCache[kwName]
+					if !found {
+						var existing entities.Keyword
+						if err := batchTx.Where("name = ?", kwName).First(&existing).Error; err != nil {
+							newKw := entities.Keyword{
+								Uid:  uid.MustGenerate(),
+								Name: kwName,
+							}
+							if err := batchTx.Create(&newKw).Error; err != nil {
+								logger.Error("Failed to create keyword", slog.String("name", kwName), slog.Any("error", err))
+								return err
+							}
+							kw = newKw
+						} else {
+							kw = existing
+						}
+						keywordCache[kwName] = kw
+					}
+
+					kwsToAssociate = append(kwsToAssociate, kw)
+				}
+
+				if len(kwsToAssociate) > 0 {
+					img.Keywords = kwsToAssociate
+					if err := batchTx.Model(img).Association("Keywords").Append(&kwsToAssociate); err != nil {
+						logger.Error("Failed to associate keywords with image", slog.String("image_uid", img.Uid), slog.Any("error", err))
+						return err
+					}
+				}
+			}
+			return nil
+		}).Error
+
+	if err != nil {
+		logger.Error("Failed to migrate image keywords in batches", slog.Any("error", err))
+		return err
+	}
+
+	logger.Info("Completed image keywords migration successfully")
 	return nil
 }

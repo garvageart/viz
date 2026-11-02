@@ -198,3 +198,29 @@ func Capitalize(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 
 }
+
+// AssignIf sets target to *val if val is not nil.
+func AssignIf[T any](target *T, val *T) {
+	if val != nil {
+		*target = *val
+	}
+}
+
+// AssignPtrIf sets target to val if val is not nil.
+func AssignPtrIf[T any](target **T, val *T) {
+	if val != nil {
+		*target = val
+	}
+}
+
+// AssignFK sets target to val if val is not nil.
+// If *val is empty, target is set to nil to clear foreign keys.
+func AssignFK(target **string, val *string) {
+	if val != nil {
+		if *val == "" {
+			*target = nil
+		} else {
+			*target = val
+		}
+	}
+}

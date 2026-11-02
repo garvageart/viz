@@ -251,6 +251,33 @@ func (s *MigrationsTestSuite) TestRunBackfills_EndToEnd() {
 	s.Equal(1, resColl.ImageCount)
 }
 
+func (s *MigrationsTestSuite) TestMigrateImageKeywords() {
+	userUid := "user-keywords"
+	s.Require().NoError(s.db.Create(&entities.User{Uid: userUid, Email: "user-kw@example.com"}).Error)
+
+	rawMetadata := []byte(`{"file_name":"shot.jpg","keywords":["Landscape","Sunset"]}`)
+	img := entities.ImageAsset{
+		Uid:          "img-kw-1",
+		Name:         "shot",
+		UploadedByID: &userUid,
+	}
+	s.Require().NoError(s.db.Create(&img).Error)
+	s.Require().NoError(s.db.Table("images").Where("uid = ?", "img-kw-1").Update("image_metadata", rawMetadata).Error)
+
+	s.Require().NoError(db.MigrateImageKeywords(s.db, s.logger))
+
+	var resImg entities.ImageAsset
+	s.Require().NoError(s.db.Preload("Keywords").First(&resImg, "uid = ?", "img-kw-1").Error)
+	s.Require().Len(resImg.Keywords, 2)
+	names := []string{resImg.Keywords[0].Name, resImg.Keywords[1].Name}
+	s.Contains(names, "Landscape")
+	s.Contains(names, "Sunset")
+
+	var count int64
+	s.Require().NoError(s.db.Model(&entities.Keyword{}).Count(&count).Error)
+	s.Equal(int64(2), count)
+}
+
 func TestMigrationsTestSuite(t *testing.T) {
 	suite.Run(t, new(MigrationsTestSuite))
 }

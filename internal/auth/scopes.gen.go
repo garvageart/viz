@@ -34,6 +34,14 @@ const (
 	CollectionsDeleteScope Scope = "collections:delete"
 	// CollectionsShareScope grants permission for collections:share.
 	CollectionsShareScope Scope = "collections:share"
+	// KeywordsCreateScope grants permission for keywords:create.
+	KeywordsCreateScope Scope = "keywords:create"
+	// KeywordsReadScope grants permission for keywords:read.
+	KeywordsReadScope Scope = "keywords:read"
+	// KeywordsUpdateScope grants permission for keywords:update.
+	KeywordsUpdateScope Scope = "keywords:update"
+	// KeywordsDeleteScope grants permission for keywords:delete.
+	KeywordsDeleteScope Scope = "keywords:delete"
 	// ImagesReadScope grants permission for images:read.
 	ImagesReadScope Scope = "images:read"
 	// ImagesUploadScope grants permission for images:upload.
@@ -94,6 +102,10 @@ var AllScopes = []ScopeItem{
 	{Value: CollectionsUpdateScope, Label: "Update Collections"},
 	{Value: CollectionsDeleteScope, Label: "Delete Collections"},
 	{Value: CollectionsShareScope, Label: "Share Collections"},
+	{Value: KeywordsCreateScope, Label: "Create Keywords"},
+	{Value: KeywordsReadScope, Label: "Read Keywords"},
+	{Value: KeywordsUpdateScope, Label: "Update Keywords"},
+	{Value: KeywordsDeleteScope, Label: "Delete Keywords"},
 	{Value: ImagesReadScope, Label: "Read Images"},
 	{Value: ImagesUploadScope, Label: "Upload Images"},
 	{Value: ImagesUpdateScope, Label: "Update Images"},

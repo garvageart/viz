@@ -115,6 +115,14 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 			r.Group(func(r chi.Router) {
 				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
 					auth.ImagesReadScope,
+					auth.ImagesDeleteScope,
+					auth.ImagesUpdateScope,
+				}))
+				r.Mount("/keyword", routes.KeywordsRouter(dbClient, logger))
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(libhttp.ScopeMiddleware([]auth.Scope{
+					auth.ImagesReadScope,
 				}))
 				r.Mount("/timeline", routes.TimelineRouter(dbClient, logger))
 			})

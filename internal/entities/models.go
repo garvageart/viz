@@ -16,5 +16,6 @@ func Models() []any {
 		SettingDefault{},
 		SettingOverride{},
 		ImageTransform{},
+		Keyword{},
 	}
 }

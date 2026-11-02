@@ -2094,6 +2094,269 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
+    /keyword:
+        post:
+            summary: Create a new keyword
+            operationId: createKeyword
+            security:
+                - BearerAuth: [keywords:create]
+                - CookieAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/KeywordCreate"
+            responses:
+                "201":
+                    description: Created
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Keyword"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        get:
+            summary: List all keywords
+            operationId: listKeywords
+            security:
+                - BearerAuth: [keywords:read]
+                - CookieAuth: []
+            responses:
+                "200":
+                    description: List of keywords
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/KeywordListResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /keyword/{uid}:
+        get:
+            summary: Get a keyword by UID
+            operationId: getKeyword
+            security:
+                - BearerAuth: [keywords:read]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+                  description: Keyword UID
+            responses:
+                "200":
+                    description: Keyword resource
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Keyword"
+                "404":
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        put:
+            summary: Update a keyword by UID
+            operationId: updateKeyword
+            security:
+                - BearerAuth: [keywords:update]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+                  description: Keyword UID
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/KeywordUpdate"
+            responses:
+                "200":
+                    description: Updated keyword resource
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Keyword"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        delete:
+            summary: Delete a keyword by UID
+            operationId: deleteKeyword
+            security:
+                - BearerAuth: [keywords:delete]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+                  description: Keyword UID to delete
+            responses:
+                "204":
+                    description: No Content (keyword deleted)
+                "404":
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+    /keyword/asset:
+        post:
+            summary: Add an asset to a keyword
+            operationId: addAssetToKeyword
+            security:
+                - BearerAuth: [keywords:update]
+                - CookieAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/KeywordAssetRequest"
+            responses:
+                "200":
+                    description: Asset added to keyword successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/KeywordAssetResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Not found (asset or keyword not found)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        delete:
+            summary: Remove assets from keywords
+            operationId: removeAssetsFromKeywords
+            security:
+                - BearerAuth: [keywords:update]
+                - CookieAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/KeywordAssetRequest"
+            responses:
+                "204":
+                    description: Assets removed from keywords successfully
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Not found (asset or keyword not found)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /keyword/{uid}/assets:
+        get:
+            summary: List assets associated with a keyword
+            operationId: listAssetsForKeyword
+            security:
+                - BearerAuth: [keywords:read]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+                  description: Keyword UID
+            responses:
+                "200":
+                    description: List of assets for the keyword
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ImagesListResponse"
+                "404":
+                    description: Not found (keyword not found)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
     /download:
         post:
             summary: Download a set of images as a ZIP (requires token)
@@ -3187,6 +3450,10 @@ components:
                 collections:update: Update Collections
                 collections:delete: Delete Collections
                 collections:share: Share Collections
+                keywords:create: Create Keywords
+                keywords:read: Read Keywords
+                keywords:update: Update Keywords
+                keywords:delete: Delete Keywords
                 images:read: Read Images
                 images:upload: Upload Images
                 images:update: Update Images
@@ -3347,6 +3614,94 @@ components:
             type: string
             enum: [sRGB, AdobeRGB, ProPhoto, DisplayP3]
             description: Color space
+
+        KeywordCreate:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The name of the keyword
+                parent:
+                    type: string
+                    description: The UID of the parent keyword, if any
+                colour:
+                    type: string
+                    description: Hex color code for the keyword
+            required: [name]
+
+        KeywordUpdate:
+            allOf:
+                - $ref: "#/components/schemas/KeywordCreate"
+
+        Keyword:
+            x-entity: true
+            x-go-gorm-index:
+                - name: idx_keywords_name
+                  unique: true
+                  fields: [name]
+            type: object
+            properties:
+                uid:
+                    type: string
+                    description: Unique identifier for the keyword
+                name:
+                    type: string
+                    description: The name of the keyword
+                parent:
+                    type: string
+                    description: The UID of the parent keyword, if any
+                colour:
+                    type: string
+                    description: Hex color code for the keyword
+                created_at:
+                    type: string
+                    format: date-time
+                    description: The timestamp when the keyword was created
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: The timestamp when the keyword was last updated
+            required: [uid, name, created_at, updated_at]
+
+        KeywordListResponse:
+            type: object
+            properties:
+                keywords:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Keyword"
+                    description: List of keywords
+            required: [keywords]
+
+        KeywordAssetRequest:
+            type: object
+            properties:
+                keyword_uids:
+                    type: array
+                    items:
+                        type: string
+                    description: The UIDs of the keywords to associate with the asset
+                asset_uids:
+                    type: array
+                    items:
+                        type: string
+                    description: The UIDs of the assets to associate with the keyword
+            required: [keyword_uids, asset_uids]
+
+        KeywordAssetResponse:
+            type: object
+            properties:
+                keyword_uid:
+                    type: string
+                    description: The UID of the keyword
+                asset_uid:
+                    type: string
+                    description: The UID of the associated asset
+                created_at:
+                    type: string
+                    format: date-time
+                    description: The timestamp when the association was created
+            required: [keyword_uid, asset_uid, created_at]
 
         DuplicateCheckRequest:
             type: object
@@ -4099,10 +4454,6 @@ components:
                         nullable: true,
                         description: "User-assigned rating (0-5). Null = unrated"
                     }
-                keywords:
-                    type: array
-                    items: { type: string }
-                    description: Keywords
                 color_space: { type: string, description: Color space }
                 has_icc_profile: { type: boolean, description: Has ICC profile }
                 file_modified_at: { type: string, format: date-time, description: File modification time }
@@ -4143,12 +4494,18 @@ components:
                     $ref: "#/components/schemas/ImageMetadata"
                 image_paths:
                     $ref: "#/components/schemas/ImagePaths"
+                keywords:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Keyword"
+                    x-gorm-tag: "many2many:image_keywords;"
+                    description: Keywords linked to this image
                 created_at: { type: string, format: date-time, description: Creation time }
                 updated_at: { type: string, format: date-time, description: Update time }
                 taken_at:
                     type: string
                     format: date-time
-                    description: "The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
+                    description: "The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
 
             required:
                 [
@@ -4587,7 +4944,10 @@ components:
                 private:
                     type: boolean
                     description: Is private
-
+                keywords:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/KeywordUpdate"
                 taken_at:
                     type: string
                     format: date-time
@@ -4612,11 +4972,6 @@ components:
                             maximum: 5
                             nullable: true
                             description: "User-assigned rating (0-5). Null = unrated"
-                        keywords:
-                            type: array
-                            items:
-                                type: string
-                            description: Keywords
 
         BatchImageUpdateRequest:
             type: object
@@ -4715,8 +5070,7 @@ components:
                 storage_path_template:
                     type: string
                     description: Template for the directory structure of stored images
-            required:
-                [storage_path_template]
+            required: [storage_path_template]
 
         LoggingConfig:
             type: object
@@ -4730,8 +5084,7 @@ components:
                 pretty:
                     type: boolean
                     description: Enable pretty colorized console logging
-            required:
-                [level, timezone, pretty]
+            required: [level, timezone, pretty]
 
         UploadConfig:
             type: object
@@ -4739,8 +5092,7 @@ components:
                 location:
                     type: string
                     description: Upload location
-            required:
-                [location]
+            required: [location]
 
         DownloadConfig:
             type: object
@@ -4749,8 +5101,7 @@ components:
                     type: string
                     default: viz-bulk_export
                     description: "Default name for user exported zip files"
-            required:
-                [zip_export_name]
+            required: [zip_export_name]
 
         DatabaseConfig:
             type: object
@@ -4770,8 +5121,7 @@ components:
                 port:
                     type: integer
                     description: Database port
-            required:
-                [location, user, password, name, port]
+            required: [location, user, password, name, port]
 
         QueueConfig:
             type: object
@@ -4861,8 +5211,7 @@ components:
                 gc_enabled:
                     type: boolean
                     description: GC enabled
-            required:
-                [gc_enabled]
+            required: [gc_enabled]
 
         UserManagementConfig:
             type: object
@@ -4870,8 +5219,7 @@ components:
                 allow_manual_registration:
                     type: boolean
                     description: Allow manual registration
-            required:
-                [allow_manual_registration]
+            required: [allow_manual_registration]
 
         StorageMetricsConfig:
             type: object
@@ -4882,8 +5230,7 @@ components:
                 interval_seconds:
                     type: integer
                     description: Interval in seconds
-            required:
-                [enabled, interval_seconds]
+            required: [enabled, interval_seconds]
 
         SearchListResponse:
             type: object

@@ -345,8 +345,6 @@ export type ImageMetadata = {
     metadata?: string;
     /** User-assigned rating (0-5). Null = unrated */
     rating?: number | null;
-    /** Keywords */
-    keywords?: string[];
     /** Color space */
     color_space: string;
     /** Has ICC profile */
@@ -372,6 +370,20 @@ export type ImagePaths = {
     /** Path to raw file */
     raw?: string;
 };
+export type Keyword = {
+    /** Unique identifier for the keyword */
+    uid: string;
+    /** The name of the keyword */
+    name: string;
+    /** The UID of the parent keyword, if any */
+    parent?: string;
+    /** Hex color code for the keyword */
+    colour?: string;
+    /** The timestamp when the keyword was created */
+    created_at: string;
+    /** The timestamp when the keyword was last updated */
+    updated_at: string;
+};
 export type ImageAsset = {
     /** Image UID */
     uid: string;
@@ -396,11 +408,13 @@ export type ImageAsset = {
     processed: boolean;
     image_metadata: ImageMetadata;
     image_paths: ImagePaths;
+    /** Keywords linked to this image */
+    keywords?: Keyword[];
     /** Creation time */
     created_at: string;
     /** Update time */
     updated_at: string;
-    /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
+    /** The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
     taken_at: string;
 };
 export type CollectionImage = {
@@ -510,6 +524,15 @@ export type DeleteAssetsResponse = {
     /** Summary message of the operation */
     message?: string;
 };
+export type KeywordCreate = {
+    /** The name of the keyword */
+    name: string;
+    /** The UID of the parent keyword, if any */
+    parent?: string;
+    /** Hex color code for the keyword */
+    colour?: string;
+};
+export type KeywordUpdate = KeywordCreate;
 export type ImageUpdate = {
     /** Image name */
     name?: string;
@@ -519,6 +542,7 @@ export type ImageUpdate = {
     description?: string | null;
     /** Is private */
     "private"?: boolean;
+    keywords?: KeywordUpdate[];
     /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
     taken_at?: string | null;
     /** Is favourited */
@@ -529,8 +553,6 @@ export type ImageUpdate = {
         label?: (Label) | null;
         /** User-assigned rating (0-5). Null = unrated */
         rating?: number | null;
-        /** Keywords */
-        keywords?: string[];
     };
 };
 export type BatchImageUpdateRequest = {
@@ -634,6 +656,24 @@ export type DeleteImagesResponse = {
     deleted: boolean;
     /** Error message if failed */
     error?: string;
+};
+export type KeywordListResponse = {
+    /** List of keywords */
+    keywords: Keyword[];
+};
+export type KeywordAssetRequest = {
+    /** The UIDs of the keywords to associate with the asset */
+    keyword_uids: string[];
+    /** The UIDs of the assets to associate with the keyword */
+    asset_uids: string[];
+};
+export type KeywordAssetResponse = {
+    /** The UID of the keyword */
+    keyword_uid: string;
+    /** The UID of the associated asset */
+    asset_uid: string;
+    /** The timestamp when the association was created */
+    created_at: string;
 };
 export type DownloadRequest = {
     /** List of UIDs to download */
@@ -2139,6 +2179,155 @@ export function deleteCollectionImages(uid: string, body: {
         method: "DELETE",
         body
     }));
+}
+/**
+ * Create a new keyword
+ */
+export function createKeyword(keywordCreate: KeywordCreate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 201;
+        data: Keyword;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/keyword", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: keywordCreate
+    }));
+}
+/**
+ * List all keywords
+ */
+export function listKeywords(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: KeywordListResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/keyword", {
+        ...opts
+    });
+}
+/**
+ * Get a keyword by UID
+ */
+export function getKeyword(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Keyword;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/keyword/${encodeURIComponent(uid)}`, {
+        ...opts
+    });
+}
+/**
+ * Update a keyword by UID
+ */
+export function updateKeyword(uid: string, keywordUpdate: KeywordUpdate, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: Keyword;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/keyword/${encodeURIComponent(uid)}`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: keywordUpdate
+    }));
+}
+/**
+ * Delete a keyword by UID
+ */
+export function deleteKeyword(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/keyword/${encodeURIComponent(uid)}`, {
+        ...opts,
+        method: "DELETE"
+    });
+}
+/**
+ * Add an asset to a keyword
+ */
+export function addAssetToKeyword(keywordAssetRequest: KeywordAssetRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: KeywordAssetResponse;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/keyword/asset", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: keywordAssetRequest
+    }));
+}
+/**
+ * Remove assets from keywords
+ */
+export function removeAssetsFromKeywords(keywordAssetRequest: KeywordAssetRequest, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 400;
+        data: ErrorResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>("/keyword/asset", oazapfts.json({
+        ...opts,
+        method: "DELETE",
+        body: keywordAssetRequest
+    }));
+}
+/**
+ * List assets associated with a keyword
+ */
+export function listAssetsForKeyword(uid: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ImagesListResponse;
+    } | {
+        status: 404;
+        data: ErrorResponse;
+    } | {
+        status: 500;
+        data: ErrorResponse;
+    }>(`/keyword/${encodeURIComponent(uid)}/assets`, {
+        ...opts
+    });
 }
 /**
  * Download a set of images as a ZIP (requires token)

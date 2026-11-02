@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"gopkg.in/yaml.v3"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -201,14 +202,14 @@ func main() {
 				if len(openapiConf.GormIndexes) > 0 {
 					existing.GormIndexes = openapiConf.GormIndexes
 				}
+
 				if len(openapiConf.FieldTags) > 0 {
 					if existing.FieldTags == nil {
 						existing.FieldTags = make(map[string]string)
 					}
-					for k, v := range openapiConf.FieldTags {
-						existing.FieldTags[k] = v
-					}
+					maps.Copy(existing.FieldTags, openapiConf.FieldTags)
 				}
+
 				// Other fields can also be merged/overwritten if necessary
 				mergedDiscovered = append(mergedDiscovered, existing)
 				delete(discoveredMap, name) // Remove from map so it's not added again
@@ -222,6 +223,7 @@ func main() {
 		for _, e := range discoveredMap {
 			mergedDiscovered = append(mergedDiscovered, e)
 		}
+
 		discovered = mergedDiscovered
 	}
 
@@ -239,6 +241,7 @@ func main() {
 		}
 		fmt.Print(e.Name)
 	}
+
 	fmt.Println()
 
 	t := template.Must(template.New("entities").Funcs(template.FuncMap{
@@ -535,21 +538,34 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 							break
 						}
 					}
+
 					if hasUID {
-						// Record that this child entity needs a parent ID field
-						entityFields[typeName] = append(entityFields[typeName], FieldConfig{
-							Name:      e.Name + "ID",
-							TypeExpr:  "*uint",
-							IsSimple:  true,
-							IsFKField: true,
-							JsonName:  strings.ToLower(e.Name) + "_id",
-						})
+						customTag, hasCustomTag := e.FieldTags[jsonName]
+						if !hasCustomTag {
+							customTag, hasCustomTag = e.FieldTags[name]
+						}
+
+						if !hasCustomTag {
+							// Record that this child entity needs a parent ID field
+							entityFields[typeName] = append(entityFields[typeName], FieldConfig{
+								Name:      e.Name + "ID",
+								TypeExpr:  "*uint",
+								IsSimple:  true,
+								IsFKField: true,
+								JsonName:  strings.ToLower(e.Name) + "_id",
+							})
+						}
 
 						typeExpr := "[]" + typeName
 						if isPointer {
 							// We still want a slice in the entity, but we'll manage the pointer-ness in DTO conversion
 							// Actually, GORM prefers non-pointer slices for relationships
 							typeExpr = "[]" + typeName
+						}
+
+						gormTag := fmt.Sprintf("gorm:\"foreignKey:%sID\"", e.Name)
+						if hasCustomTag {
+							gormTag = fmt.Sprintf("gorm:\"%s\"", customTag)
 						}
 
 						fields = append(fields, FieldConfig{
@@ -559,7 +575,7 @@ func populateEntityFields(dtoPath string, entities []EntityConfig) ([]EntityConf
 							IsFKField:     false,
 							IsEntitySlice: true,
 							OriginalType:  typeName,
-							GormTag:       fmt.Sprintf("gorm:\"foreignKey:%sID\"", e.Name),
+							GormTag:       gormTag,
 							Comment:       comment,
 						})
 						continue
