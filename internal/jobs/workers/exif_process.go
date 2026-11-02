@@ -20,6 +20,7 @@ import (
 	"viz/internal/images"
 	libvips "viz/internal/images/ops/vips"
 	"viz/internal/jobs"
+	"viz/internal/uid"
 	"viz/internal/utils"
 	customxmp "viz/internal/xmp"
 
@@ -224,15 +225,26 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		}
 
 		// 3. Keywords / Subjects
-		if imgEnt.ImageMetadata.Keywords == nil || len(*imgEnt.ImageMetadata.Keywords) == 0 {
+		if len(imgEnt.Keywords) == 0 {
+			var rawKeywords []string
 			if len(dcModel.Subject) > 0 {
-				// Convert xmp.StringArray to []string
-				keywords := []string(dcModel.Subject)
-				imgEnt.ImageMetadata.Keywords = &keywords
+				rawKeywords = []string(dcModel.Subject)
 			} else if len(lrModel.HierarchicalSubject) > 0 {
-				// Fallback to Lightroom hierarchical subject
-				keywords := []string(lrModel.HierarchicalSubject)
-				imgEnt.ImageMetadata.Keywords = &keywords
+				rawKeywords = []string(lrModel.HierarchicalSubject)
+			}
+			for _, kwName := range rawKeywords {
+				kwName = strings.TrimSpace(kwName)
+				if kwName != "" {
+					var kw entities.Keyword
+					if err := db.Where("name = ?", kwName).First(&kw).Error; err != nil {
+						kw = entities.Keyword{
+							Uid:  uid.MustGenerate(),
+							Name: kwName,
+						}
+						_ = db.Create(&kw).Error
+					}
+					imgEnt.Keywords = append(imgEnt.Keywords, kw)
+				}
 			}
 		}
 
@@ -267,7 +279,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 
 	// Fetch latest image from DB to ensure we don't overwrite concurrent metadata updates (e.g. dimensions)
 	var dbImage entities.ImageAsset
-	if err := db.Where("uid = ?", imgEnt.Uid).First(&dbImage).Error; err != nil {
+	if err := db.Preload("Keywords").Where("uid = ?", imgEnt.Uid).First(&dbImage).Error; err != nil {
 		return fmt.Errorf("failed to fetch image for update: %w", err)
 	}
 
@@ -284,8 +296,9 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	if (dbImage.ImageMetadata.Label == nil || *dbImage.ImageMetadata.Label == "") && imgEnt.ImageMetadata.Label != nil {
 		dbImage.ImageMetadata.Label = imgEnt.ImageMetadata.Label
 	}
-	if (dbImage.ImageMetadata.Keywords == nil || len(*dbImage.ImageMetadata.Keywords) == 0) && imgEnt.ImageMetadata.Keywords != nil {
-		dbImage.ImageMetadata.Keywords = imgEnt.ImageMetadata.Keywords
+	if len(dbImage.Keywords) == 0 && len(imgEnt.Keywords) > 0 {
+		dbImage.Keywords = imgEnt.Keywords
+		_ = db.Model(&dbImage).Association("Keywords").Replace(dbImage.Keywords)
 	}
 	if (dbImage.Description == nil || *dbImage.Description == "") && imgEnt.Description != nil {
 		dbImage.Description = imgEnt.Description

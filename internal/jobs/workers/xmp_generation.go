@@ -183,8 +183,11 @@ func generateXMPSidecar(img entities.ImageAsset, onProgress func(step string, pr
 		}
 	}
 
-	if img.ImageMetadata.Keywords != nil && len(*img.ImageMetadata.Keywords) > 0 {
-		keywords := *img.ImageMetadata.Keywords
+	if len(img.Keywords) > 0 {
+		keywords := make([]string, len(img.Keywords))
+		for i, kw := range img.Keywords {
+			keywords[i] = kw.Name
+		}
 		dcModel.Subject = keywords
 		lrModel.HierarchicalSubject = xmp.StringArray(keywords)
 	}

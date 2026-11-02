@@ -33,7 +33,6 @@ func TestGenerateXMPSidecar(t *testing.T) {
 
 	rating := 5
 	label := dto.Label("Red")
-	keywords := []string{"Landscape", "Fujifilm"}
 	filename := "_DSF1234.RAF"
 	uid := "img_001"
 
@@ -53,11 +52,14 @@ func TestGenerateXMPSidecar(t *testing.T) {
 			FirstName: "Jack",
 			LastName:  "Brigland",
 		},
+		Keywords: []entities.Keyword{
+			{Name: "Landscape"},
+			{Name: "Fujifilm"},
+		},
 		ImageMetadata: dto.ImageMetadata{
 			FileName: filename,
 			Rating:   &rating,
 			Label:    &label,
-			Keywords: &keywords,
 		},
 	}
 

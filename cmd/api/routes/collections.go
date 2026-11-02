@@ -45,6 +45,7 @@ func findCollectionImages(db *gorm.DB, collection entities.Collection, limit, of
 	query := db.Model(&entities.ImageAsset{}).
 		Preload("Owner").
 		Preload("UploadedBy").
+		Preload("Keywords").
 		Where("uid IN (?)", subquery)
 
 	allowedSortBy := []string{"taken_at", "recently_added", "updated_at", "name"}
@@ -230,7 +231,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			}
 
 			// Fetch current page
-			return query.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").
+			return query.Preload("Thumbnail").Preload("Thumbnail.Keywords").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").
 				Order(fmt.Sprintf("%s %s", dbSortBy, order)).
 				Limit(limit).
 				Offset(page * limit).
@@ -298,7 +299,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 		var imgResponse []dto.ImagesResponse
 
 		err := db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Preload("Thumbnail").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error; err != nil {
+			if err := tx.Preload("Thumbnail").Preload("Thumbnail.Keywords").Preload("CreatedBy").First(&collection, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
@@ -402,7 +403,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 				}
 			}
 
-			updateCollectionFromDTO(&collection, update)
+			collection.ApplyUpdate(update)
 
 			if err := tx.Save(&collection).Error; err != nil {
 				return err
@@ -411,7 +412,7 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 			logger.Info("Updated collection", slog.String("name", collection.Name))
 
 			// Reload to ensure updated data is sent to clients
-			return tx.Preload("Thumbnail").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").First(&collection, "uid = ?", uid).Error
+			return tx.Preload("Thumbnail").Preload("Thumbnail.Keywords").Preload("CreatedBy").Preload("Images").Preload("Images.AddedBy").First(&collection, "uid = ?", uid).Error
 		})
 
 		if err == nil {
@@ -870,30 +871,4 @@ func CollectionsRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBro
 	})
 
 	return router
-}
-
-// updateCollectionFromDTO updates collection entity fields from a CollectionUpdate DTO
-func updateCollectionFromDTO(collection *entities.Collection, update dto.CollectionUpdate) {
-	if update.Name != nil {
-		collection.Name = *update.Name
-	}
-	if update.Description != nil {
-		collection.Description = update.Description
-	}
-	if update.Private != nil {
-		collection.Private = update.Private
-	}
-	if update.Favourited != nil {
-		collection.Favourited = update.Favourited
-	}
-	if update.ThumbnailUID != nil {
-		if *update.ThumbnailUID == "" {
-			collection.ThumbnailID = nil
-		} else {
-			collection.ThumbnailID = update.ThumbnailUID
-		}
-	}
-	if update.OwnerUID != nil {
-		collection.OwnerID = update.OwnerUID
-	}
 }

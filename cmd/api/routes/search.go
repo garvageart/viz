@@ -64,7 +64,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 			logger.Error("failed to count search images", slog.Any("error", err))
 		}
 
-		imagesQuery = imagesQuery.Limit(limit).Offset(page * limit)
+		imagesQuery = imagesQuery.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Limit(limit).Offset(page * limit)
 
 		var images []entities.ImageAsset
 		if err := imagesQuery.Find(&images).Error; err != nil {
@@ -79,7 +79,7 @@ func SearchRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 
 		collectionsQuery := engine.ApplyCollections(db, criteria).Scopes(securityScope)
 		// Preload collection relations used by the DTO (thumbnail, created_by)
-		collectionsQuery = collectionsQuery.Preload("Thumbnail").Preload("CreatedBy").Limit(limit).Offset(page * limit)
+		collectionsQuery = collectionsQuery.Preload("Thumbnail").Preload("Thumbnail.Keywords").Preload("CreatedBy").Limit(limit).Offset(page * limit)
 
 		var collections []entities.Collection
 		if err := collectionsQuery.Find(&collections).Error; err != nil {

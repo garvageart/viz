@@ -123,7 +123,6 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		ColorSpace:       imageops.GetColourSpaceString(libvipsImg),
 		FileModifiedAt:   fileModifiedAt,
 		FileCreatedAt:    fileCreatedAt,
-		Keywords:         &keywords,
 	}
 
 	// Seed canonical rating into the stored image metadata (NULL = unrated)
@@ -164,6 +163,18 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 		Width:         int32(libvipsImg.Width()),
 		Height:        int32(libvipsImg.Height()),
 		Description:   imageops.GetExifDescription(exifData),
+	}
+
+	if len(keywords) > 0 {
+		var kws []entities.Keyword
+		for _, kwName := range keywords {
+			kws = append(kws, entities.Keyword{
+				Uid:  uid.MustGenerate(),
+				Name: kwName,
+			})
+		}
+
+		allImageData.Keywords = kws
 	}
 
 	ta := imageops.GetTakenAt(allImageData)
@@ -296,7 +307,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			}
 
 			pageOffset := max(page*limit, 0)
-			if err := txQuery.Preload("Owner").Preload("UploadedBy").Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
+			if err := txQuery.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
 				return err
 			}
 
@@ -471,7 +482,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		uid := chi.URLParam(req, "uid")
 
 		var imgEnt entities.ImageAsset
-		query := db.Preload("Owner").Preload("UploadedBy").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		query := db.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
 		query = queries.ApplyImageAccessControlFilter(query, req)
 		result := query.First(&imgEnt)
 
@@ -542,10 +553,20 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 					return ErrImageUnauthorised
 				}
 
-				updateImageFromDTO(&updatedImages[i], body.Update)
+				updatedImages[i].ApplyUpdate(body.Update)
 
-				if err := tx.Save(&updatedImages[i]).Error; err != nil {
+				if err := tx.Omit("Keywords").Save(&updatedImages[i]).Error; err != nil {
 					return err
+				}
+
+				if body.Update.Keywords != nil {
+					resolvedKws, err := resolveKeywords(tx, *body.Update.Keywords)
+					if err != nil {
+						return err
+					}
+					if err := tx.Model(&updatedImages[i]).Association("Keywords").Replace(&resolvedKws); err != nil {
+						return err
+					}
 				}
 
 				updatedUIDs = append(updatedUIDs, updatedImages[i].Uid)
@@ -621,14 +642,24 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 				}
 			}
 
-			updateImageFromDTO(&img, update)
+			img.ApplyUpdate(update)
 
-			if err := tx.Save(&img).Error; err != nil {
+			if err := tx.Omit("Keywords").Save(&img).Error; err != nil {
 				return err
 			}
 
+			if update.Keywords != nil {
+				resolvedKws, err := resolveKeywords(tx, *update.Keywords)
+				if err != nil {
+					return err
+				}
+				if err := tx.Model(&img).Association("Keywords").Replace(&resolvedKws); err != nil {
+					return err
+				}
+			}
+
 			// send updated data
-			if err := tx.Preload("Owner").Preload("UploadedBy").First(&img, "uid = ?", uid).Error; err != nil {
+			if err := tx.Preload("Owner").Preload("UploadedBy").Preload("Keywords").First(&img, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
@@ -1442,68 +1473,49 @@ func validateDownloadRequest(res http.ResponseWriter, req *http.Request, db *gor
 	return true
 }
 
-// updateImageFromDTO updates image entity fields from a small ImageUpdate
-func updateImageFromDTO(image *entities.ImageAsset, update dto.ImageUpdate) {
-	if update.Name != nil {
-		image.Name = *update.Name
-	}
-
-	if update.Description != nil {
-		image.Description = update.Description
-	}
-
-	if update.Private != nil {
-		image.Private = *update.Private
-	}
-
-	if update.Favourited != nil {
-		image.Favourited = update.Favourited
-	}
-
-	if update.Exif != nil {
-		image.Exif = update.Exif
-	}
-
-	if update.ImageMetadata != nil {
-		if update.ImageMetadata.Rating != nil {
-			// Clamp rating 0..5
-			// Treat 0 as "unrated" -> nil
-			r := *update.ImageMetadata.Rating
-			if r == 0 {
-				image.ImageMetadata.Rating = nil
-			} else {
-				if r < 0 {
-					r = 0
-				} else if r > 5 {
-					r = 5
-				}
-				image.ImageMetadata.Rating = &r
-			}
-		}
-
-		if update.ImageMetadata.Label != nil {
-			image.ImageMetadata.Label = update.ImageMetadata.Label
-		} else {
-			// Explicitly set to nil if the label is being cleared
-			image.ImageMetadata.Label = nil
-		}
-
-		if update.ImageMetadata.Keywords != nil {
-			image.ImageMetadata.Keywords = update.ImageMetadata.Keywords
-		}
-	}
-
-	if update.OwnerUid != nil {
-		image.OwnerID = update.OwnerUid
-	}
-
-	if update.TakenAt != nil {
-		image.TakenAt = *update.TakenAt
-	}
-}
-
 // isOwnerReassignmentAttempt checks if the PATCH update contains an owner_uid change.
 // Owner reassignment is admin-only; non-admin callers have this field silently stripped.
 func isOwnerReassignmentAttempt(update dto.ImageUpdate) bool {
 	return update.OwnerUid != nil
+}
+
+// resolveKeywords finds existing keywords by name or creates new keywords if they do not exist.
+func resolveKeywords(tx *gorm.DB, kwUpdates []dto.KeywordUpdate) ([]entities.Keyword, error) {
+	var resolved []entities.Keyword
+	seen := make(map[string]bool)
+
+	for _, kw := range kwUpdates {
+		name := strings.TrimSpace(kw.Name)
+		if name == "" {
+			continue
+		}
+
+		lower := strings.ToLower(name)
+		if seen[lower] {
+			continue
+		}
+		seen[lower] = true
+
+		var existing entities.Keyword
+		if err := tx.Where("LOWER(name) = LOWER(?)", name).First(&existing).Error; err == nil {
+			resolved = append(resolved, existing)
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			newKw := entities.Keyword{
+				Uid:    uid.MustGenerate(),
+				Name:   name,
+				Colour: kw.Colour,
+				Parent: kw.Parent,
+			}
+
+			if err := tx.Create(&newKw).Error; err != nil {
+				return nil, err
+			}
+
+			resolved = append(resolved, newKw)
+		} else {
+			return nil, err
+		}
+	}
+
+	return resolved, nil
 }
