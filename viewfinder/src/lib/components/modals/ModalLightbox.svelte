@@ -41,31 +41,17 @@
 
     const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-    // NOTE: The focus trap and Enter-submit handling below are manually managed for now.
-    // Native `<dialog>` + `showModal()` provides focus trapping, implicit
-    // Enter-submission, and Escape dismissal for free — revisit when the modal
+    // NOTE: The focus trap below is manually managed for now.
+    // Native `<dialog>` + `showModal()` provides focus trapping and Escape dismissal for free — revisit when the modal
     // system is migrated to `<dialog>`.
-
     function getFocusable(): HTMLElement[] {
         if (!modalEl) {
             return [];
         }
+
         return Array.from(modalEl.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
             (el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true"
         );
-    }
-
-    function isInteractiveTarget(target: EventTarget | null): boolean {
-        if (!(target instanceof HTMLElement)) {
-            return false;
-        }
-        if (target.tagName === "BUTTON" || target.tagName === "SELECT" || target.tagName === "TEXTAREA") {
-            return true;
-        }
-        if (target.tagName === "INPUT") {
-            return ["checkbox", "radio"].includes((target as HTMLInputElement).type);
-        }
-        return false;
     }
 
     function handleKeyDown(e: KeyboardEvent) {
@@ -74,6 +60,7 @@
             if (focusable.length === 0) {
                 return;
             }
+
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
             const active = document.activeElement;
@@ -90,11 +77,6 @@
                 }
             }
             return;
-        }
-
-        if (e.key === "Enter" && !isInteractiveTarget(e.target)) {
-            e.preventDefault();
-            modalEl?.querySelector<HTMLFormElement>("form")?.requestSubmit();
         }
     }
 
@@ -125,7 +107,7 @@
             {#if heading}
                 <h1>{heading}</h1>
             {/if}
-            <Button iconName="close" onclick={() => onclickClose?.()} title="Close Modal" />
+            <Button class="modal-close-btn" iconName="close" onclick={() => onclickClose?.()} title="Close Modal" />
         {/if}
     </div>
     <div class="modal-content" class:padding={applyPadding}>
