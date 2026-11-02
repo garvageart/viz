@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.7] - 2026-11-02
+
+* fix: remove unused vitest import (691cdb41)
+* chore(viewfinder): update app route page title to viewfinder (cccf09cc)
+* test(viewfinder): add e2e tests for keywords management and lifecycle (43d8a18b)
+* fix(viewfinder): make keywords search toolbar sticky and add test attributes (479aa166)
+* feat(viewfinder): introduce keyword modal tagging mode and combobox input (9403d420)
+* fix(viewfinder): remove form submission handling from modal lightbox (1bc59002)
+* fix(viewfinder): standardize z-index elevations for modals, toasts, and tooltips (aaebff35)
+
 ## [0.36.6] - 2026-11-02
 
 * test(internal): serialize sqlite in-memory test database connections (6e53e40e)
