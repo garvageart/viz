@@ -508,6 +508,11 @@ export class KeyboardManager {
                 return true;
             }
 
+            // Always allow Escape in all contexts to trigger dismissal tiers (e.g. blur or popup dismiss)
+            if (e.key === "Escape") {
+                return true;
+            }
+
             const isInput =
                 target.isContentEditable ||
                 target.tagName === "INPUT" ||
@@ -515,11 +520,6 @@ export class KeyboardManager {
                 target.tagName === "TEXTAREA";
 
             if (!isInput) {
-                return true;
-            }
-
-            // Always allow Escape in inputs to trigger dismissal tiers (e.g. blur or popup dismiss)
-            if (e.key === "Escape") {
                 return true;
             }
 

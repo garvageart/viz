@@ -68,17 +68,17 @@
 
         &.size-small {
             font-size: var(--viz-font-size-sm);
-            padding: 0.15rem 0.35rem;
+            padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
         }
 
         &.size-standard {
             font-size: var(--viz-font-size-std);
-            padding: 0.2rem 0.5rem;
+            padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
         }
 
         &.size-large {
             font-size: var(--viz-font-size-lg);
-            padding: 0.3rem 0.65rem;
+            padding: var(--viz-spacing-sm) var(--viz-spacing-sm);
         }
 
         &.mono {

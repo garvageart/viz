@@ -1,6 +1,8 @@
 <script lang="ts">
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import KeywordModal from "#lib/components/modals/KeywordModal.svelte";
+    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import DatePicker from "#lib/components/ui/DatePicker.svelte";
@@ -319,6 +321,27 @@
             })
     );
 
+    function openKeywordModal() {
+        if (!currentAsset || selectedImages.length === 0) {
+            return;
+        }
+
+        modalsManager.open(
+            KeywordModal,
+            {
+                mode: "add",
+                heading: "Add Keywords",
+                buttonText: "Save Keywords",
+                selectedKeywords: currentKeywords,
+                onAdd: async (keywords: KeywordUpdate[]) => {
+                    await saveKeywords(keywords);
+                    modalsManager.pop();
+                }
+            },
+            { heading: "Add Keywords" }
+        );
+    }
+
     function getCurrentKeywords(): KeywordUpdate[] {
         if (selectedImages.length === 0) {
             return [];
@@ -331,10 +354,12 @@
         return currentAsset?.keywords ?? [];
     }
 
-    async function saveKeywords() {
+    async function saveKeywords(keywordsToSave?: KeywordUpdate[]) {
         if (!currentAsset || selectedImages.length === 0) {
             return;
         }
+
+        const keywordsToSend = keywordsToSave ?? currentKeywords;
 
         if (isMultiSelection) {
             const uids = selectedImages.map((img) => img.uid);
@@ -343,11 +368,10 @@
                 await batchUpdateImages({
                     uids,
                     update: {
-                        keywords: currentKeywords
+                        keywords: keywordsToSend
                     }
                 });
             } catch (err) {
-                currentKeywords = getCurrentKeywords();
                 const keywordErr = err as Error;
                 toasts.add({
                     type: "error",
@@ -361,7 +385,7 @@
 
         try {
             const res = await updateImage(currentAsset.uid, {
-                keywords: currentKeywords,
+                keywords: keywordsToSend,
                 image_metadata: {
                     label: currentAsset.image_metadata.label
                 }
@@ -375,7 +399,6 @@
                 }
                 onImageUpdated?.(res.data);
             } else {
-                currentKeywords = getCurrentKeywords();
                 toasts.add({
                     type: "error",
                     title: "Failed to update keywords",
@@ -934,9 +957,7 @@
                                         iconSize="1rem"
                                         class="add-keyword-btn"
                                         title="Add Keyword"
-                                        onclick={() => {
-                                            keywordEditing = true;
-                                        }}
+                                        onclick={() => openKeywordModal()}
                                     >
                                         {currentKeywords.length === 0 ? "Add Keyword" : "Add"}
                                     </Button>

@@ -1,29 +1,117 @@
 <script lang="ts">
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
+    import { type ModalOptions, modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
+    import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
+    import InputCombobox from "#lib/components/ui/InputCombobox.svelte";
     import InputSelect, { type InputOption } from "#lib/components/ui/InputSelect.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
-    import type { Keyword, KeywordUpdate } from "@viz/api";
+    import { type Keyword, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
+    import { onMount } from "svelte";
 
     interface Props {
         id?: string;
-        heading: string;
+        mode?: "edit" | "create" | "add";
+        heading?: string;
         data?: Keyword;
         keywords?: Keyword[];
-        buttonText: string;
-        modalAction: (data: KeywordUpdate) => Promise<void> | void;
+        selectedKeywords?: (Keyword | KeywordUpdate)[];
+        buttonText?: string;
+        modalAction?: (data: KeywordUpdate) => Promise<void> | void;
+        onAdd?: (keywords: KeywordUpdate[]) => Promise<void> | void;
     }
 
-    let { data, keywords = [], buttonText, modalAction }: Props = $props();
+    export const modalOptions: ModalOptions = {
+        width: "30%"
+    };
 
+    let { mode, data, keywords = [], selectedKeywords = [], buttonText, modalAction, onAdd }: Props = $props();
+
+    let currentMode = $derived<"edit" | "create" | "add">(mode ?? (data ? "edit" : "create"));
+
+    // Form state for edit/create
     let name = $derived(data?.name ?? "");
     let colour = $derived(data?.colour ?? "");
     let parent = $derived(data?.parent ?? "");
     let isSubmitting = $state(false);
 
+    // State for keywords
+    let availableKeywords = $state<Keyword[]>([]);
+    let activeKeywords = $state<KeywordUpdate[]>([]);
+    let newKeywordInput = $state("");
+    let isCreatingKeyword = $state(false);
+    let isComboboxOpen = $state(false);
+    let comboboxSelectedValue = $state("");
+    let submitButtonEl = $state<HTMLButtonElement | HTMLAnchorElement>();
+
+    const hasKeywordChanges = $derived.by(() => {
+        if (activeKeywords.length !== selectedKeywords.length) {
+            return true;
+        }
+
+        const initialNames = new Set(
+            selectedKeywords.map((k) => {
+                return k.name.toLowerCase();
+            })
+        );
+
+        return activeKeywords.some((k) => {
+            return !initialNames.has(k.name.toLowerCase());
+        });
+    });
+
+    const isNewKeyword = $derived.by(() => {
+        const trimmed = newKeywordInput.trim().toLowerCase();
+        if (!trimmed) {
+            return false;
+        }
+
+        return !availableKeywords.some((k) => {
+            return k.name.toLowerCase() === trimmed;
+        });
+    });
+
+    onMount(async () => {
+        activeKeywords = selectedKeywords.map((k) => ({
+            name: k.name,
+            colour: k.colour,
+            parent: k.parent
+        }));
+
+        if (keywords.length > 0) {
+            availableKeywords = [...keywords];
+            return;
+        }
+
+        try {
+            const res = await listKeywords();
+            if (res.status === 200 && res.data.keywords) {
+                availableKeywords = res.data.keywords;
+            }
+        } catch (err) {
+            const error = err as Error;
+            console.error("Failed to fetch keywords:", error);
+        }
+    });
+
+    const submitButtonText = $derived.by(() => {
+        if (buttonText) {
+            return buttonText;
+        }
+
+        if (currentMode === "create") {
+            return "Create Keyword";
+        }
+
+        if (currentMode === "edit") {
+            return "Save Changes";
+        }
+
+        return "Save Keywords";
+    });
+
     const parentOptions = $derived<InputOption[]>([
         { value: "", label: "None" },
-        ...keywords
+        ...availableKeywords
             .filter((k) => {
                 if (data && k.uid === data.uid) {
                     return false;
@@ -37,10 +125,259 @@
             }))
     ]);
 
+    const comboboxOptions = $derived<InputOption[]>(
+        availableKeywords
+            .filter((k) => {
+                const activeNames = new Set(activeKeywords.map((ak) => ak.name.toLowerCase()));
+                return !activeNames.has(k.name.toLowerCase());
+            })
+            .map((k) => ({
+                value: k.uid,
+                label: k.name
+            }))
+    );
+
+    function handleComboboxSelect(uid: string) {
+        if (!uid) {
+            return;
+        }
+
+        const match = availableKeywords.find((k) => {
+            return k.uid === uid;
+        });
+
+        if (match) {
+            addKeywordToImages(match);
+            newKeywordInput = "";
+            comboboxSelectedValue = "";
+        }
+    }
+
+    function addKeywordToImages(kw: Keyword | KeywordUpdate) {
+        const lowerName = kw.name.toLowerCase();
+        const exists = activeKeywords.some((k) => {
+            return k.name.toLowerCase() === lowerName;
+        });
+
+        if (exists) {
+            return;
+        }
+
+        activeKeywords.push({
+            name: kw.name,
+            colour: kw.colour,
+            parent: kw.parent
+        });
+        newKeywordInput = "";
+    }
+
+    async function handleCreateAndAddKeyword() {
+        const trimmed = newKeywordInput.trim();
+        if (!trimmed || isCreatingKeyword) {
+            return;
+        }
+
+        isCreatingKeyword = true;
+        try {
+            const res = await createKeyword({ name: trimmed });
+            if (res.status === 201) {
+                availableKeywords.push(res.data);
+                addKeywordToImages(res.data);
+
+                newKeywordInput = "";
+            }
+        } catch (err) {
+            const error = err as Error;
+            console.error("Failed to create keyword:", error);
+        } finally {
+            isCreatingKeyword = false;
+        }
+    }
+
+    function removeKeyword(kw: KeywordUpdate) {
+        activeKeywords = activeKeywords.filter((k) => {
+            return k.name.toLowerCase() !== kw.name.toLowerCase();
+        });
+    }
+
+    function addKeywordsFromInput(inputStr: string) {
+        const trimmed = inputStr.trim();
+        if (!trimmed) {
+            newKeywordInput = "";
+            return;
+        }
+
+        const parts = trimmed
+            .split(",")
+            .map((k) => {
+                return k.trim();
+            })
+            .filter((k) => {
+                return k.length > 0;
+            });
+
+        if (parts.length === 0) {
+            newKeywordInput = "";
+            return;
+        }
+
+        const lowerExisting = new Set(
+            activeKeywords.map((k) => {
+                return k.name.toLowerCase();
+            })
+        );
+        const toAdd: KeywordUpdate[] = [];
+
+        for (const part of parts) {
+            const partLower = part.toLowerCase();
+            if (lowerExisting.has(partLower)) {
+                continue;
+            }
+
+            lowerExisting.add(partLower);
+
+            const match = availableKeywords.find((k) => {
+                return k.name.toLowerCase() === partLower;
+            });
+
+            if (match) {
+                toAdd.push({
+                    name: match.name,
+                    colour: match.colour,
+                    parent: match.parent
+                });
+                continue;
+            }
+
+            toAdd.push({ name: part });
+        }
+
+        if (toAdd.length > 0) {
+            activeKeywords.push(...toAdd);
+        }
+
+        newKeywordInput = "";
+    }
+
+    function addKeywordFromCombobox() {
+        const query = newKeywordInput.trim().toLowerCase();
+        if (!query && !comboboxSelectedValue) {
+            return;
+        }
+
+        if (comboboxSelectedValue) {
+            const match = availableKeywords.find((k) => {
+                return k.uid === comboboxSelectedValue;
+            });
+            if (match) {
+                addKeywordToImages(match);
+                newKeywordInput = "";
+                comboboxSelectedValue = "";
+                isComboboxOpen = false;
+                return;
+            }
+        }
+
+        const exactMatch = availableKeywords.find((k) => {
+            const activeNames = new Set(
+                activeKeywords.map((ak) => {
+                    return ak.name.toLowerCase();
+                })
+            );
+            return !activeNames.has(k.name.toLowerCase()) && k.name.toLowerCase() === query;
+        });
+
+        const partialMatch = availableKeywords.find((k) => {
+            const activeNames = new Set(
+                activeKeywords.map((ak) => {
+                    return ak.name.toLowerCase();
+                })
+            );
+            return !activeNames.has(k.name.toLowerCase()) && k.name.toLowerCase().includes(query);
+        });
+
+        const match = exactMatch ?? partialMatch;
+        if (match) {
+            addKeywordToImages(match);
+            newKeywordInput = "";
+            comboboxSelectedValue = "";
+            isComboboxOpen = false;
+            return;
+        }
+
+        addKeywordsFromInput(newKeywordInput);
+    }
+
+    function handleInputKeydown(e: KeyboardEvent) {
+        if (e.key === "Escape") {
+            if (hasKeywordChanges) {
+                submitButtonEl?.focus();
+            }
+            return;
+        }
+
+        if (e.key === ",") {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const trimmed = newKeywordInput.trim();
+            if (trimmed) {
+                addKeywordsFromInput(trimmed);
+            }
+            return;
+        }
+
+        if (e.key === "Enter" && !e.shiftKey) {
+            const query = newKeywordInput.trim().toLowerCase();
+            const hasOptions =
+                isComboboxOpen &&
+                comboboxOptions.some((opt) => {
+                    if (typeof opt === "string") {
+                        return !query || opt.toLowerCase().includes(query);
+                    }
+
+                    if ("value" in opt && opt.label) {
+                        return !query || opt.label.toLowerCase().includes(query);
+                    }
+
+                    return false;
+                });
+
+            if (hasOptions) {
+                // Allow bits-ui onkeydown to process Enter and select the highlighted candidate
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (query) {
+                addKeywordFromCombobox();
+            }
+        }
+    }
+
     async function handleSubmit(e: SubmitEvent) {
         e.preventDefault();
         e.stopPropagation();
 
+        if (currentMode === "add") {
+            if (!hasKeywordChanges) {
+                return;
+            }
+
+            isSubmitting = true;
+            try {
+                if (onAdd) {
+                    await onAdd(activeKeywords);
+                }
+            } finally {
+                isSubmitting = false;
+            }
+            return;
+        }
+
+        // Handle edit or create mode
         const trimmedName = name.trim();
         if (!trimmedName) {
             return;
@@ -49,78 +386,155 @@
         isSubmitting = true;
         try {
             const trimmedColour = colour?.trim();
-            await modalAction({
+            const payload: KeywordUpdate = {
                 name: trimmedName,
                 colour: trimmedColour ? trimmedColour : undefined,
                 parent: parent ? parent : undefined
-            });
+            };
+
+            if (modalAction) {
+                await modalAction(payload);
+            }
         } finally {
             isSubmitting = false;
         }
     }
 </script>
 
-<div id="viz-keyword-modal">
-    <form id="keyword-form" onsubmit={handleSubmit}>
-        <InputText
-            id="keyword-name"
-            name="name"
-            label="Name"
-            placeholder="Keyword name"
-            type="text"
-            bind:value={name}
-            selectOnFocus={false}
-            autofocus
-            required
-            spellcheck="false"
-        />
-
-        <div class="form-field colour-field">
-            <span class="field-label">Colour</span>
-            <div class="colour-row">
-                <input
-                    id="keyword-colour-picker"
-                    type="color"
-                    value={colour}
-                    onchange={(e) => {
-                        colour = e.currentTarget.value;
-                    }}
-                    class="colour-picker"
-                    aria-label="Select keyword colour"
-                />
-                <InputText
-                    id="keyword-colour-text"
-                    name="colour"
-                    placeholder="None"
-                    bind:value={colour}
-                    spellcheck="false"
-                    class="colour-text-input"
-                />
-                {#if colour}
+<div id="viz-keyword-modal" class="mode-{currentMode}">
+    <form id="keyword-form" autocomplete="off" onsubmit={handleSubmit}>
+        {#if currentMode === "add"}
+            <div class="search-row">
+                <div class="combobox-field">
+                    <InputCombobox
+                        id="keyword-search-input"
+                        label="Search"
+                        placeholder="Type keyword and press Enter (or comma)..."
+                        options={comboboxOptions}
+                        bind:value={comboboxSelectedValue}
+                        bind:inputValue={newKeywordInput}
+                        bind:open={isComboboxOpen}
+                        onchange={handleComboboxSelect}
+                        onkeydown={handleInputKeydown}
+                        autofocus
+                    />
+                </div>
+                {#if isNewKeyword}
                     <Button
-                        variant="ghost"
-                        size="small"
-                        iconName="close"
-                        onclick={() => {
-                            colour = "";
-                        }}
-                        title="Clear colour"
-                        aria-label="Clear colour"
+                        variant="primary"
+                        iconName="add"
+                        type="button"
+                        class="create-keyword-btn"
+                        title="Create keyword"
+                        aria-label="Create keyword"
+                        disabled={isCreatingKeyword}
+                        onclick={handleCreateAndAddKeyword}
                     />
                 {/if}
             </div>
-        </div>
 
-        <div class="form-field">
-            <InputSelect id="keyword-parent" label="Parent Keyword" options={parentOptions} bind:value={parent} />
-        </div>
+            {#if activeKeywords.length > 0}
+                <div class="form-field">
+                    <span class="field-label">Keywords</span>
+                    <div class="keywords-list">
+                        {#each activeKeywords as keyword (keyword.name)}
+                            <Badge size="large" class="keyword-badge">
+                                <Button
+                                    variant="ghost"
+                                    size="mini"
+                                    iconName="close"
+                                    class="keyword-remove-btn"
+                                    title="Remove Keyword"
+                                    aria-label="Remove Keyword"
+                                    onclick={(e) => {
+                                        e.stopPropagation();
+                                        removeKeyword(keyword);
+                                    }}
+                                />
+                                <span class="keyword-text">{keyword.name}</span>
+                                {#if keyword.colour}
+                                    <span
+                                        class="keyword-colour-dot"
+                                        style="background-color: {keyword.colour ??
+                                            'inherit'}; width: 0.5rem; height: 0.5rem; border: var(--viz-border-thin); border-radius: var(--viz-border-radius-pill); display: inline-block;"
+                                    ></span>
+                                {/if}
+                            </Badge>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+        {:else}
+            <!-- Create / Edit Mode Form -->
+            <InputText
+                id="keyword-name"
+                name="name"
+                label="Name"
+                placeholder="Keyword"
+                type="text"
+                bind:value={name}
+                selectOnFocus={false}
+                autofocus
+                required
+                spellcheck="false"
+            />
+
+            <div class="form-field colour-field">
+                <span class="field-label">Colour</span>
+                <div class="colour-row">
+                    <input
+                        id="keyword-colour-picker"
+                        type="color"
+                        value={colour}
+                        onchange={(e) => {
+                            colour = e.currentTarget.value;
+                        }}
+                        class="colour-picker"
+                        aria-label="Select keyword colour"
+                    />
+                    <InputText
+                        id="keyword-colour-text"
+                        name="colour"
+                        placeholder="None"
+                        bind:value={colour}
+                        spellcheck="false"
+                        class="colour-text-input"
+                    />
+                    {#if colour}
+                        <Button
+                            variant="ghost"
+                            size="small"
+                            iconName="close"
+                            type="button"
+                            onclick={() => {
+                                colour = "";
+                            }}
+                            title="Clear colour"
+                            aria-label="Clear colour"
+                        />
+                    {/if}
+                </div>
+            </div>
+
+            <div class="form-field">
+                <InputSelect id="keyword-parent" label="Parent Keyword" options={parentOptions} bind:value={parent} />
+            </div>
+        {/if}
 
         <div class="form-actions">
-            <Button variant="danger" onclick={() => modalsManager.pop()}>
+            <Button variant="danger" type="button" onclick={() => modalsManager.pop()}>
                 <span>Cancel</span>
             </Button>
-            <Button variant="primary" type="submit" disabled={isSubmitting || !name.trim()}>
-                <span>{buttonText}</span>
+            <Button
+                id="keyword-submit-btn"
+                bind:element={submitButtonEl}
+                variant="primary"
+                type="submit"
+                disabled={isSubmitting ||
+                    (currentMode !== "add" && !name.trim()) ||
+                    (currentMode === "add" && !hasKeywordChanges)}
+            >
+                <span>{submitButtonText}</span>
             </Button>
         </div>
     </form>
@@ -141,6 +555,23 @@
         width: 100%;
     }
 
+    .search-row {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--viz-spacing-xs);
+        width: 100%;
+
+        .combobox-field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        :global(.create-keyword-btn) {
+            flex-shrink: 0;
+            margin-bottom: 1px;
+        }
+    }
+
     .form-field {
         display: flex;
         flex-direction: column;
@@ -151,6 +582,37 @@
     .field-label {
         font-weight: 500;
         color: var(--viz-text-secondary);
+    }
+
+    .empty-state-text {
+        font-weight: bold;
+    }
+
+    .keywords-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--viz-spacing-sm);
+        background: var(--viz-surface-panel);
+        align-items: center;
+
+        :global(.keyword-badge) {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        :global(.keyword-remove-btn) {
+            line-height: 1;
+        }
+    }
+
+    .keyword-colour-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-pill);
+        display: inline-block;
+        flex-shrink: 0;
     }
 
     .colour-row {

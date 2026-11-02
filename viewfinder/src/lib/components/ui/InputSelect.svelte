@@ -14,7 +14,7 @@
 
 <script lang="ts">
     import { ContextKeys } from "#lib/context-keys.js";
-    import { generateKeyId } from "#lib/utils/layout.js";
+    import { generateRandomString } from "#lib/utils/misc.ts";
     import { Select } from "bits-ui";
     import { getContext } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
@@ -52,8 +52,7 @@
         ...props
     }: Props & Omit<SvelteHTMLElements["button"], "onchange" | "value"> = $props();
 
-    const fallbackId = generateKeyId();
-    const selectId = $derived(props.id ?? fallbackId);
+    const selectId = $derived(props.id ?? generateRandomString(6));
 
     const stringValue = $derived(String(value ?? ""));
 
