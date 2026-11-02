@@ -67,6 +67,26 @@ export function trackCreatedCollections(page: Page, targetArray: string[]) {
     });
 }
 
+/**
+ * Intercepts POST /api/keyword responses on a page and pushes created keyword UIDs into target array.
+ */
+export function trackCreatedKeywords(page: Page, targetArray: string[]) {
+    page.on("response", async (response) => {
+        if (response.url().includes("/api/keyword") && response.request().method() === "POST") {
+            try {
+                const json = (await response.json()) as { uid?: string };
+                if (json && typeof json.uid === "string" && json.uid.length > 0) {
+                    if (!targetArray.includes(json.uid)) {
+                        targetArray.push(json.uid);
+                    }
+                }
+            } catch {
+                // Ignore non-JSON
+            }
+        }
+    });
+}
+
 function recordTestImageUid(uid: string) {
     const authDir = path.join(process.cwd(), "e2e/.auth");
     if (!fs.existsSync(authDir)) {
@@ -142,6 +162,23 @@ export async function cleanupSpecificCollections(request: APIRequestContext, uid
             await request.delete(`/api/collections/${uid}`);
         } catch (err) {
             console.error(`Error deleting collection ${uid}:`, err);
+        }
+    }
+}
+
+/**
+ * Cleans up specific test-created keywords by their UIDs.
+ */
+export async function cleanupSpecificKeywords(request: APIRequestContext, uids: string[]) {
+    if (!uids || uids.length === 0) {
+        return;
+    }
+
+    for (const uid of uids) {
+        try {
+            await request.delete(`/api/keyword/${uid}`);
+        } catch (err) {
+            console.error(`Error deleting keyword ${uid}:`, err);
         }
     }
 }
