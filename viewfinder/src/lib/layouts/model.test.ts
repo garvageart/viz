@@ -76,28 +76,51 @@ describe("Workspace Layout System", () => {
     // SplitNode Unit Tests
     // ----------------------------------------------------
     describe("SplitNode", () => {
-        it("should handle child management and size normalization", () => {
-            const group1 = new TabGroup({ id: "g1" });
-            const group2 = new TabGroup({ id: "g2" });
+        it("adds and removes children without resizing unrelated siblings", () => {
+            const group1 = new TabGroup({ id: "g1", size: 50 });
+            const group2 = new TabGroup({ id: "g2", size: 50 });
             const split = new SplitNode({ orientation: "horizontal", children: [group1] });
 
             expect(split.children.length).toBe(1);
             expect(group1.parent).toBe(split);
-            expect(group1.size).toBe(100);
+            expect(group1.size).toBe(50);
 
-            // Add child
+            // Add child: sizes are the caller's responsibility.
             split.addChild(group2);
             expect(split.children.length).toBe(2);
             expect(group2.parent).toBe(split);
-            // Normalized sizes: 50% each
             expect(group1.size).toBe(50);
             expect(group2.size).toBe(50);
 
-            // Remove child
+            // Remove child: the next sibling absorbs its space.
             split.removeChild(group1);
             expect(split.children.length).toBe(1);
             expect(group1.parent).toBeNull();
-            expect(group2.size).toBe(100); // Normalized size
+            expect(group2.size).toBe(100);
+        });
+
+        it("gives a removed child's space to its neighbour", () => {
+            const group1 = new TabGroup({ id: "g1", size: 20 });
+            const group2 = new TabGroup({ id: "g2", size: 30 });
+            const group3 = new TabGroup({ id: "g3", size: 50 });
+            const split = new SplitNode({ children: [group1, group2, group3] });
+
+            split.removeChild(group2);
+
+            expect(split.children).toEqual([group1, group3]);
+            expect(group1.size).toBeCloseTo(20, 2);
+            expect(group3.size).toBeCloseTo(80, 2);
+        });
+
+        it("gives a removed last child's space to the previous sibling", () => {
+            const group1 = new TabGroup({ id: "g1", size: 25 });
+            const group2 = new TabGroup({ id: "g2", size: 75 });
+            const split = new SplitNode({ children: [group1, group2] });
+
+            split.removeChild(group2);
+
+            expect(split.children).toEqual([group1]);
+            expect(group1.size).toBeCloseTo(100, 2);
         });
 
         it("should replace children correctly", () => {
@@ -452,7 +475,7 @@ describe("Workspace Layout System", () => {
             expect(newGroup?.views[0].name).toBe("Left");
             expect(leftGroup.views.length).toBe(1);
             expect(leftGroup.views[0].name).toBe("Spare");
-            // Existing sizes preserved; the largest column (75) halves to make room.
+            // Existing sizes preserved; the boundary column (75) halves to make room.
             expect(leftGroup.size).toBeCloseTo(25, 2);
             expect(rightGroup.size).toBeCloseTo(37.5, 2);
             expect(newGroup?.size).toBeCloseTo(37.5, 2);
@@ -469,9 +492,10 @@ describe("Workspace Layout System", () => {
             expect(root.children[2]).toBe(rightGroup);
             expect(newGroup?.views[0].name).toBe("Spare");
             expect(leftGroup.views.length).toBe(1);
-            expect(leftGroup.size).toBeCloseTo(25, 2);
-            expect(rightGroup.size).toBeCloseTo(37.5, 2);
-            expect(newGroup?.size).toBeCloseTo(37.5, 2);
+            // The boundary column (25) halves; the far column (75) is untouched.
+            expect(leftGroup.size).toBeCloseTo(12.5, 2);
+            expect(rightGroup.size).toBeCloseTo(75, 2);
+            expect(newGroup?.size).toBeCloseTo(12.5, 2);
         });
 
         it("wraps a horizontal root in a vertical split when adding a top row", () => {
@@ -512,14 +536,15 @@ describe("Workspace Layout System", () => {
             const newGroup = workspace.splitToRoot("right", rightView.id);
 
             expect(newGroup).not.toBeNull();
-            // rightGroup emptied -> removed from root. SplitNode.removeChild()
-            // equalizes the remaining root columns ([50, 50]) — pre-existing
-            // cleanup behavior for a whole column disappearing.
-            expect(root.children.length).toBe(2);
-            expect(root.children[0]).toBe(leftGroup);
-            expect(root.children[1]).toBe(newGroup);
+            // rightGroup emptied and is collapsed first: leftGroup absorbs its
+            // 75 and becomes the root. Inserting the new column then wraps that
+            // root and splits it 50/50.
             expect(rightGroup.views.length).toBe(0);
             expect(newGroup?.views[0].name).toBe("Right");
+            expect(workspace.root).toBeInstanceOf(SplitNode);
+            const newRoot = workspace.root as SplitNode;
+            expect(newRoot).not.toBe(root);
+            expect(newRoot.children).toEqual([leftGroup, newGroup]);
             expect(leftGroup.size).toBeCloseTo(50, 2);
             expect(newGroup?.size).toBeCloseTo(50, 2);
         });
@@ -556,7 +581,7 @@ describe("Workspace Layout System", () => {
             expect(root.children.length).toBe(3);
             expect(root.children[2]).toBe(extraGroup);
             expect(extraGroup.parent).toBe(root);
-            // Existing columns keep their sizes; the largest (75) halves for the new one.
+            // Existing columns keep their sizes; the boundary column (75) halves for the new one.
             expect(leftGroup.size).toBeCloseTo(25, 2);
             expect(rightGroup.size).toBeCloseTo(37.5, 2);
             expect(extraGroup.size).toBeCloseTo(37.5, 2);

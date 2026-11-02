@@ -178,6 +178,7 @@ export class TabGroup {
  */
 export class SplitNode {
     readonly type = "split";
+
     id: string;
     orientation: Orientation = $state("horizontal");
     size: number = $state(100);
@@ -196,6 +197,7 @@ export class SplitNode {
         this.orientation = opts.orientation ?? "horizontal";
         this.size = opts.size ?? 100;
         this.locked = opts.locked ?? false;
+
         if (opts.children) {
             this.children = opts.children;
             this.children.forEach((c) => (c.parent = this));
@@ -209,17 +211,25 @@ export class SplitNode {
         } else {
             this.children.push(node);
         }
-
-        this.normalizeSizes();
     }
 
     removeChild(node: SplitNode | TabGroup) {
         const idx = this.children.indexOf(node);
-        if (idx !== -1) {
-            this.children.splice(idx, 1);
-            node.parent = null;
-            this.normalizeSizes();
+        if (idx === -1) {
+            return;
         }
+
+        const [removed] = this.children.splice(idx, 1);
+        node.parent = null;
+
+        if (this.children.length === 0) {
+            return;
+        }
+
+        // The pane that occupied the vacated slot (or the previous sibling if the removed child was last)
+        // absorbs the removed pane's space. Other siblings keep their exact sizes
+        const neighbor = this.children[idx] ?? this.children[idx - 1];
+        neighbor.size += removed.size;
     }
 
     replaceChild(oldNode: SplitNode | TabGroup, newNode: SplitNode | TabGroup) {
@@ -555,25 +565,48 @@ export class Workspace {
             return; // Cannot split a locked view
         }
 
-        const parent = targetGroup.parent;
         const orientation: Orientation = direction === "left" || direction === "right" ? "horizontal" : "vertical";
         const isAfter = direction === "right" || direction === "bottom";
 
         const sourceGroup = this.findGroupWithView(viewToMove.id);
 
-        // Remove view from source first
+        // Remove the view from its source first. If the source is a different
+        // pane and becomes empty, collapse it now so its neighbour absorbs the
+        // vacated space before the target pane is split.
         if (sourceGroup) {
             sourceGroup.removeTab(viewToMove.id);
+            if (sourceGroup !== targetGroup) {
+                this.cleanupNode(sourceGroup);
+            }
         }
 
         const newGroup = new TabGroup({ views: [viewToMove] });
         newGroup.setActive(viewToMove.id);
         this.setActiveGroup(newGroup.id);
 
+        // If the target pane has no tabs left (the dragged view was its last),
+        // the pane effectively moves: the new group takes its place and size.
+        if (targetGroup.views.length === 0) {
+            const parent = targetGroup.parent;
+            if (parent) {
+                parent.replaceChild(targetGroup, newGroup);
+            } else {
+                newGroup.size = targetGroup.size;
+                newGroup.parent = null;
+                this.root = newGroup;
+            }
+            return;
+        }
+
+        const parent = targetGroup.parent;
         if (parent && parent.orientation === orientation) {
-            // If the parent is a SplitNode with the same orientation,
-            // just add the new group as a sibling.
+            // Same-orientation parent: split only the target pane, leaving its
+            // siblings untouched
             const idx = parent.children.indexOf(targetGroup);
+            const share = targetGroup.size / 2;
+            targetGroup.size = share;
+            newGroup.size = share;
+
             parent.addChild(newGroup, isAfter ? idx + 1 : idx);
         } else {
             // If targetGroup is root, or parent has different orientation,
@@ -589,20 +622,17 @@ export class Workspace {
                 this.root = newSplit; // New SplitNode becomes the root
                 newSplit.parent = null;
             }
+
             // Normalize sizes for the newly created split
             newSplit.normalizeSizes();
-        }
-
-        if (sourceGroup) {
-            this.cleanupNode(sourceGroup); // Cleanup source group if it becomes empty
         }
     }
 
     /**
      * Moves a view out of its current group into a brand new root-level column
-     * (left/right) or row (top/bottom) that spans the full workspace. Existing
-     * columns/rows keep their sizes; the largest one gives up half of itself to
-     * make room for the new column/row.
+     * (left/right) or row (top/bottom) that spans the full workspace. The source
+     * pane is collapsed first, then the new pane splits the column/row at the
+     * insertion boundary; the rest of the layout keeps its sizes.
      */
     splitToRoot(edge: RootEdge, viewId: number): TabGroup | null {
         if (this.root.locked) {
@@ -615,16 +645,24 @@ export class Workspace {
             return null;
         }
 
-        // Remove view from source first
+        // Remove the view and collapse the source pane before inserting the new
+        // column/row, so the vacated space is absorbed by a neighbour first.
         sourceGroup.removeTab(viewId);
+        this.cleanupNode(sourceGroup);
 
         const newGroup = new TabGroup({ views: [view] });
         newGroup.setActive(view.id);
         this.setActiveGroup(newGroup.id);
 
-        this.insertColumnOrRow(newGroup, edge);
+        // If the workspace is now empty, the new group simply takes its place.
+        if (this.root instanceof TabGroup && this.root.views.length === 0) {
+            newGroup.size = this.root.size;
+            newGroup.parent = null;
+            this.root = newGroup;
+            return newGroup;
+        }
 
-        this.cleanupNode(sourceGroup); // Cleanup source group if it becomes empty
+        this.insertColumnOrRow(newGroup, edge);
         return newGroup;
     }
 
@@ -659,33 +697,24 @@ export class Workspace {
             return;
         }
 
-        // Same orientation: insert as a sibling. Existing columns/rows keep their
-        // exact size; only the largest one gives up half of itself to the new
-        // column/row, so the layout doesn't jump around.
+        // Same orientation: split only the column/row at the insertion boundary,
+        // leaving the rest of the layout untouched
+        const neighbor = isBefore ? root.children[0] : root.children[root.children.length - 1];
         node.parent = root;
+
         const index = isBefore ? 0 : root.children.length;
         root.children.splice(index, 0, node);
-        this.rebalanceForNewChild(root, node);
+        this.splitWithNeighbor(node, neighbor);
     }
 
-    private rebalanceForNewChild(container: SplitNode, newNode: SplitNode | TabGroup) {
-        let biggest: SplitNode | TabGroup | null = null;
-        for (const child of container.children) {
-            if (child === newNode) {
-                continue;
-            }
-            if (!biggest || child.size > biggest.size) {
-                biggest = child;
-            }
-        }
-
-        if (!biggest) {
-            container.normalizeSizes();
+    private splitWithNeighbor(newNode: SplitNode | TabGroup, neighbor: SplitNode | TabGroup | undefined) {
+        if (!neighbor) {
+            newNode.size = 100;
             return;
         }
 
-        const share = biggest.size / 2;
-        biggest.size = share;
+        const share = neighbor.size / 2;
+        neighbor.size = share;
         newNode.size = share;
     }
     getAllTabGroups(startNode: SplitNode | TabGroup = this.root): TabGroup[] {
@@ -709,6 +738,7 @@ export class Workspace {
         } else {
             root = TabGroup.fromJSON(json.root as SerializedTabGroup, this.registry);
         }
+
         this.root = root;
         this.activeGroupId = json.activeGroupId;
     }
@@ -716,6 +746,7 @@ export class Workspace {
     static fromJSON(json: SerializedWorkspace, registry: VizView<any, any>[]): Workspace {
         const workspace = new Workspace(undefined, registry);
         workspace.load(json);
+
         return workspace;
     }
 }
