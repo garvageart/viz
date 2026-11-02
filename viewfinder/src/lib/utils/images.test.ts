@@ -24,7 +24,7 @@ import {
     parseExifDate,
     parseTransformParams
 } from "#lib/utils/images.js";
-import { type ImageAsset, Label } from "@viz/api";
+import { type ImageAsset, type Keyword, Label } from "@viz/api";
 import { Settings } from "luxon";
 import { rgbaToThumbHash } from "thumbhash";
 import { describe, expect, it, vi } from "vitest";
@@ -35,6 +35,16 @@ function assetFixture(overrides: Partial<ImageAsset> = {}): ImageAsset {
     return {
         ...createTestImageObject(),
         ...overrides
+    };
+}
+
+function keywordFixture(name: string): Keyword {
+    const now = new Date().toISOString();
+    return {
+        uid: `kw-${name}`,
+        name,
+        created_at: now,
+        updated_at: now
     };
 }
 
@@ -378,84 +388,98 @@ describe("getSelectionKeywords", () => {
     });
 
     it("returns keywords of single image", () => {
+        const kws = [keywordFixture("night"), keywordFixture("joburg")];
         const img = assetFixture({
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["night", "joburg"] }
+            keywords: kws
         });
-        expect(getSelectionKeywords([img])).toEqual(["night", "joburg"]);
+        expect(getSelectionKeywords([img])).toEqual(kws);
     });
 
     it("returns empty array for single image with no keywords", () => {
         const img = assetFixture({
-            image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+            keywords: []
         });
         expect(getSelectionKeywords([img])).toEqual([]);
     });
 
     it("returns all keywords from first selected image when other images have no keywords", () => {
+        const kws = ["a", "b", "c", "d"].map(keywordFixture);
         const first = assetFixture({
             uid: "img-1",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["a", "b", "c", "d"] }
+            keywords: kws
         });
         const others = Array.from({ length: 7 }, (_, i) =>
             assetFixture({
                 uid: `img-${i + 2}`,
-                image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+                keywords: []
             })
         );
 
-        expect(getSelectionKeywords([first, ...others])).toEqual(["a", "b", "c", "d"]);
+        expect(getSelectionKeywords([first, ...others])).toEqual(kws);
     });
 
     it("includes keywords from first image plus overlapping keywords from remaining images", () => {
+        const kwMountain = keywordFixture("mountain");
+        const kwLake = keywordFixture("lake");
+        const kwSunset = keywordFixture("sunset");
+        const kwForest = keywordFixture("forest");
+        const kwWildlife = keywordFixture("wildlife");
+
         const img1 = assetFixture({
             uid: "img-1",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["mountain", "lake"] }
+            keywords: [kwMountain, kwLake]
         });
         const img2 = assetFixture({
             uid: "img-2",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["forest", "sunset"] }
+            keywords: [kwForest, kwSunset]
         });
         const img3 = assetFixture({
             uid: "img-3",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["sunset", "wildlife"] }
+            keywords: [kwSunset, kwWildlife]
         });
 
         // "mountain" and "lake" from first image
         // "sunset" appears in img2 and img3 (count = 2) -> included
         // "forest" only in img2 (count = 1) -> not included
         // "wildlife" only in img3 (count = 1) -> not included
-        expect(getSelectionKeywords([img1, img2, img3])).toEqual(["mountain", "lake", "sunset"]);
+        expect(getSelectionKeywords([img1, img2, img3])).toEqual([kwMountain, kwLake, kwSunset]);
     });
 
     it("does not duplicate keywords that appear in first image and also overlap in others", () => {
+        const kwNature = keywordFixture("nature");
+        const kwLandscape = keywordFixture("landscape");
+
         const img1 = assetFixture({
             uid: "img-1",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature", "landscape"] }
+            keywords: [kwNature, kwLandscape]
         });
         const img2 = assetFixture({
             uid: "img-2",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature"] }
+            keywords: [kwNature]
         });
         const img3 = assetFixture({
             uid: "img-3",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["nature"] }
+            keywords: [kwNature]
         });
 
-        expect(getSelectionKeywords([img1, img2, img3])).toEqual(["nature", "landscape"]);
+        expect(getSelectionKeywords([img1, img2, img3])).toEqual([kwNature, kwLandscape]);
     });
 
     it("uses primaryImage keywords when primaryImage is not at index 0", () => {
+        const kwForest = keywordFixture("forest");
+        const kwFog = keywordFixture("fog");
+
         const withoutKeywords = assetFixture({
             uid: "img-empty",
-            image_metadata: { ...assetFixture().image_metadata, keywords: [] }
+            keywords: []
         });
         const withKeywords = assetFixture({
             uid: "img-primary",
-            image_metadata: { ...assetFixture().image_metadata, keywords: ["forest", "fog"] }
+            keywords: [kwForest, kwFog]
         });
 
         // withoutKeywords is at index 0, but withKeywords is passed as primaryImage
-        expect(getSelectionKeywords([withoutKeywords, withKeywords], withKeywords)).toEqual(["forest", "fog"]);
+        expect(getSelectionKeywords([withoutKeywords, withKeywords], withKeywords)).toEqual([kwForest, kwFog]);
     });
 });
 

@@ -88,12 +88,21 @@ export function createTestImageObject(): ImageAsset {
         taken_at: dateCreated,
         updated_at: dateModified,
         exif: createTestExif(),
+        keywords: faker.lorem
+            .words(Math.floor(Math.random() * 15))
+            .split(" ")
+            .filter((w) => w.length > 0)
+            .map((w) => ({
+                uid: generateRandomString(16),
+                name: w,
+                created_at: dateCreated,
+                updated_at: dateModified
+            })),
         image_metadata: {
             file_name: `${name.replace(/\s/g, "_")}.jpg`,
             file_size: Math.floor(Math.random() * 1000000) + 100000,
             original_file_name: `${faker.word.noun()}_original.jpg`,
             file_type: "jpg",
-            keywords: faker.lorem.words(Math.floor(Math.random() * 15)).split(" "),
             color_space: "sRGB",
             has_icc_profile: faker.datatype.boolean(),
             rating: faker.helpers.arrayElement([0, 1, 2, 3, 4, 5, null]),

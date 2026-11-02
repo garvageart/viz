@@ -1,5 +1,11 @@
 import { LabelColours, flashModes } from "#lib/images/constants.js";
-import { type CollectionDetailResponse, type ImageAsset, downloadImagesZipBlob, signDownload } from "@viz/api";
+import {
+    type CollectionDetailResponse,
+    type ImageAsset,
+    type Keyword,
+    downloadImagesZipBlob,
+    signDownload
+} from "@viz/api";
 import { DateTime, Duration } from "luxon";
 import { thumbHashToDataURL } from "thumbhash";
 
@@ -887,18 +893,18 @@ export function formatExifTag(str: string): string {
  * Shows all keywords from the primary (or first) selected image, plus any keywords
  * that appear on two or more images across the selection.
  */
-export function getSelectionKeywords(images: ImageAsset[], primaryImage?: ImageAsset): string[] {
+export function getSelectionKeywords(images: ImageAsset[], primaryImage?: ImageAsset): Keyword[] {
     if (images.length === 0) {
         return [];
     }
 
     const primary = primaryImage && images.includes(primaryImage) ? primaryImage : images[0];
-    const firstKeywords = primary.image_metadata?.keywords ?? [];
+    const firstKeywords = primary.keywords ?? [];
     const resultSet = new Set(firstKeywords);
 
-    const counts = new Map<string, number>();
+    const counts = new Map<Keyword, number>();
     for (const img of images) {
-        const kws = new Set(img.image_metadata?.keywords ?? []);
+        const kws = new Set(img.keywords ?? []);
         for (const kw of kws) {
             counts.set(kw, (counts.get(kw) ?? 0) + 1);
         }

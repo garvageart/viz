@@ -195,9 +195,9 @@ export class FilterScope<F> {
                         lenses.set(lens, (lenses.get(lens) || 0) + 1);
                     }
 
-                    if (img.image_metadata.keywords) {
-                        for (const tag of img.image_metadata.keywords) {
-                            tags.set(tag, (tags.get(tag) || 0) + 1);
+                    if (img.keywords) {
+                        for (const kw of img.keywords) {
+                            tags.set(kw.name, (tags.get(kw.name) || 0) + 1);
                         }
                     }
 
@@ -387,7 +387,7 @@ export class FilterScope<F> {
                 }
 
                 if (criteria.tags.length > 0) {
-                    const imgTags = img.image_metadata.keywords || [];
+                    const imgTags = (img.keywords || []).map((k) => k.name);
                     const hasAll = criteria.tags.every((t) => imgTags.includes(t));
                     if (!hasAll) {
                         return false;

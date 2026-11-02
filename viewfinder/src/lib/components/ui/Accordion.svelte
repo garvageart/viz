@@ -90,7 +90,7 @@
         <button
             type="button"
             id={headerId}
-            class="viz-accordion-header {headerClass}"
+            class="viz-accordion-header size-{size} {headerClass}"
             aria-expanded={open}
             aria-controls={contentId}
             {disabled}
@@ -119,7 +119,7 @@
     {#if open}
         <div
             id={contentId}
-            class="viz-accordion-content {contentClass}"
+            class="viz-accordion-content size-{size} {contentClass}"
             role="region"
             aria-labelledby={headerId}
             transition:slide={{ duration: 200 }}
@@ -187,39 +187,6 @@
             }
         }
 
-        &.size-compact {
-            .viz-accordion-header {
-                padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
-            }
-
-            .viz-accordion-content {
-                padding: var(--viz-spacing-xs) 0;
-                gap: 2px;
-            }
-        }
-
-        &.size-standard {
-            .viz-accordion-header {
-                padding: var(--viz-spacing-xs);
-            }
-
-            .viz-accordion-content {
-                padding: 0.5rem 0;
-                gap: var(--viz-spacing-sm);
-            }
-        }
-
-        &.size-large {
-            .viz-accordion-header {
-                padding: var(--viz-spacing-sm) var(--viz-spacing-md);
-            }
-
-            .viz-accordion-content {
-                padding: var(--viz-spacing-md) var(--viz-spacing-std);
-                gap: var(--viz-spacing-md);
-            }
-        }
-
         &.is-disabled {
             opacity: 0.5;
             pointer-events: none;
@@ -253,6 +220,18 @@
             outline: 2px solid var(--viz-primary);
             outline-offset: -2px;
         }
+    }
+
+    .viz-accordion-header.size-compact {
+        padding: var(--viz-spacing-xxs) var(--viz-spacing-xs);
+    }
+
+    .viz-accordion-header.size-standard {
+        padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+    }
+
+    .viz-accordion-header.size-large {
+        padding: var(--viz-spacing-md) var(--viz-spacing-lg);
     }
 
     .viz-accordion-title {
@@ -298,5 +277,20 @@
         flex-direction: column;
         color: var(--viz-text-primary);
         font-family: var(--viz-display-font);
+    }
+
+    .viz-accordion-content.size-compact {
+        padding: var(--viz-spacing-xs) 0;
+        gap: 2px;
+    }
+
+    .viz-accordion-content.size-standard {
+        padding: 0.5rem 0;
+        gap: var(--viz-spacing-sm);
+    }
+
+    .viz-accordion-content.size-large {
+        padding: var(--viz-spacing-md) var(--viz-spacing-std);
+        gap: var(--viz-spacing-md);
     }
 </style>

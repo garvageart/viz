@@ -5,7 +5,7 @@
         message?: string;
     }
 
-    let { message = "No image(s) selected" }: Props = $props();
+    let { message = "No image selected" }: Props = $props();
 </script>
 
 <div class="no-image-selected">

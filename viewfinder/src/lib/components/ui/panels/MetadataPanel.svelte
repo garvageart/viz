@@ -35,7 +35,7 @@
         isAssetImage
     } from "#lib/utils/images.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
-    import { type ImageAsset, type Label, batchUpdateImages, updateImage } from "@viz/api";
+    import { type ImageAsset, type KeywordUpdate, type Label, batchUpdateImages, updateImage } from "@viz/api";
     import type { KeyboardEventHandler } from "svelte/elements";
 
     const MIXED_VALUES = "Mixed Values";
@@ -61,6 +61,7 @@
         if (asset) {
             return [asset];
         }
+
         const items = activeScope?.selectedItems ?? [];
         return items.filter(isAssetImage);
     });
@@ -309,59 +310,44 @@
     // Keyword stuff
     let keywordEditing = $state(false);
     let newKeywordInput = $state("");
-    let draftKeywords = $state<string[] | null>(null);
+    let selectedKeywords = $derived.by(getCurrentKeywords);
+    let currentKeywords = $derived.by(getCurrentKeywords);
+    let keywordsChanged = $derived(
+        currentKeywords.length !== selectedKeywords.length ||
+            currentKeywords.some((keyword, index) => {
+                return keyword.name !== selectedKeywords[index]?.name;
+            })
+    );
 
-    let currentKeywords = $derived.by(() => {
-        if (!isMultiSelection) {
-            return currentAsset?.image_metadata.keywords ?? [];
+    function getCurrentKeywords(): KeywordUpdate[] {
+        if (selectedImages.length === 0) {
+            return [];
         }
 
-        return getSelectionKeywords(selectedImages, currentAsset);
-    });
+        if (isMultiSelection) {
+            return getSelectionKeywords(selectedImages, currentAsset);
+        }
 
-    let displayedKeywords = $derived(draftKeywords ?? currentKeywords);
+        return currentAsset?.keywords ?? [];
+    }
 
-    $effect(() => {
-        // Track current asset UID to reset keyword input state on image switch
-        void currentAsset?.uid;
-        keywordEditing = false;
-        newKeywordInput = "";
-        draftKeywords = null;
-    });
-
-    async function saveKeywords(newKeywords: string[]) {
-        if (!currentAsset) {
+    async function saveKeywords() {
+        if (!currentAsset || selectedImages.length === 0) {
             return;
         }
 
         if (isMultiSelection) {
             const uids = selectedImages.map((img) => img.uid);
-            const prevKeywordsMap = new Map(selectedImages.map((img) => [img.uid, img.image_metadata?.keywords ?? []]));
-
-            for (const img of selectedImages) {
-                if (img.image_metadata) {
-                    img.image_metadata.keywords = newKeywords;
-                    onImageUpdated?.(img);
-                }
-            }
 
             try {
                 await batchUpdateImages({
                     uids,
                     update: {
-                        image_metadata: {
-                            keywords: newKeywords
-                        }
+                        keywords: currentKeywords
                     }
                 });
             } catch (err) {
-                for (const img of selectedImages) {
-                    if (img.image_metadata) {
-                        img.image_metadata.keywords = prevKeywordsMap.get(img.uid) ?? [];
-                        onImageUpdated?.(img);
-                    }
-                }
-
+                currentKeywords = getCurrentKeywords();
                 const keywordErr = err as Error;
                 toasts.add({
                     type: "error",
@@ -373,21 +359,31 @@
             return;
         }
 
-        const previousKeywords = currentAsset.image_metadata.keywords ?? [];
-        currentAsset.image_metadata.keywords = newKeywords;
-        onImageUpdated?.(currentAsset);
-
         try {
-            await updateImage(currentAsset.uid, {
+            const res = await updateImage(currentAsset.uid, {
+                keywords: currentKeywords,
                 image_metadata: {
-                    keywords: newKeywords,
                     label: currentAsset.image_metadata.label
                 }
             });
-        } catch (err) {
-            currentAsset.image_metadata.keywords = previousKeywords;
-            onImageUpdated?.(currentAsset);
 
+            if (res.status === 200) {
+                for (const image of selectedImages) {
+                    if (image.uid === res.data.uid) {
+                        image.keywords = res.data.keywords;
+                    }
+                }
+                onImageUpdated?.(res.data);
+            } else {
+                currentKeywords = getCurrentKeywords();
+                toasts.add({
+                    type: "error",
+                    title: "Failed to update keywords",
+                    message: res.data.error
+                });
+            }
+        } catch (err) {
+            currentKeywords = getCurrentKeywords();
             const keywordErr = err as Error;
             toasts.add({
                 type: "error",
@@ -422,39 +418,41 @@
             return;
         }
 
-        const existing = draftKeywords ?? currentKeywords;
         const lowerExisting = new Set(
-            existing.map((k) => {
-                return k.toLowerCase();
+            currentKeywords.map((k) => {
+                return k.name.toLowerCase();
             })
         );
 
-        const toAdd = parts.filter((k) => {
-            return !lowerExisting.has(k.toLowerCase());
-        });
+        const toAdd: KeywordUpdate[] = parts
+            .filter((k) => {
+                return !lowerExisting.has(k.toLowerCase());
+            })
+            .map((name) => {
+                return { name };
+            });
 
         newKeywordInput = "";
 
         if (toAdd.length > 0) {
-            draftKeywords = [...existing, ...toAdd];
+            currentKeywords = [...currentKeywords, ...toAdd];
         }
     }
 
-    async function removeKeyword(keywordToRemove: string) {
-        if (!currentAsset) {
+    async function removeKeyword(keyword: KeywordUpdate) {
+        if (!currentAsset || selectedImages.length === 0) {
             return;
         }
 
-        const base = draftKeywords ?? currentKeywords;
-        const updatedKeywords = base.filter((k) => {
-            return k !== keywordToRemove;
+        const updatedKeywords = currentKeywords.filter((k) => {
+            return k.name !== keyword.name;
         });
 
-        if (draftKeywords !== null) {
-            draftKeywords = updatedKeywords;
+        if (updatedKeywords.length === currentKeywords.length) {
+            return;
         }
-
-        await saveKeywords(updatedKeywords);
+        currentKeywords = updatedKeywords;
+        await saveKeywords();
     }
 
     const handleKeywordKeydown: KeyboardEventHandler<HTMLInputElement> = (e) => {
@@ -476,21 +474,11 @@
             addKeywordsFromInput();
         }
 
-        const keywordsToSave = draftKeywords;
-        draftKeywords = null;
         keywordEditing = false;
         newKeywordInput = "";
 
-        if (keywordsToSave !== null) {
-            const hasChanged =
-                keywordsToSave.length !== currentKeywords.length ||
-                keywordsToSave.some((k, i) => {
-                    return k !== currentKeywords[i];
-                });
-
-            if (hasChanged) {
-                await saveKeywords(keywordsToSave);
-            }
+        if (keywordsChanged) {
+            await saveKeywords();
         }
     }
 
@@ -531,8 +519,7 @@
             try {
                 await updateImage(currentAsset.uid, {
                     image_metadata: {
-                        label: labelToSend,
-                        keywords: currentAsset.image_metadata.keywords
+                        label: labelToSend
                     }
                 });
             } catch (err) {
@@ -905,7 +892,7 @@
                     <div class="card-row main-row center">
                         <MaterialIcon iconName="sell" class="exif-material-icon" />
                         <div class="keywords-list">
-                            {#each displayedKeywords as keyword (keyword)}
+                            {#each currentKeywords as keyword (keyword.name)}
                                 <Badge size="small" class="keyword-badge">
                                     <Button
                                         variant="ghost"
@@ -919,7 +906,14 @@
                                             removeKeyword(keyword);
                                         }}
                                     />
-                                    <span class="keyword-text">{keyword}</span>
+                                    <span class="keyword-text">{keyword.name}</span>
+                                    {#if keyword.colour}
+                                        <span
+                                            class="keyword-colour-dot"
+                                            style="background-color: {keyword.colour ??
+                                                'inherit'}; width: 0.5rem; height: 0.5rem; border: var(--viz-border-thin); border-radius: var(--viz-border-radius-pill); display: inline-block;"
+                                        ></span>
+                                    {/if}
                                 </Badge>
                             {/each}
                             <div class="keyword-action-slot">
@@ -942,10 +936,9 @@
                                         title="Add Keyword"
                                         onclick={() => {
                                             keywordEditing = true;
-                                            draftKeywords = [...currentKeywords];
                                         }}
                                     >
-                                        {displayedKeywords.length === 0 ? "Add Keyword" : "Add"}
+                                        {currentKeywords.length === 0 ? "Add Keyword" : "Add"}
                                     </Button>
                                 {/if}
                             </div>
@@ -1102,7 +1095,7 @@
             </div>
         </div>
     {:else}
-        <NoImageSelected message="No image selected" />
+        <NoImageSelected />
     {/if}
 </div>
 

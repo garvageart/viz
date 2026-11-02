@@ -59,7 +59,6 @@
         height: 100%;
         overflow-y: scroll;
         overflow-x: hidden;
-        padding: 0 var(--viz-spacing-sm);
         color: var(--viz-text-primary);
         position: relative;
     }

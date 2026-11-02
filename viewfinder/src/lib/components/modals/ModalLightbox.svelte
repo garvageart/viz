@@ -99,7 +99,13 @@
     }
 
     onMount(() => {
-        modalEl?.focus();
+        const autoFocusEl = modalEl?.querySelector<HTMLElement>("[autofocus]");
+        if (autoFocusEl) {
+            autoFocusEl.focus();
+        } else {
+            modalEl?.focus();
+        }
+
         modalEl?.addEventListener("keydown", handleKeyDown);
         return () => {
             modalEl?.removeEventListener("keydown", handleKeyDown);

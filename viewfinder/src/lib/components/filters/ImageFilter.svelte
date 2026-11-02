@@ -92,7 +92,9 @@
         bind:open={uiState.expanded[key]}
         ontoggle={handleSectionToggle}
     >
-        {@render content()}
+        <div class="filter-section-content">
+            {@render content()}
+        </div>
     </Accordion>
 {/snippet}
 
@@ -291,6 +293,13 @@
 {@render filterSection("date", "Date Taken", dateContent)}
 
 <style lang="scss">
+    .filter-section-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--viz-spacing-sm);
+        padding: 0 var(--viz-spacing-sm);
+    }
+
     .rating-row {
         display: flex;
         align-items: center;

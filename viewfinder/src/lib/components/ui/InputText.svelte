@@ -7,6 +7,8 @@
         description?: string;
         disabled?: boolean;
         focused?: boolean;
+        element?: HTMLInputElement | undefined;
+        selectOnFocus?: boolean;
     }
 
     let {
@@ -15,15 +17,21 @@
         label,
         description,
         disabled = false,
+        selectOnFocus = true,
+        element = $bindable(),
         ...props
     }: Props & SvelteHTMLElements["input"] = $props();
 
     const inputId = $derived(props.id ?? generateRandomString(6));
-    let inputEl = $state<HTMLInputElement | undefined>();
     $effect(() => {
-        if (inputEl && focused) {
-            inputEl.focus();
-            inputEl.select();
+        if (element && focused) {
+            element.focus();
+            if (selectOnFocus) {
+                element.select();
+            } else if (element.value) {
+                const len = element.value.length;
+                element.setSelectionRange(len, len);
+            }
         }
     });
 </script>
@@ -43,7 +51,7 @@
         name={props.name}
         type={props.type ?? "text"}
         placeholder={props.placeholder}
-        bind:this={inputEl}
+        bind:this={element}
         bind:value
         {disabled}
         oninput={(e) => {
