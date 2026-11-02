@@ -10,8 +10,8 @@ export enum ZIndex {
     Chrome = 500,
     Popover = 1000,
     FloatingPanel = 2000,
-    Modal = 5000,
-    Lightbox = 8000,
+    Lightbox = 6000,
+    Modal = 7000,
     Toast = 9000,
     Tooltip = 10000
 }

@@ -123,7 +123,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--viz-spacing-xs);
-        z-index: 99999;
+        z-index: var(--viz-z-toast);
         pointer-events: none;
         box-sizing: border-box;
     }

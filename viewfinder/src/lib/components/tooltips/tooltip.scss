@@ -1,5 +1,9 @@
 /* Tippy Tooltip styles for the 'viz' theme */
 
+[data-tippy-root] {
+    z-index: var(--viz-z-tooltip) !important;
+}
+
 .tippy-box[data-theme~="viz"] {
     background-color: var(--viz-surface-popover);
     color: var(--viz-text-primary);

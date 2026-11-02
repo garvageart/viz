@@ -11,12 +11,18 @@
     // see ModalLightbox.svelte for more context
     $effect(() => {
         if (modalsManager.modals.length > 0) {
-            return keyboardManager.registerEscape({
+            const popScope = keyboardManager.pushScope("modal");
+            const unregisterEscape = keyboardManager.registerEscape({
                 tier: KbdShortcutTier.Overlay,
                 handler: () => {
                     modalsManager.pop();
                 }
             });
+
+            return () => {
+                popScope();
+                unregisterEscape();
+            };
         }
     });
 </script>

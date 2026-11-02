@@ -1,3 +1,4 @@
+import { ZIndex } from "#lib/constants/z-index.js";
 import { type Component, mount, unmount } from "svelte";
 import tippy, { type Instance, type Props } from "tippy.js";
 import "tippy.js/dist/tippy.css";
@@ -73,6 +74,7 @@ export function tooltip(node: HTMLElement, params?: TooltipParams | string | nul
             arrow: false,
             content: contentNode,
             appendTo: () => document.body,
+            zIndex: ZIndex.Tooltip,
             ...tippyOptions,
             onDestroy(inst) {
                 if (destroyComponent) {

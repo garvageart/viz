@@ -1,3 +1,4 @@
+import { ZIndex } from "#lib/constants/z-index.js";
 import { generateRandomString } from "#lib/utils/misc.js";
 import type { Component } from "svelte";
 
@@ -24,7 +25,7 @@ export interface ModalOptions {
 
 export class ModalsManager {
     modals = $state<ModalInstance<any, any>[]>([]);
-    baseZIndex = 100000;
+    baseZIndex = ZIndex.Modal;
 
     private DEFAULT_MODAL_OPTIONS: ModalOptions = $state({
         width: "40%",

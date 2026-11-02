@@ -207,8 +207,8 @@ All stacking contexts and `z-index` elevations are standardized into discrete se
 | **Chrome**         | `--viz-z-chrome`           | `500`   | `ZIndex.Chrome`          | Fixed application shell navigation  | Top header bar, docked sidebar                |
 | **Popover**        | `--viz-z-popover`          | `1000`  | `ZIndex.Popover`         | In-page transient popup menus       | Context menus, account dropdown, date pickers |
 | **Floating Panel** | `--viz-z-floating-panel`   | `2000`  | `ZIndex.FloatingPanel`   | Long-running task dock overlays     | Upload panel, download panel                  |
-| **Modal**          | `--viz-z-modal`            | `5000`  | `ZIndex.Modal`           | Blocking modal dialog windows       | Confirmation dialogs, metadata edit modals    |
-| **Lightbox**       | `--viz-z-lightbox`         | `8000`  | `ZIndex.Lightbox`        | Fullscreen inspection view          | Image/video lightbox overlay                  |
+| **Lightbox**       | `--viz-z-lightbox`         | `6000`  | `ZIndex.Lightbox`        | Fullscreen inspection view          | Image/video lightbox overlay                  |
+| **Modal**          | `--viz-z-modal`            | `7000`  | `ZIndex.Modal`           | Blocking modal dialog windows       | Confirmation dialogs, metadata edit modals    |
 | **Toast**          | `--viz-z-toast`            | `9000`  | `ZIndex.Toast`           | User alert notifications            | Toast notifications, alert badges             |
 | **Tooltip**        | `--viz-z-tooltip`          | `10000` | `ZIndex.Tooltip`         | Hover micro-interactions            | Tooltips                                      |
 
