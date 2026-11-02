@@ -82,6 +82,8 @@
                 action: () => goto("/collections")
             },
             { id: "divider-2", separator: true },
+            { id: "keywords", label: "Keywords", iconName: "label", action: () => goto("/keywords") },
+            { id: "divider-3", separator: true },
             { id: "settings", label: "Settings", iconName: "settings", action: () => goto("/settings") },
             {
                 id: "help",
@@ -103,8 +105,8 @@
         ];
 
         if (user.isAdmin) {
-            items.splice(4, 0, adminSettings);
-            items.splice(4, 0, { id: "divider-admin", separator: true });
+            items.splice(6, 0, adminSettings);
+            items.splice(6, 0, { id: "divider-admin", separator: true });
         }
 
         return items;
