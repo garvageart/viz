@@ -216,17 +216,16 @@
                 </Badge>
             </div>
         </div>
+    </div>
 
-        <div class="keywords-toolbar">
-            <div class="toolbar-search">
-                <SearchInput inputId="keywords-search" placeholder="Search keywords..." bind:value={searchQuery} />
-            </div>
-            <div class="toolbar-actions">
-                <Button variant="primary" onclick={openCreateModal}>
-                    <MaterialIcon iconName="add" />
-                    <span>Create Keyword</span>
-                </Button>
-            </div>
+    <div class="keywords-toolbar">
+        <div class="toolbar-search">
+            <SearchInput inputId="keywords-search" placeholder="Search keywords..." bind:value={searchQuery} />
+        </div>
+        <div class="toolbar-actions">
+            <Button id="keywords-create-btn" iconName="add" variant="primary" onclick={openCreateModal}>
+                <span>Create Keyword</span>
+            </Button>
         </div>
     </div>
 
@@ -250,13 +249,14 @@
     {:else}
         <div class="keywords-grid">
             {#each filteredKeywords as kw (kw.uid)}
-                <div class="keyword-card">
+                <div class="keyword-card" data-keyword-name={kw.name}>
                     <div class="card-header">
                         <div class="keyword-title-wrap">
                             <span class="keyword-name">{kw.name}</span>
                         </div>
                         <div class="card-actions">
                             <Button
+                                class="keyword-edit-btn"
                                 iconName="edit"
                                 size="small"
                                 variant="ghost"
@@ -265,6 +265,7 @@
                                 aria-label="Edit Keyword"
                             />
                             <Button
+                                class="keyword-delete-btn"
                                 iconName="delete"
                                 size="small"
                                 variant="ghost"
@@ -348,11 +349,19 @@
     }
 
     .keywords-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: var(--viz-z-local);
+        background-color: var(--viz-surface-base);
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: var(--viz-spacing-md);
         flex-wrap: wrap;
+        width: 100%;
+        box-sizing: border-box;
+        padding: var(--viz-spacing-sm) 0;
+        border-bottom: var(--viz-border-thin);
     }
 
     .toolbar-search {
