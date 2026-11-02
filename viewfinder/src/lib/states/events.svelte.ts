@@ -13,7 +13,7 @@ class EventsState {
     private client: WSClient | null = null;
     connected = $state(false);
     initialized = $state(false);
-    private wasDisconnected = $state(false);
+    wasDisconnected = $state(false);
 
     private invalidateApp = async (resourcePath?: string) => {
         console.debug(`[Events] Triggering debounced soft refresh for path: ${resourcePath ?? "all"}`);

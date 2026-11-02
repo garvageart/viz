@@ -235,6 +235,16 @@
                 <span class="offline-dot"></span>
                 <span>Offline</span>
             </div>
+        {:else if eventsState.wasDisconnected}
+            <Button
+                variant="ghost"
+                iconName="refresh"
+                size="small"
+                onclick={() => location.reload()}
+                title="Reload Page"
+                aria-label="Reload Page"
+                class="header-button"
+            ></Button>
         {/if}
         <Button
             variant="ghost"
