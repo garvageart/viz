@@ -27,5 +27,6 @@ export const api = generated;
 
 export * from "./client.gen";
 export * from "./functions.custom";
+export * from "./types.d";
 export * from "./websocket";
 export { defaults, servers };

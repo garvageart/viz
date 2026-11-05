@@ -418,9 +418,15 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			if !validateDownloadRequest(res, req, db, uid) {
 				return
 			}
+
+			// When downloading an image, default to embedding metadata unless explicitly disabled
+			embedParam := req.URL.Query().Get("embed_metadata")
+			if embedParam != "false" && embedParam != "0" {
+				params.EmbedMetadata = true
+			}
 		}
 
-		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != ""
+		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != "" || params.EmbedMetadata
 		if !hasTransformParams {
 			serveOriginalImage(res, req, logger, &imgEnt, isDownload)
 			return

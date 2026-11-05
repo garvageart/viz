@@ -193,10 +193,13 @@ export async function downloadSelectedImages(selectionScope: SelectionScope<Imag
             });
 
             const img = items[0];
-            const url = getAssetImagePath(img, "original") || getFullImagePath(img.image_paths.original);
+            const rawUrl = getAssetImagePath(img, "original") || getFullImagePath(img.image_paths.original);
+            const downloadUrl = new URL(rawUrl, window.location.origin);
+            downloadUrl.searchParams.set("download", "1");
+            downloadUrl.searchParams.set("embed_metadata", "true");
             const filename = img.image_metadata.file_name ?? `${img.name || img.uid}.jpg`;
 
-            const task = new DownloadFile(url, filename, "GET");
+            const task = new DownloadFile(downloadUrl.toString(), filename, "GET");
             download.files.push(task);
             download.stats.total += 1;
 

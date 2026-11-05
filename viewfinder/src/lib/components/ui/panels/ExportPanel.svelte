@@ -17,18 +17,20 @@
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
     import { downloadToFilesystem } from "#lib/utils/files.js";
+    import { generateRandomString } from "#lib/utils/misc.js";
+    import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
+    import ImageExportWorker from "#lib/workers/image_export?worker";
     import {
         type BitDepths,
         type ColorSpace,
         type DestinationMode,
         type ExportFormats,
+        type ImageAsset,
         type MetadataPolicy,
-        type ResizeMode
-    } from "#lib/utils/images.js";
-    import { generateRandomString } from "#lib/utils/misc.js";
-    import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
-    import ImageExportWorker from "#lib/workers/image_export?worker";
-    import { type ImageAsset, getAssetImagePath, getFullImagePath } from "@viz/api";
+        type ResizeMode,
+        getAssetImagePath,
+        getFullImagePath
+    } from "@viz/api";
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
@@ -271,10 +273,16 @@
         const imageTasks: DownloadFile[] = [];
         for (const asset of exportAssets) {
             const filename = resolveExportFilename(asset, imageTasks.length, exportSettings.format);
-            const url =
+            const rawUrl =
                 getAssetImagePath(asset, "original") ||
                 getFullImagePath(`/images/${encodeURIComponent(asset.uid)}/file`);
-            const task = new DownloadFile(url, filename, "GET");
+            const urlObj = new URL(rawUrl, window.location.origin);
+
+            if (exportSettings.includeMetadata) {
+                urlObj.searchParams.set("embed_metadata", "true");
+            }
+
+            const task = new DownloadFile(urlObj.toString(), filename, "GET");
 
             imageTasks.push(task);
         }

@@ -10,14 +10,15 @@ import (
 
 // TransformParams defines the parameters for an image transformation.
 type TransformParams struct {
-	Format   string
-	Width    int64
-	Height   int64
-	Quality  int64
-	Rotate   int
-	Flip     string
-	Kernel   string
-	BitDepth int
+	Format        string
+	Width         int64
+	Height        int64
+	Quality       int64
+	Rotate        int
+	Flip          string
+	Kernel        string
+	BitDepth      int
+	EmbedMetadata bool
 }
 
 // ToQueryString serializes the transform parameters into a URL query string.
@@ -46,6 +47,9 @@ func (p *TransformParams) ToQueryString() string {
 	}
 	if p.BitDepth > 0 {
 		q.Set("bitdepth", strconv.Itoa(p.BitDepth))
+	}
+	if p.EmbedMetadata {
+		q.Set("embed_metadata", "true")
 	}
 	return q.Encode()
 }
@@ -76,6 +80,10 @@ func CreateTransformEtag(imgEnt entities.ImageAsset, params *TransformParams) *s
 		case reflect.Int, reflect.Int64:
 			if num := field.Int(); num != 0 {
 				base = fmt.Sprintf("%s-%d", base, num)
+			}
+		case reflect.Bool:
+			if field.Bool() {
+				base = fmt.Sprintf("%s-%s", base, fieldName)
 			}
 		}
 	}

@@ -242,3 +242,76 @@ func diff(a, b int64) int64 {
 	}
 	return b - a
 }
+
+func TestGenerateTransform_EmbedMetadata(t *testing.T) {
+	samplesDir := "../../../resources/test/samples"
+	samplePath := filepath.Join(samplesDir, "Nikon_D70.jpg")
+	data, err := os.ReadFile(samplePath)
+	if err != nil {
+		t.Skipf("Sample file %s not found: %v", samplePath, err)
+	}
+
+	rating := 5
+	label := dto.Label("Red")
+	desc := "Sunset over the lake"
+
+	imgEnt := entities.ImageAsset{
+		Uid:         "test-img-001",
+		Name:        "Test Photo",
+		Description: &desc,
+		ImageMetadata: dto.ImageMetadata{
+			FileName: "sample.jpg",
+			FileType: "jpg",
+			Rating:   &rating,
+			Label:    &label,
+		},
+	}
+
+	params := &transform.TransformParams{
+		Format:        "jpg",
+		Width:         200,
+		Height:        200,
+		Quality:       80,
+		EmbedMetadata: true,
+	}
+
+	result, err := GenerateTransform(params, imgEnt, data)
+	if err != nil {
+		t.Fatalf("GenerateTransform with EmbedMetadata failed: %v", err)
+	}
+
+	// Verify that the XMP rating and label are present in the resulting image
+	xmlStr := string(result.ImageData)
+	if !strings.Contains(xmlStr, "<xmp:Rating>5</xmp:Rating>") {
+		t.Errorf("expected embedded XMP rating in JPEG output, got length %d", len(result.ImageData))
+	}
+	if !strings.Contains(xmlStr, "<xmp:Label>Red</xmp:Label>") {
+		t.Errorf("expected embedded XMP label in JPEG output")
+	}
+
+	// Verify that the transformed image decodes cleanly
+	resImg, err := libvips.NewImageFromBuffer(result.ImageData, libvips.DefaultLoadOptions())
+	if err != nil {
+		t.Fatalf("Failed to reload transformed image: %v", err)
+	}
+	defer resImg.Close()
+
+	if resImg.Width() == 0 || resImg.Height() == 0 {
+		t.Errorf("expected valid image dimensions, got %dx%d", resImg.Width(), resImg.Height())
+	}
+
+	// Verify that empty Format defaults to the asset's file type and encodes properly (not raw buffer)
+	paramsDefaultFormat := &transform.TransformParams{
+		EmbedMetadata: true,
+	}
+	resultDefault, err := GenerateTransform(paramsDefaultFormat, imgEnt, data)
+	if err != nil {
+		t.Fatalf("GenerateTransform with default format failed: %v", err)
+	}
+	if resultDefault.Ext != "jpg" {
+		t.Errorf("expected ext 'jpg', got %q", resultDefault.Ext)
+	}
+	if len(resultDefault.ImageData) < 2 || resultDefault.ImageData[0] != 0xFF || resultDefault.ImageData[1] != 0xD8 {
+		t.Errorf("expected JPEG SOI marker (0xFF, 0xD8), got size %d bytes", len(resultDefault.ImageData))
+	}
+}

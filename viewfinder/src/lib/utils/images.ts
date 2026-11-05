@@ -1,8 +1,11 @@
 import { LabelColours, flashModes } from "#lib/images/constants.js";
 import {
     type CollectionDetailResponse,
+    type ColorSpace,
     type ImageAsset,
     type Keyword,
+    type MetadataPolicy,
+    type TransformParams,
     downloadImagesZipBlob,
     signDownload
 } from "@viz/api";
@@ -261,29 +264,6 @@ export function getImageMegapixels(image: ImageAsset, precision = 0) {
 /** Format a raw pixel count as megapixels with the given decimal precision (e.g. 12.4) */
 export function formatMegapixels(pixelCount: number, precision = 1) {
     return (pixelCount / 1_000_000).toFixed(precision);
-}
-
-export type ExportFormats = "webp" | "png" | "jpg" | "jpeg" | "avif" | "heif" | "tiff";
-export type BitDepths = 8 | 10 | 12 | 16;
-export type ResizeMode = "none" | "width" | "height" | "long-edge" | "short-edge" | "dimensions";
-export type ColorSpace =
-    "sRGB" | "AdobeRGB" | "ProPhoto" | "DisplayP3" | "Rec2020" | "ColorMatch" | "GrayGamma18" | "GrayGamma22" | "sGray";
-export type MetadataPolicy = "all" | "copyright" | "contact" | "except-camera" | "none";
-export type DestinationMode = "zip";
-
-export interface TransformParams {
-    format?: ExportFormats;
-    flip?: string;
-    kernel?: string;
-    width?: number;
-    height?: number;
-    quality?: number;
-    rotate?: number;
-    resizeMode?: ResizeMode;
-    colorSpace?: ColorSpace;
-    metadata?: MetadataPolicy;
-    includeLocation?: boolean;
-    bitDepth?: number;
 }
 
 export function parseTransformParams(pathStr: string): TransformParams {

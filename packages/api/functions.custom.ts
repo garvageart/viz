@@ -307,6 +307,7 @@ export async function getImageFileBlob(
         download?: "1";
         token?: string;
         password?: string;
+        embed_metadata?: boolean | string;
     } = {},
     opts?: Oazapfts.RequestOpts
 ): Promise<

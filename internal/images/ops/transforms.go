@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"viz/internal/entities"
 	libvips "viz/internal/images/ops/vips"
 	"viz/internal/images/transform"
+	customxmp "viz/internal/xmp"
 )
 
 type TransformResult struct {
@@ -66,6 +68,10 @@ func ParseTransformParams(pathStr string) (*transform.TransformParams, error) {
 		if bd, err := strconv.Atoi(bitdepthParam); err == nil {
 			params.BitDepth = bd
 		}
+	}
+
+	if embedParam := q.Get("embed_metadata"); embedParam == "true" || embedParam == "1" {
+		params.EmbedMetadata = true
 	}
 
 	return params, nil
@@ -190,19 +196,37 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 		}
 	}
 
+	// Embed metadata if requested
+	if params.EmbedMetadata {
+		xmpBytes, xmpErr := customxmp.GenerateXMP(imgEnt)
+		if xmpErr == nil && len(xmpBytes) > 0 {
+			libvipsImg.SetXMP(xmpBytes)
+		}
+	}
+
 	// Encode
 	var imageData []byte
-	switch params.Format {
+	switch strings.ToLower(ext) {
 	case "webp":
 		opts := &libvips.WebpsaveBufferOptions{
 			Q:      int(params.Quality),
 			Effort: 2,
 		}
+
+		if params.EmbedMetadata {
+			opts.Keep = libvips.KeepAll
+		}
+
 		imageData, err = libvipsImg.WebpsaveBuffer(opts)
 		if err != nil {
 			// WebP buffer encoding failed on ultra-high resolution image; fallback gracefully to JPEG
 			var jpegErr error
-			imageData, jpegErr = libvipsImg.JpegsaveBuffer(&libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true})
+			jpegOpts := &libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true}
+			if params.EmbedMetadata {
+				jpegOpts.Keep = libvips.KeepAll
+			}
+			
+			imageData, jpegErr = libvipsImg.JpegsaveBuffer(jpegOpts)
 			if jpegErr == nil {
 				ext = "jpg"
 				err = nil
@@ -220,21 +244,39 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 			pngOpts.Bitdepth = params.BitDepth
 		}
 
+		if params.EmbedMetadata {
+			pngOpts.Keep = libvips.KeepAll
+		}
+
 		imageData, err = libvipsImg.PngsaveBuffer(pngOpts)
 	case "jpg", "jpeg":
-		imageData, err = libvipsImg.JpegsaveBuffer(&libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true})
+		jpegOpts := &libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true}
+		if params.EmbedMetadata {
+			jpegOpts.Keep = libvips.KeepAll
+		}
+
+		imageData, err = libvipsImg.JpegsaveBuffer(jpegOpts)
 	case "avif", "heif":
 		heifBitDepth := 8
 		if params.BitDepth > 0 {
 			heifBitDepth = params.BitDepth
 		}
 
-		imageData, err = libvipsImg.HeifsaveBuffer(&libvips.HeifsaveBufferOptions{Q: int(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false})
+		heifOpts := &libvips.HeifsaveBufferOptions{Q: int(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false}
+		if params.EmbedMetadata {
+			heifOpts.Keep = libvips.KeepAll
+		}
+
+		imageData, err = libvipsImg.HeifsaveBuffer(heifOpts)
 	case "tiff":
 		tiffOpts := libvips.DefaultTiffsaveBufferOptions()
 		tiffOpts.Q = int(params.Quality)
 		if params.BitDepth > 0 {
 			tiffOpts.Bitdepth = params.BitDepth
+		}
+
+		if params.EmbedMetadata {
+			tiffOpts.Keep = libvips.KeepAll
 		}
 
 		imageData, err = libvipsImg.TiffsaveBuffer(tiffOpts)
