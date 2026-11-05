@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.8] - 2026-11-05
+
+* test(viewfinder): improve e2e keyword tests and cleanup error handling (a0ac7967)
+* feat(viewfinder): make keywords page responsive using container queries (0efec90c)
+* feat(viewfinder): enhance keyword modal, metadata tagging, and views (f4975dff)
+* feat(viewfinder): add ColourPicker component with svelte-awesome-color-picker (722de4cf)
+* fix(api): cascade keyword deletion and sort preloaded keywords case-insensitively (37a04247)
+
 ## [0.36.7] - 2026-11-02
 
 * fix: remove unused vitest import (691cdb41)
