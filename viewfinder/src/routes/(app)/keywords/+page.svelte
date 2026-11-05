@@ -192,7 +192,7 @@
     {#if keywordToDelete}
         <div class="delete-confirm-content">
             <p>
-                Are you sure you want to delete keyword <strong>{keywordToDelete.name}</strong>?
+                Are you sure you want to delete keyword <strong>{keywordToDelete.name}</strong>? This cannot be undone.
             </p>
         </div>
     {/if}
@@ -223,8 +223,15 @@
             <SearchInput inputId="keywords-search" placeholder="Search keywords..." bind:value={searchQuery} />
         </div>
         <div class="toolbar-actions">
-            <Button id="keywords-create-btn" iconName="add" variant="primary" onclick={openCreateModal}>
-                <span>Create Keyword</span>
+            <Button
+                id="keywords-create-btn"
+                iconName="add"
+                variant="primary"
+                onclick={openCreateModal}
+                title="Create Keyword"
+                aria-label="Create Keyword"
+            >
+                <span class="create-btn-text">Create Keyword</span>
             </Button>
         </div>
     </div>
@@ -311,6 +318,7 @@
         box-sizing: border-box;
         padding: var(--viz-spacing-lg);
         gap: var(--viz-spacing-lg);
+        container-type: inline-size;
     }
 
     #viz-info-container {
@@ -331,7 +339,6 @@
     #keywords-name-container {
         display: flex;
         align-items: center;
-        min-height: 2.5rem;
     }
 
     #keywords-title {
@@ -357,7 +364,7 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--viz-spacing-md);
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         width: 100%;
         box-sizing: border-box;
         padding: var(--viz-spacing-sm) 0;
@@ -366,17 +373,41 @@
 
     .toolbar-search {
         flex: 1;
+        min-width: 0;
+
+        :global(.search-input) {
+            width: 100%;
+        }
     }
 
     .toolbar-actions {
         display: flex;
         align-items: center;
         gap: var(--viz-spacing-sm);
+        flex-shrink: 0;
+    }
+
+    .create-btn-text {
+        display: inline;
+    }
+
+    @container (max-width: 40rem) {
+        .create-btn-text {
+            display: none;
+        }
+
+        :global(#keywords-create-btn.with-children) {
+            padding: var(--viz-spacing-xs);
+        }
+
+        .keywords-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .keywords-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
         gap: var(--viz-spacing-md);
         width: 100%;
     }
@@ -440,7 +471,6 @@
     .card-body {
         display: flex;
         align-items: center;
-        min-height: 1.75rem;
     }
 
     .parent-chip {
@@ -464,8 +494,7 @@
         align-items: center;
         justify-content: space-between;
         border-top: var(--viz-border-thin);
-        padding-top: var(--viz-spacing-xs);
-        margin-top: var(--viz-spacing-xs);
+        padding: var(--viz-spacing-xs) 0;
     }
 
     .created-date {
