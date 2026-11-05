@@ -15,9 +15,8 @@
         buildDateTokens
     } from "#lib/ui-tools/template.js";
     import { decodeHtmlEntities } from "#lib/utils/dom.js";
-    import type { ExportFormats } from "#lib/utils/images.js";
     import { generateRandomString } from "#lib/utils/misc.js";
-    import type { ImageAsset } from "@viz/api";
+    import type { ExportFormats, ImageAsset } from "@viz/api";
     import { DateTime } from "luxon";
     import InputSelect from "./InputSelect.svelte";
     import InputText from "./InputText.svelte";
@@ -65,21 +64,23 @@
             namingTemplate: defaultTemplate,
             sequenceStart: 1,
             sequencePadding: 4,
-            builderRows: [
-                {
-                    id: generateRandomString(16),
-                    type: "original",
-                    textValue: "",
-                    dateFormat: "YYYY-MM-DD",
-                    metadataField: "model",
-                    sequencePadding: 4
-                }
-            ]
+            builderRows: [createNewRow()]
         }),
         activeTemplate = $bindable("{{basename}}"),
         assets,
         format = "jpg"
     }: Props = $props();
+
+    function createNewRow(): RenameRow {
+        return {
+            id: generateRandomString(16),
+            type: "original",
+            textValue: "",
+            dateFormat: "YYYY-MM-DD",
+            metadataField: "model",
+            sequencePadding: 4
+        };
+    }
 
     function addRow() {
         settings.builderRows.push({

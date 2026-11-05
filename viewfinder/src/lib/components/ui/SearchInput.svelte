@@ -9,6 +9,7 @@
         element?: HTMLInputElement;
         placeholder?: string;
         searchInputHasFocus?: boolean;
+        autocomplete?: SvelteHTMLElements["input"]["autocomplete"];
         performSearch?: (e: KeyboardEvent | MouseEvent) => void;
     }
 
@@ -18,6 +19,7 @@
         element = $bindable(),
         placeholder = "Search",
         searchInputHasFocus = $bindable(),
+        autocomplete = "off",
         performSearch,
         inputId,
         ...props
@@ -47,6 +49,7 @@
         type="search"
         class="search-input__field"
         {placeholder}
+        {autocomplete}
         aria-label="Search"
         aria-disabled={loading}
         disabled={loading}

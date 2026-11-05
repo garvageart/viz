@@ -6,7 +6,7 @@
     import Button from "#lib/components/ui/Button.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
-    import { isLayoutPage } from "#lib/states/index.svelte.js";
+    import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { tryParseDate } from "#lib/utils/dates.js";
     import { refreshAll } from "$app/navigation";
@@ -220,7 +220,12 @@
 
     <div class="keywords-toolbar">
         <div class="toolbar-search">
-            <SearchInput inputId="keywords-search" placeholder="Search keywords..." bind:value={searchQuery} />
+            <SearchInput
+                inputId="keywords-search"
+                placeholder="Search keywords..."
+                bind:value={searchQuery}
+                autocomplete="off"
+            />
         </div>
         <div class="toolbar-actions">
             <Button
@@ -231,7 +236,9 @@
                 title="Create Keyword"
                 aria-label="Create Keyword"
             >
-                <span class="create-btn-text">Create Keyword</span>
+                {#if !isMobile}
+                    <span class="create-btn-text">Create Keyword</span>
+                {/if}
             </Button>
         </div>
     </div>
@@ -241,12 +248,18 @@
             <div class="empty-icon-wrapper">
                 <MaterialIcon iconName="label" size="3.5rem" />
             </div>
-            {#if keywords.length === 0}
+            {#if keywords.length !== 0}
                 <h3>Create your first keyword</h3>
                 <p>Keywords help organise and filter your image library.</p>
-                <Button variant="primary" onclick={openCreateModal}>
-                    <MaterialIcon iconName="add" />
-                    <span>Create Keyword</span>
+                <Button
+                    id="keywords-create-btn"
+                    iconName="add"
+                    variant="primary"
+                    onclick={openCreateModal}
+                    title="Create Keyword"
+                    aria-label="Create Keyword"
+                >
+                    <span class="create-btn-text">Create Keyword</span>
                 </Button>
             {:else}
                 <h3>No keywords found</h3>
@@ -391,20 +404,6 @@
         display: inline;
     }
 
-    @container (max-width: 40rem) {
-        .create-btn-text {
-            display: none;
-        }
-
-        :global(#keywords-create-btn.with-children) {
-            padding: var(--viz-spacing-xs);
-        }
-
-        .keywords-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
     .keywords-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
@@ -514,7 +513,7 @@
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding: var(--viz-spacing-2xl) var(--viz-spacing-md);
+        padding: var(--viz-spacing-xl) var(--viz-spacing-md);
         gap: var(--viz-spacing-md);
         background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
@@ -534,6 +533,16 @@
             font-size: var(--viz-font-size-base);
             color: var(--viz-text-secondary);
             margin: 0;
+        }
+    }
+
+    @container (max-width: 40rem) {
+        .create-btn-text {
+            display: none;
+        }
+
+        .keywords-grid {
+            grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
         }
     }
 </style>
