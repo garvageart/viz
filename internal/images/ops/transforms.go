@@ -225,7 +225,7 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 			if params.EmbedMetadata {
 				jpegOpts.Keep = libvips.KeepAll
 			}
-			
+
 			imageData, jpegErr = libvipsImg.JpegsaveBuffer(jpegOpts)
 			if jpegErr == nil {
 				ext = "jpg"
