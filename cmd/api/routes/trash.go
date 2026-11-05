@@ -65,7 +65,9 @@ func TrashRouter(db *gorm.DB, logger *slog.Logger) chi.Router {
 		}
 
 		pageOffset := max(page*limit, 0)
-		if err := query.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Order("deleted_at DESC").Offset(pageOffset).Limit(limit).Find(&imagesList).Error; err != nil {
+		if err := query.Preload("Owner").Preload("UploadedBy").Preload("Keywords", func(db *gorm.DB) *gorm.DB {
+			return db.Order("LOWER(keywords.name) ASC")
+		}).Order("deleted_at DESC").Offset(pageOffset).Limit(limit).Find(&imagesList).Error; err != nil {
 			logger.Error("failed to query trash images", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch trash images"})

@@ -123,3 +123,36 @@ func HardDeleteUser(db *gorm.DB, userUid string) error {
 		return nil
 	})
 }
+
+// HardDeleteKeyword permanently removes a keyword and all associated relational data from the database.
+//
+// Operations performed within a single database transaction:
+//  1. Deletes all image_keywords associations referencing this keyword.
+//  2. Nullifies the parent field of any child keywords referencing this keyword UID.
+//  3. Deletes the Keyword record itself. Returns gorm.ErrRecordNotFound if no keyword matches keywordUID.
+//
+// This operation is permanent and irreversible.
+func HardDeleteKeyword(db *gorm.DB, keywordUID string) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var keyword Keyword
+		if err := tx.Where("uid = ?", keywordUID).First(&keyword).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("keyword_id = ?", keyword.ID).Delete(&ImageKeyword{}).Error; err != nil {
+			return fmt.Errorf("failed to delete image keyword associations: %w", err)
+		}
+
+		if err := tx.Model(&Keyword{}).Unscoped().
+			Where("parent = ?", keyword.Uid).
+			Update("parent", nil).Error; err != nil {
+			return fmt.Errorf("failed to nullify child keyword parent references: %w", err)
+		}
+
+		if err := tx.Unscoped().Delete(&keyword).Error; err != nil {
+			return fmt.Errorf("failed to delete keyword: %w", err)
+		}
+
+		return nil
+	})
+}

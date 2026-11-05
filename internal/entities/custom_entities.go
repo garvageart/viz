@@ -37,3 +37,14 @@ func (ImageAsset) TableName() string {
 func (CollectionImage) TableName() string {
 	return "collection_images"
 }
+
+// ImageKeyword represents the many-to-many junction record between ImageAsset and Keyword.
+type ImageKeyword struct {
+	ImageAssetID uint `gorm:"column:image_asset_id;primaryKey"`
+	KeywordID    uint `gorm:"column:keyword_id;primaryKey"`
+}
+
+// TableName overrides the default GORM table name for ImageKeyword.
+func (ImageKeyword) TableName() string {
+	return "image_keywords"
+}

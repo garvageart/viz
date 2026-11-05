@@ -195,7 +195,9 @@ func KeywordsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 			Where("images.deleted_at IS NULL").
 			Preload("Owner").
 			Preload("UploadedBy").
-			Preload("Keywords").
+			Preload("Keywords", func(db *gorm.DB) *gorm.DB {
+				return db.Order("LOWER(keywords.name) ASC")
+			}).
 			Order("images.taken_at DESC NULLS LAST, images.name ASC")
 
 		query = queries.ApplyImageAccessControlFilter(query, req)
@@ -317,19 +319,13 @@ func KeywordsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return
 			}
 
-			var keyword entities.Keyword
-			if err := db.WithContext(req.Context()).Where("uid = ?", keywordUID).First(&keyword).Error; err != nil {
+			if err := entities.HardDeleteKeyword(db.WithContext(req.Context()), keywordUID); err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					render.Status(req, http.StatusNotFound)
 					render.JSON(res, req, dto.ErrorResponse{Error: "Keyword not found"})
 					return
 				}
 
-				libhttp.ServerError(res, req, err, logger, nil, "failed to find keyword for delete", "Failed to delete keyword")
-				return
-			}
-
-			if err := db.WithContext(req.Context()).Delete(&keyword).Error; err != nil {
 				libhttp.ServerError(res, req, err, logger, nil, "failed to delete keyword", "Failed to delete keyword")
 				return
 			}

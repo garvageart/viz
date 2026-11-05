@@ -183,3 +183,49 @@ func TestKeywordListAndCreateRoutes(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &fetched))
 	assert.Equal(t, created.Uid, fetched.Uid)
 }
+
+func TestDeleteKeyword_CascadeAssociationsAndChildren(t *testing.T) {
+	db := tests.NewTestDB(t)
+	router := setupKeywordRouter(t, db)
+	token, user := createTestUserSession(t, db)
+
+	parentKw := entities.Keyword{Uid: "kw-parent", Name: "Parent"}
+	require.NoError(t, db.Create(&parentKw).Error)
+
+	childKw := entities.Keyword{Uid: "kw-child", Name: "Child", Parent: &parentKw.Uid}
+	require.NoError(t, db.Create(&childKw).Error)
+
+	image := entities.ImageAsset{Uid: "img-kw-cascade", Name: "cascade.jpg", OwnerID: &user.Uid}
+	require.NoError(t, db.Create(&image).Error)
+	require.NoError(t, db.Model(&image).Association("Keywords").Append(&parentKw))
+
+	var assocCount int64
+	require.NoError(t, db.Table("image_keywords").Where("keyword_id = ?", parentKw.ID).Count(&assocCount).Error)
+	assert.Equal(t, int64(1), assocCount)
+
+	req := httptest.NewRequest(http.MethodDelete, "/keyword/"+parentKw.Uid, nil)
+	req.AddCookie(&http.Cookie{Name: libhttp.AuthTokenCookie, Value: token})
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+
+	var checkDeleted entities.Keyword
+	err := db.Unscoped().Where("uid = ?", parentKw.Uid).First(&checkDeleted).Error
+	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+	require.NoError(t, db.Table("image_keywords").Where("keyword_id = ?", parentKw.ID).Count(&assocCount).Error)
+	assert.Equal(t, int64(0), assocCount)
+
+	var updatedChild entities.Keyword
+	require.NoError(t, db.Where("uid = ?", childKw.Uid).First(&updatedChild).Error)
+	assert.Nil(t, updatedChild.Parent)
+
+	// Deleting a non-existent keyword should return 404
+	reqNotFound := httptest.NewRequest(http.MethodDelete, "/keyword/non-existent-uid", nil)
+	reqNotFound.AddCookie(&http.Cookie{Name: libhttp.AuthTokenCookie, Value: token})
+	recNotFound := httptest.NewRecorder()
+
+	router.ServeHTTP(recNotFound, reqNotFound)
+	assert.Equal(t, http.StatusNotFound, recNotFound.Code)
+}

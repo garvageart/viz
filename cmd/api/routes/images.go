@@ -307,7 +307,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			}
 
 			pageOffset := max(page*limit, 0)
-			if err := txQuery.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
+			if err := txQuery.Preload("Owner").Preload("UploadedBy").Preload("Keywords", func(db *gorm.DB) *gorm.DB {
+				return db.Order("LOWER(keywords.name) ASC")
+			}).Order(orderClause).Offset(pageOffset).Limit(limit).Find(&images).Error; err != nil {
 				return err
 			}
 
@@ -482,7 +484,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		uid := chi.URLParam(req, "uid")
 
 		var imgEnt entities.ImageAsset
-		query := db.Preload("Owner").Preload("UploadedBy").Preload("Keywords").Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		query := db.Preload("Owner").Preload("UploadedBy").Preload("Keywords", func(db *gorm.DB) *gorm.DB {
+			return db.Order("LOWER(keywords.name) ASC")
+		}).Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
 		query = queries.ApplyImageAccessControlFilter(query, req)
 		result := query.First(&imgEnt)
 
@@ -659,7 +663,9 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			}
 
 			// send updated data
-			if err := tx.Preload("Owner").Preload("UploadedBy").Preload("Keywords").First(&img, "uid = ?", uid).Error; err != nil {
+			if err := tx.Preload("Owner").Preload("UploadedBy").Preload("Keywords", func(db *gorm.DB) *gorm.DB {
+				return db.Order("LOWER(keywords.name) ASC")
+			}).First(&img, "uid = ?", uid).Error; err != nil {
 				return err
 			}
 
