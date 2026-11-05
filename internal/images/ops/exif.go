@@ -12,6 +12,8 @@ import (
 	exif "github.com/dsoprea/go-exif/v3"
 	exifcommon "github.com/dsoprea/go-exif/v3/common"
 	"github.com/trimmer-io/go-xmp/xmp"
+
+	customxmp "viz/internal/xmp"
 )
 
 func ReadExif(bytes []byte) (data map[string]any, err error) {
@@ -462,45 +464,5 @@ func GetEffectiveExifOffset(exif *dto.ImageEXIF) *string {
 
 // ParseRational attempts to parse strings like "1/500", "f/1.8", "50", "50 mm" into xmp.Rational
 func ParseRational(s string) *xmp.Rational {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil
-	}
-
-	// Remove common units/prefixes
-	s = strings.TrimPrefix(s, "f/")
-	s = strings.TrimSuffix(s, " mm")
-	s = strings.TrimSuffix(s, " sec")
-	s = strings.TrimSuffix(s, " s")
-
-	// Try fraction "1/500"
-	if strings.Contains(s, "/") {
-		parts := strings.Split(s, "/")
-		if len(parts) == 2 {
-			num, err1 := strconv.ParseInt(strings.TrimSpace(parts[0]), 10, 64)
-			den, err2 := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
-			if err1 == nil && err2 == nil && den != 0 {
-				return &xmp.Rational{Num: num, Den: den}
-			}
-		}
-	}
-
-	// Try decimal "1.8" -> 18/10
-	if strings.Contains(s, ".") {
-		f, err := strconv.ParseFloat(s, 64)
-		if err == nil {
-			// Convert float to rational approximation
-			// Simple approach: multiply by precision
-			const precision = 10000
-			num := int64(f * precision)
-			return &xmp.Rational{Num: num, Den: precision}
-		}
-	}
-
-	// Try integer "50" -> 50/1
-	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return &xmp.Rational{Num: i, Den: 1}
-	}
-
-	return nil
+	return customxmp.ParseRational(s)
 }
