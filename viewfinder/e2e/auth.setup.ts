@@ -1,7 +1,14 @@
 import { type Page, expect, test as setup } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-import { configureApiClient, getTestUploadedImageUids, performDragAndDrop, trackUploadedImages } from "./helpers";
+import {
+    cleanupTestCollections,
+    cleanupTestKeywords,
+    configureApiClient,
+    getTestUploadedImageUids,
+    performDragAndDrop,
+    trackUploadedImages
+} from "./helpers";
 
 const authFile = "e2e/.auth/user.json";
 
@@ -173,6 +180,10 @@ setup("authenticate", async ({ page }) => {
     await expect(page.locator(".viz-workspace, main#main, .viz-photo-grid-container").first()).toBeVisible({
         timeout: 25000
     });
+
+    // Clean up any stale leftover E2E collections and keywords from prior aborted runs
+    await cleanupTestCollections(page.request).catch(() => {});
+    await cleanupTestKeywords(page.request).catch(() => {});
 
     // 1. Upload 2 photos via Drag & Drop
     const dndFiles = [getTestImageFilePath("Fujifilm_XT5_01.jpg"), getTestImageFilePath("Canon_R5_01.jpg")];

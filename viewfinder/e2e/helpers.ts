@@ -1,5 +1,11 @@
 import { type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { defaults, deleteImagesBulk } from "@viz/api";
+import {
+    type CollectionListResponse,
+    type Keyword,
+    type KeywordListResponse,
+    defaults,
+    deleteImagesBulk
+} from "@viz/api";
 import fs from "fs";
 import path from "path";
 
@@ -34,15 +40,18 @@ export function isUserAdmin(): boolean {
  */
 export function trackUploadedImages(page: Page) {
     page.on("response", async (response) => {
-        if (response.url().includes("/api/images") && response.request().method() === "POST") {
-            try {
-                const json = (await response.json()) as { uid?: string };
-                if (json && typeof json.uid === "string" && json.uid.length > 0) {
-                    recordTestImageUid(json.uid);
-                }
-            } catch {
-                // Ignore non-JSON
+        const isImagePost = response.url().includes("/api/images") && response.request().method() === "POST";
+        if (!isImagePost) {
+            return;
+        }
+
+        try {
+            const json = (await response.json()) as { uid?: string };
+            if (json?.uid) {
+                recordTestImageUid(json.uid);
             }
+        } catch {
+            // Ignore non-JSON
         }
     });
 }
@@ -52,32 +61,50 @@ export function trackUploadedImages(page: Page) {
  */
 export function trackCreatedCollections(page: Page, targetArray: string[]) {
     page.on("response", async (response) => {
-        if (response.url().includes("/api/collections") && response.request().method() === "POST") {
-            try {
-                const json = (await response.json()) as { uid?: string };
-                if (json && typeof json.uid === "string" && json.uid.length > 0) {
-                    if (!targetArray.includes(json.uid)) {
-                        targetArray.push(json.uid);
-                    }
-                }
-            } catch {
-                // Ignore non-JSON
+        const isCollectionPost = response.url().includes("/api/collections") && response.request().method() === "POST";
+        if (!isCollectionPost) {
+            return;
+        }
+
+        try {
+            const json = (await response.json()) as { uid?: string };
+            if (json?.uid && !targetArray.includes(json.uid)) {
+                targetArray.push(json.uid);
             }
+        } catch {
+            // Ignore non-JSON
         }
     });
 }
 
 /**
- * Intercepts POST /api/keyword responses on a page and pushes created keyword UIDs into target array.
+ * Intercepts keyword creation responses on a page and pushes created keyword UIDs into target array.
  */
 export function trackCreatedKeywords(page: Page, targetArray: string[]) {
     page.on("response", async (response) => {
-        if (response.url().includes("/api/keyword") && response.request().method() === "POST") {
+        const url = response.url();
+        const method = response.request().method();
+
+        if (url.includes("/api/keyword") && method === "POST") {
             try {
                 const json = (await response.json()) as { uid?: string };
-                if (json && typeof json.uid === "string" && json.uid.length > 0) {
-                    if (!targetArray.includes(json.uid)) {
-                        targetArray.push(json.uid);
+                if (json?.uid && !targetArray.includes(json.uid)) {
+                    targetArray.push(json.uid);
+                }
+            } catch {
+                // Ignore non-JSON
+            }
+            return;
+        }
+
+        if (url.includes("/api/images") && (method === "PUT" || method === "POST")) {
+            try {
+                const json = (await response.json()) as { keywords?: Keyword[] };
+                const keywords = json?.keywords ?? [];
+
+                for (const kw of keywords) {
+                    if (kw.uid && kw.name?.startsWith("E2E-") && !targetArray.includes(kw.uid)) {
+                        targetArray.push(kw.uid);
                     }
                 }
             } catch {
@@ -127,25 +154,27 @@ export function getTestUploadedImageUids(): string[] {
  * Destroys all collections starting with the "E2E-" prefix.
  */
 export async function cleanupTestCollections(request: APIRequestContext) {
-    try {
-        const response = await request.get("/api/collections?limit=100");
-        if (!response.ok()) {
-            console.error(`Failed to list collections for cleanup: ${response.status()} ${response.statusText()}`);
-            return;
+    const response = await request.get("/api/collections?limit=100");
+    if (!response.ok()) {
+        throw new Error(`Failed to list collections for cleanup: ${response.status()} ${response.statusText()}`);
+    }
+
+    const body = (await response.json()) as CollectionListResponse;
+    const collections = body.items || [];
+
+    for (const collection of collections) {
+        if (!collection.name.startsWith("E2E-")) {
+            continue;
         }
-        const body = await response.json();
-        const collections = body.items || [];
-        for (const collection of collections) {
-            if (collection.name.startsWith("E2E-")) {
-                console.log(`Cleaning up leftover E2E collection: ${collection.name} (${collection.uid})`);
-                const deleteRes = await request.delete(`/api/collections/${collection.uid}`);
-                if (!deleteRes.ok()) {
-                    console.error(`Failed to delete collection ${collection.uid}: ${deleteRes.status()}`);
-                }
-            }
+
+        console.log(`Cleaning up leftover E2E collection: ${collection.name} (${collection.uid})`);
+        const deleteRes = await request.delete(`/api/collections/${collection.uid}`);
+
+        if (!deleteRes.ok() && deleteRes.status() !== 404) {
+            throw new Error(
+                `Failed to delete collection ${collection.name} (${collection.uid}): ${deleteRes.status()} ${deleteRes.statusText()}`
+            );
         }
-    } catch (err) {
-        console.error("Error during collection cleanup:", err);
     }
 }
 
@@ -158,10 +187,9 @@ export async function cleanupSpecificCollections(request: APIRequestContext, uid
     }
 
     for (const uid of uids) {
-        try {
-            await request.delete(`/api/collections/${uid}`);
-        } catch (err) {
-            console.error(`Error deleting collection ${uid}:`, err);
+        const res = await request.delete(`/api/collections/${uid}`);
+        if (!res.ok() && res.status() !== 404) {
+            throw new Error(`Failed to delete collection ${uid}: ${res.status()} ${res.statusText()}`);
         }
     }
 }
@@ -174,11 +202,47 @@ export async function cleanupSpecificKeywords(request: APIRequestContext, uids: 
         return;
     }
 
-    for (const uid of uids) {
-        try {
-            await request.delete(`/api/keyword/${uid}`);
-        } catch (err) {
-            console.error(`Error deleting keyword ${uid}:`, err);
+    // Delete in reverse order so child keywords are deleted before their parents
+    for (let i = uids.length - 1; i >= 0; i--) {
+        const uid = uids[i];
+        const res = await request.delete(`/api/keyword/${uid}`);
+
+        if (!res.ok() && res.status() !== 404) {
+            throw new Error(`Failed to delete keyword ${uid}: ${res.status()} ${res.statusText()}`);
+        }
+    }
+}
+
+/**
+ * Cleans up any test-created keywords from the database.
+ * Destroys all keywords starting with the "E2E-" prefix.
+ */
+export async function cleanupTestKeywords(request: APIRequestContext) {
+    const response = await request.get("/api/keyword");
+    if (!response.ok()) {
+        throw new Error(`Failed to list keywords for cleanup: ${response.status()} ${response.statusText()}`);
+    }
+
+    const body = (await response.json()) as KeywordListResponse;
+    const keywords = body.keywords || [];
+    const e2eKeywords = keywords.filter((k) => k.name && k.name.startsWith("E2E-"));
+
+    // Delete child keywords first (those with a parent), then parent/root keywords
+    const children = e2eKeywords.filter((k) => !!k.parent);
+    const roots = e2eKeywords.filter((k) => !k.parent);
+
+    for (const kw of [...children, ...roots]) {
+        if (!kw.uid) {
+            continue;
+        }
+
+        console.log(`Cleaning up leftover E2E keyword: ${kw.name} (${kw.uid})`);
+        const deleteRes = await request.delete(`/api/keyword/${kw.uid}`);
+
+        if (!deleteRes.ok() && deleteRes.status() !== 404) {
+            throw new Error(
+                `Failed to delete keyword ${kw.name} (${kw.uid}): ${deleteRes.status()} ${deleteRes.statusText()}`
+            );
         }
     }
 }
@@ -188,6 +252,7 @@ export async function cleanupSpecificKeywords(request: APIRequestContext, uids: 
  */
 export async function performDragAndDrop(page: Page, fileBuffer: Buffer, fileName: string) {
     trackUploadedImages(page);
+
     await page.evaluate(
         ([base64Str, name]) => {
             const binStr = atob(base64Str);
@@ -260,24 +325,20 @@ export async function cleanupTestPhotos(request: APIRequestContext, uids: string
         return;
     }
 
-    try {
-        configureApiClient();
+    configureApiClient();
 
-        // Extract session cookies from Playwright to authenticate native fetch calls
-        const state = await request.storageState();
-        const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+    // Extract session cookies from Playwright to authenticate native fetch calls
+    const state = await request.storageState();
+    const cookieHeader = state.cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
-        const authOpts = {
-            headers: { Cookie: cookieHeader }
-        };
+    const authOpts = {
+        headers: { Cookie: cookieHeader }
+    };
 
-        console.log(`Cleaning up leftover E2E photos via SDK: ${uids.join(", ")}`);
-        const deleteRes = await deleteImagesBulk({ uids, force: true }, authOpts);
+    console.log(`Cleaning up leftover E2E photos via SDK: ${uids.join(", ")}`);
+    const deleteRes = await deleteImagesBulk({ uids, force: true }, authOpts);
 
-        if (deleteRes.status !== 200 && deleteRes.status !== 207) {
-            console.error(`Failed to delete photos: ${deleteRes.status}`);
-        }
-    } catch (err) {
-        console.error("Error during photo cleanup:", err);
+    if (deleteRes.status < 200 || deleteRes.status >= 300) {
+        throw new Error(`Failed to delete photos: status ${deleteRes.status}`);
     }
 }

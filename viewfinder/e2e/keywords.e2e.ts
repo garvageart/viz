@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { cleanupSpecificKeywords, trackCreatedKeywords } from "./helpers";
+import { cleanupSpecificKeywords, cleanupTestKeywords, trackCreatedKeywords } from "./helpers";
 
 test.describe("Keywords Management & Lifecycle (/keywords)", () => {
     let createdUids: string[] = [];
@@ -17,7 +17,9 @@ test.describe("Keywords Management & Lifecycle (/keywords)", () => {
     test.afterEach(async ({ request }) => {
         if (createdUids.length > 0) {
             await cleanupSpecificKeywords(request, createdUids);
+            createdUids = [];
         }
+        await cleanupTestKeywords(request);
     });
 
     test("should display keywords page header and sticky toolbar", async ({ page }) => {
@@ -180,18 +182,24 @@ test.describe("Keywords Management & Lifecycle (/keywords)", () => {
         const parentCard = page.locator(`.keyword-card[data-keyword-name="${parentName}"]`);
         await expect(parentCard).toBeVisible({ timeout: 10000 });
 
+        // Reload the keywords page so fresh keywords are loaded for modal dropdowns
+        await page.reload();
+        await page.waitForLoadState("networkidle");
+        await expect(parentCard).toBeVisible({ timeout: 10000 });
+
         // 2. Create Child Keyword with Parent Selected
         await createBtn.click();
         await expect(modal).toBeVisible();
         await page.locator("#keyword-name").fill(childName);
 
-        // Open Parent Select dropdown
+        // Open Parent Select dropdown and type to filter
         const parentSelect = modal.locator("#keyword-parent");
         await expect(parentSelect).toBeVisible();
-        await parentSelect.click();
+        await parentSelect.fill(parentName);
 
         const parentUid = createdUids[0];
         const parentOption = page.locator(`.select-item[data-value="${parentUid}"]`);
+        await parentOption.scrollIntoViewIfNeeded();
         await expect(parentOption).toBeVisible();
         await parentOption.click();
 
@@ -220,7 +228,9 @@ test.describe("Keyword Modal in Add Mode (Asset Tagging)", () => {
     test.afterEach(async ({ request }) => {
         if (createdUids.length > 0) {
             await cleanupSpecificKeywords(request, createdUids);
+            createdUids = [];
         }
+        await cleanupTestKeywords(request);
     });
 
     test("should handle add mode keyboard interactions and badge creation", async ({ page }) => {
@@ -295,6 +305,58 @@ test.describe("Keyword Modal in Add Mode (Asset Tagging)", () => {
         await expect(modal).not.toBeVisible({ timeout: 10000 });
 
         // Close lightbox
+        await page.keyboard.press("Escape");
+        await expect(lightbox).not.toBeVisible({ timeout: 5000 });
+    });
+
+    test("should add keyword on first Enter and save/close modal on second Enter", async ({ page }) => {
+        // Check if photos exist on grid
+        const photos = page.locator(".asset-photo, .asset-card");
+        const count = await photos.count();
+        if (count === 0) {
+            test.skip(true, "No photos available for asset tagging test");
+            return;
+        }
+
+        // Open lightbox by double-clicking first photo
+        await photos.first().dblclick();
+        const lightbox = page.locator("#viz-lightbox-overlay");
+        await expect(lightbox).toBeVisible({ timeout: 10000 });
+
+        // Open Add Keyword modal
+        const addKwBtn = page.locator(".keywords-card .add-keyword-btn").first();
+        await expect(addKwBtn).toBeVisible({ timeout: 10000 });
+        await addKwBtn.click();
+
+        const modal = page.locator(".viz-modal");
+        await expect(modal).toBeVisible();
+
+        const comboboxInput = modal.locator(".combobox-input");
+        await expect(comboboxInput).toBeVisible();
+        await expect(comboboxInput).toBeFocused();
+
+        const initialBadgeCount = await modal.locator(".keyword-badge").count();
+        const tag = `E2E-TwoEnter-${Date.now()}`;
+
+        // 1. First Enter adds the keyword
+        await comboboxInput.fill(tag);
+        await comboboxInput.press("Enter");
+
+        // Verify badge added and input cleared
+        const badges = modal.locator(".keyword-badge");
+        await expect(badges).toHaveCount(initialBadgeCount + 1, { timeout: 5000 });
+        await expect(comboboxInput).toHaveValue("");
+
+        // Verify focus remains on the combobox input
+        await expect(comboboxInput).toBeFocused();
+
+        // 2. Second Enter submits the form and closes the modal
+        await comboboxInput.press("Enter");
+
+        // Verify modal closes
+        await expect(modal).not.toBeVisible({ timeout: 10000 });
+
+        // Clean up: Close lightbox
         await page.keyboard.press("Escape");
         await expect(lightbox).not.toBeVisible({ timeout: 5000 });
     });
