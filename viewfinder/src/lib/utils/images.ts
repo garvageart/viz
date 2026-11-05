@@ -631,9 +631,9 @@ export function formatOrientation(o?: string | null): string | null {
     return trimmed;
 }
 
-export function getCameraName(asset?: ImageAsset): string {
+export function getCameraName(asset?: ImageAsset): string | null {
     if (!asset?.exif) {
-        return "Unknown Camera";
+        return null;
     }
 
     const make = asset.exif.make?.trim();
@@ -646,7 +646,7 @@ export function getCameraName(asset?: ImageAsset): string {
         return `${make} ${model}`;
     }
 
-    return model || make || "Unknown Camera";
+    return model || make || null;
 }
 
 export function getLensName(asset?: ImageAsset): string | null {

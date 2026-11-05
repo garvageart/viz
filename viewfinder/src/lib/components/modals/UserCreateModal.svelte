@@ -39,7 +39,7 @@
 </script>
 
 <div class="user-modal">
-    <InputText label="Name" bind:value={createForm.name} />
+    <InputText label="Name" autofocus bind:value={createForm.name} />
     <InputText label="Email" type="email" bind:value={createForm.email} />
     <InputPassword label="Password" bind:value={createForm.password} />
     <InputSelect

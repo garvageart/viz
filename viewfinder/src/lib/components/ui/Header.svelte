@@ -237,9 +237,8 @@
             </div>
         {:else if eventsState.wasDisconnected}
             <Button
-                variant="ghost"
+                variant="primary"
                 iconName="refresh"
-                size="small"
                 onclick={() => location.reload()}
                 title="Reload Page"
                 aria-label="Reload Page"

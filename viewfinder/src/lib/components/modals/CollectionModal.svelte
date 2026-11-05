@@ -47,6 +47,7 @@
             label="Name"
             placeholder="Name"
             type="text"
+            autofocus
             bind:value={name}
             required
             spellcheck="false"

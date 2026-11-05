@@ -122,13 +122,7 @@
         margin-bottom: 0;
 
         &::placeholder {
-            color: var(--viz-text-secondary);
             font-family: var(--viz-display-font);
-        }
-
-        &:focus::placeholder {
-            color: var(--viz-border-subtle);
-            opacity: 1;
         }
 
         &:focus {

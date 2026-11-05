@@ -170,13 +170,102 @@ describe("KeywordModal", () => {
         const searchInput = container.querySelector<HTMLInputElement>("#keyword-search-input");
         expect(searchInput).not.toBeNull();
 
-        // Type "port" (matches "portrait" in mockKeywords)
-        await fireEvent.input(searchInput as HTMLInputElement, { target: { value: "port" } });
+        // Type "portrait" (matches "portrait" in mockKeywords exactly)
+        await fireEvent.input(searchInput as HTMLInputElement, { target: { value: "portrait" } });
         await fireEvent.keyDown(searchInput as HTMLInputElement, { key: "Enter" });
 
         // Portrait badge should now exist
         expect(screen.getByText("portrait")).toBeInTheDocument();
         // Modal should not have been submitted or closed
+        expect(onAdd).not.toHaveBeenCalled();
+    });
+
+    it("adds typed word as new keyword on Enter without auto-selecting partial matches", async () => {
+        const onAdd = vi.fn();
+        const { container } = render(KeywordModal, {
+            mode: "add",
+            heading: "Add Keywords",
+            buttonText: "Save Keywords",
+            keywords: [{ uid: "kw-p", name: "Picnic and Thrift", created_at: "", updated_at: "" }],
+            selectedKeywords: [],
+            onAdd
+        });
+
+        const searchInput = container.querySelector<HTMLInputElement>("#keyword-search-input");
+        expect(searchInput).not.toBeNull();
+
+        // Type "Picnic" (only partially matches "Picnic and Thrift")
+        await fireEvent.input(searchInput as HTMLInputElement, { target: { value: "Picnic" } });
+        await fireEvent.keyDown(searchInput as HTMLInputElement, { key: "Enter" });
+
+        // "Picnic" badge should be created, NOT "Picnic and Thrift"
+        expect(screen.getByText("Picnic")).toBeInTheDocument();
+        expect(screen.queryByText("Picnic and Thrift")).toBeNull();
+    });
+
+    it("submits keywords on second Enter when input is empty and changes exist", async () => {
+        // NOTE (Check 3 evaluation):
+        // If focus escapes the modal (for example, clicking the modal background),
+        // PhotoAssetGrid could still receive hotkeys registered in the wildcard "all" scope.
+        // Evaluate Check 3: guard KeybindAction.OpenImage in PhotoAssetGrid.svelte with:
+        // `if (keyboardManager.currentScope === "modal" || modalsManager.modals.length > 0) return;`
+        const onAdd = vi.fn();
+        const { container } = render(KeywordModal, {
+            mode: "add",
+            heading: "Add Keywords",
+            buttonText: "Save Keywords",
+            keywords: mockKeywords,
+            selectedKeywords: [],
+            onAdd
+        });
+
+        const searchInput = container.querySelector<HTMLInputElement>("#keyword-search-input");
+        expect(searchInput).not.toBeNull();
+
+        // 1. First Enter adds the keyword
+        await fireEvent.input(searchInput as HTMLInputElement, { target: { value: "portrait" } });
+        await fireEvent.keyDown(searchInput as HTMLInputElement, { key: "Enter" });
+        await new Promise((r) => setTimeout(r, 20));
+
+        expect(screen.getByText("portrait")).toBeInTheDocument();
+        expect(onAdd).not.toHaveBeenCalled();
+        expect(searchInput?.value).toBe("");
+
+        // 2. Second Enter with empty input submits the modal
+        const secondEnterEvent = new KeyboardEvent("keydown", {
+            key: "Enter",
+            cancelable: true,
+            bubbles: true
+        });
+        searchInput?.dispatchEvent(secondEnterEvent);
+
+        expect(secondEnterEvent.defaultPrevented).toBe(true);
+        expect(onAdd).toHaveBeenCalledWith([{ name: "portrait", colour: undefined, parent: undefined }]);
+    });
+
+    it("does not submit on second Enter when no keyword changes exist", async () => {
+        const onAdd = vi.fn();
+        const { container } = render(KeywordModal, {
+            mode: "add",
+            heading: "Add Keywords",
+            buttonText: "Save Keywords",
+            keywords: mockKeywords,
+            selectedKeywords: [{ name: "nature" }],
+            onAdd
+        });
+
+        const searchInput = container.querySelector<HTMLInputElement>("#keyword-search-input");
+        expect(searchInput).not.toBeNull();
+
+        // Press Enter while input is empty and no changes exist
+        const enterEvent = new KeyboardEvent("keydown", {
+            key: "Enter",
+            cancelable: true,
+            bubbles: true
+        });
+        searchInput?.dispatchEvent(enterEvent);
+
+        expect(enterEvent.defaultPrevented).toBe(true);
         expect(onAdd).not.toHaveBeenCalled();
     });
 
@@ -270,8 +359,8 @@ describe("KeywordModal", () => {
         const searchInput = container.querySelector<HTMLInputElement>("#keyword-search-input");
         expect(searchInput).not.toBeNull();
 
-        // Focus input to open combobox
-        await fireEvent.focus(searchInput as HTMLInputElement);
+        // Type a character to open combobox dropdown
+        await fireEvent.input(searchInput as HTMLInputElement, { target: { value: "n" } });
 
         // Press Escape on search input
         const escEvent = new KeyboardEvent("keydown", { key: "Escape", cancelable: true, bubbles: true });

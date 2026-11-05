@@ -36,7 +36,7 @@
 </script>
 
 <div class="user-modal">
-    <InputText label="Name" bind:value={editForm.name} />
+    <InputText label="Name" autofocus bind:value={editForm.name} />
     <InputText label="Email" type="email" bind:value={editForm.email} />
     <div class="form-row">
         <InputText label="First Name" bind:value={editForm.first_name} />

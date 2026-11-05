@@ -15,6 +15,7 @@
         lightboxElement?: HTMLElement | undefined;
         backgroundColour?: string;
         backgroundOpacity?: number;
+        blur?: boolean;
         zIndex?: number;
         closeOnEsc?: boolean;
     }
@@ -27,6 +28,7 @@
         lightboxElement = $bindable(),
         backgroundColour = "#000000",
         backgroundOpacity = 0.65,
+        blur = false,
         zIndex = ZIndex.Lightbox,
         closeOnEsc = true
     }: Props = $props();
@@ -74,6 +76,7 @@
         id="viz-lightbox-overlay"
         style:z-index={zIndex}
         style:background-color={resolvedBackground}
+        style:backdrop-filter={blur ? "blur(8px)" : undefined}
         bind:this={lightboxElement}
     >
         {@render children()}
@@ -87,8 +90,6 @@
         left: 0;
         width: 100%;
         height: 100%;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
         display: flex;
         justify-content: center;
         align-items: center;

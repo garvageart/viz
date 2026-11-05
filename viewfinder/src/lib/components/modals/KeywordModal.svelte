@@ -2,8 +2,8 @@
     import { type ModalOptions, modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
-    import InputCombobox from "#lib/components/ui/InputCombobox.svelte";
-    import InputSelect, { type InputOption } from "#lib/components/ui/InputSelect.svelte";
+    import ColourPicker from "#lib/components/ui/ColourPicker.svelte";
+    import InputCombobox, { type InputOption } from "#lib/components/ui/InputCombobox.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { type Keyword, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
     import { onMount } from "svelte";
@@ -41,6 +41,7 @@
     let isCreatingKeyword = $state(false);
     let isComboboxOpen = $state(false);
     let comboboxSelectedValue = $state("");
+    let comboboxInputEl = $state<HTMLInputElement | null>(null);
     let submitButtonEl = $state<HTMLButtonElement | HTMLAnchorElement>();
 
     const hasKeywordChanges = $derived.by(() => {
@@ -125,8 +126,9 @@
             }))
     ]);
 
-    const comboboxOptions = $derived<InputOption[]>(
-        availableKeywords
+    const comboboxOptions = $derived.by<InputOption[]>(() => {
+        const trimmed = newKeywordInput.trim();
+        const baseOptions = availableKeywords
             .filter((k) => {
                 const activeNames = new Set(activeKeywords.map((ak) => ak.name.toLowerCase()));
                 return !activeNames.has(k.name.toLowerCase());
@@ -134,23 +136,62 @@
             .map((k) => ({
                 value: k.uid,
                 label: k.name
-            }))
-    );
+            }));
 
-    function handleComboboxSelect(uid: string) {
-        if (!uid) {
+        if (trimmed && isNewKeyword) {
+            const hasSuggestions = baseOptions.some((opt) => {
+                return opt.label.toLowerCase().includes(trimmed.toLowerCase());
+            });
+
+            if (hasSuggestions) {
+                return [
+                    {
+                        value: trimmed,
+                        label: `Add: "${trimmed}"`
+                    },
+                    {
+                        type: "separator"
+                    },
+                    ...baseOptions
+                ];
+            }
+
+            return [
+                {
+                    value: trimmed,
+                    label: `Add: "${trimmed}"`
+                }
+            ];
+        }
+
+        return baseOptions;
+    });
+
+    function handleComboboxSelect(selectedValue: string) {
+        if (!selectedValue) {
             return;
         }
 
         const match = availableKeywords.find((k) => {
-            return k.uid === uid;
+            return k.uid === selectedValue || k.name.toLowerCase() === selectedValue.toLowerCase();
         });
 
         if (match) {
             addKeywordToImages(match);
-            newKeywordInput = "";
-            comboboxSelectedValue = "";
+        } else {
+            addKeywordsFromInput(selectedValue);
         }
+
+        comboboxSelectedValue = "";
+        isComboboxOpen = false;
+        newKeywordInput = "";
+        queueMicrotask(() => {
+            newKeywordInput = "";
+            if (comboboxInputEl) {
+                comboboxInputEl.value = "";
+                comboboxInputEl.focus();
+            }
+        });
     }
 
     function addKeywordToImages(kw: Keyword | KeywordUpdate) {
@@ -185,6 +226,8 @@
                 addKeywordToImages(res.data);
 
                 newKeywordInput = "";
+                isComboboxOpen = false;
+                comboboxInputEl?.focus();
             }
         } catch (err) {
             const error = err as Error;
@@ -257,6 +300,7 @@
         }
 
         newKeywordInput = "";
+        comboboxInputEl?.focus();
     }
 
     function addKeywordFromCombobox() {
@@ -274,6 +318,7 @@
                 newKeywordInput = "";
                 comboboxSelectedValue = "";
                 isComboboxOpen = false;
+                comboboxInputEl?.focus();
                 return;
             }
         }
@@ -287,30 +332,45 @@
             return !activeNames.has(k.name.toLowerCase()) && k.name.toLowerCase() === query;
         });
 
-        const partialMatch = availableKeywords.find((k) => {
-            const activeNames = new Set(
-                activeKeywords.map((ak) => {
-                    return ak.name.toLowerCase();
-                })
-            );
-            return !activeNames.has(k.name.toLowerCase()) && k.name.toLowerCase().includes(query);
-        });
-
-        const match = exactMatch ?? partialMatch;
-        if (match) {
-            addKeywordToImages(match);
+        if (exactMatch) {
+            addKeywordToImages(exactMatch);
             newKeywordInput = "";
             comboboxSelectedValue = "";
             isComboboxOpen = false;
+            comboboxInputEl?.focus();
             return;
         }
 
         addKeywordsFromInput(newKeywordInput);
+        isComboboxOpen = false;
+        comboboxInputEl?.focus();
+    }
+
+    function handleEmptyQuerySubmit(e: KeyboardEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isSubmitting) {
+            return;
+        }
+
+        if (currentMode === "add" && hasKeywordChanges) {
+            isComboboxOpen = false;
+            void handleSubmit();
+            return;
+        }
+
+        if (currentMode !== "add" && name.trim()) {
+            void handleSubmit();
+            return;
+        }
     }
 
     function handleInputKeydown(e: KeyboardEvent) {
         if (e.key === "Escape") {
             if (hasKeywordChanges) {
+                e.preventDefault();
+                e.stopPropagation();
                 submitButtonEl?.focus();
             }
             return;
@@ -327,39 +387,46 @@
             return;
         }
 
-        if (e.key === "Enter" && !e.shiftKey) {
-            const query = newKeywordInput.trim().toLowerCase();
-            const hasOptions =
-                isComboboxOpen &&
-                comboboxOptions.some((opt) => {
-                    if (typeof opt === "string") {
-                        return !query || opt.toLowerCase().includes(query);
-                    }
-
-                    if ("value" in opt && opt.label) {
-                        return !query || opt.label.toLowerCase().includes(query);
-                    }
-
-                    return false;
-                });
-
-            if (hasOptions) {
-                // Allow bits-ui onkeydown to process Enter and select the highlighted candidate
-                return;
-            }
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (query) {
-                addKeywordFromCombobox();
-            }
+        if (e.key !== "Enter" || e.shiftKey) {
+            return;
         }
-    }
 
-    async function handleSubmit(e: SubmitEvent) {
+        const query = newKeywordInput.trim().toLowerCase();
+        if (!query) {
+            handleEmptyQuerySubmit(e);
+            return;
+        }
+
+        const hasOptions =
+            isComboboxOpen &&
+            comboboxOptions.some((opt) => {
+                if (typeof opt === "string") {
+                    return opt.toLowerCase().includes(query);
+                }
+
+                if ("value" in opt && opt.label) {
+                    return opt.label.toLowerCase().includes(query);
+                }
+
+                return false;
+            });
+
+        if (hasOptions) {
+            // Allow bits-ui onkeydown to process Enter and select the highlighted candidate
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
+
+        addKeywordFromCombobox();
+    }
+
+    async function handleSubmit(e?: SubmitEvent) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (currentMode === "add") {
             if (!hasKeywordChanges) {
@@ -411,12 +478,13 @@
                         label="Search"
                         placeholder="Type keyword and press Enter (or comma)..."
                         options={comboboxOptions}
+                        autofocus
                         bind:value={comboboxSelectedValue}
                         bind:inputValue={newKeywordInput}
                         bind:open={isComboboxOpen}
+                        bind:inputElement={comboboxInputEl}
                         onchange={handleComboboxSelect}
                         onkeydown={handleInputKeydown}
-                        autofocus
                     />
                 </div>
                 {#if isNewKeyword}
@@ -472,9 +540,10 @@
                 label="Name"
                 placeholder="Keyword"
                 type="text"
+                autocomplete="off"
+                autofocus
                 bind:value={name}
                 selectOnFocus={false}
-                autofocus
                 required
                 spellcheck="false"
             />
@@ -482,7 +551,7 @@
             <div class="form-field colour-field">
                 <span class="field-label">Colour</span>
                 <div class="colour-row">
-                    <input
+                    <!-- <input
                         id="keyword-colour-picker"
                         type="color"
                         value={colour}
@@ -491,11 +560,13 @@
                         }}
                         class="colour-picker"
                         aria-label="Select keyword colour"
-                    />
+                    /> -->
+                    <ColourPicker id="keyword-colour-picker" bind:hex={colour} />
                     <InputText
                         id="keyword-colour-text"
                         name="colour"
                         placeholder="None"
+                        autocomplete="off"
                         bind:value={colour}
                         spellcheck="false"
                         class="colour-text-input"
@@ -517,7 +588,7 @@
             </div>
 
             <div class="form-field">
-                <InputSelect id="keyword-parent" label="Parent Keyword" options={parentOptions} bind:value={parent} />
+                <InputCombobox id="keyword-parent" label="Parent Keyword" options={parentOptions} bind:value={parent} />
             </div>
         {/if}
 

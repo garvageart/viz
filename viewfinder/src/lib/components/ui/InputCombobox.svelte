@@ -35,6 +35,7 @@
         id?: string;
         class?: string;
         contentAlign?: "start" | "center" | "end";
+        inputElement?: HTMLInputElement | null;
         onchange?: (val: string) => void;
         onkeydown?: (e: KeyboardEvent) => void;
     }
@@ -55,6 +56,7 @@
         id,
         class: className = "",
         contentAlign = "start",
+        inputElement = $bindable(null),
         onchange,
         onkeydown
     }: Props = $props();
@@ -112,6 +114,10 @@
         if (onchange) {
             onchange(v);
         }
+
+        if (inputElement) {
+            inputElement.focus();
+        }
     }
 </script>
 
@@ -128,16 +134,17 @@
 
         <div class="input-wrapper">
             <Combobox.Input
+                bind:ref={inputElement}
                 id={comboboxId}
                 class="combobox-input {className}"
                 {placeholder}
                 {autofocus}
-                onfocus={() => {
-                    open = true;
-                }}
                 oninput={(e) => {
                     inputValue = e.currentTarget.value;
-                    open = true;
+                    // Dropdown only shows when there is at least one character in the input.
+                    // NOTE: In the future, we can evaluate a keyboard shortcut (like ArrowDown)
+                    // to open the dropdown without typing a character.
+                    open = e.currentTarget.value.trim().length > 0;
                 }}
                 onkeydown={(e) => {
                     if (e.key === "Escape" && open) {

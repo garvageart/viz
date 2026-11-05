@@ -17,6 +17,7 @@ import VizView from "#lib/views/views.svelte.js";
 import type { CollectionDetailResponse } from "@viz/api";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
+import KeywordsPage from "../../routes/(app)/keywords/+page.svelte";
 import PhotosPage from "../../routes/(app)/photos/+page.svelte";
 
 // Only one instance of a view/panel and its component
@@ -78,5 +79,10 @@ export const views: VizView<any, any>[] = [
     new VizView({
         name: "Favourites",
         component: FavouritesPanel
+    }),
+    new VizView({
+        name: "Keywords",
+        component: KeywordsPage,
+        path: "/keywords"
     })
 ];

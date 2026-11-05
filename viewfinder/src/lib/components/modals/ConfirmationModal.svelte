@@ -71,7 +71,7 @@
                 {@render actions({ id })}
             {:else}
                 <Button id="cancel-btn" type="button" variant="secondary" onclick={handleCancel}>{cancelText}</Button>
-                <Button id="confirm-btn" type="submit" variant={buttonVariant}>
+                <Button id="confirm-btn" type="submit" variant={buttonVariant} autofocus>
                     {confirmText}
                 </Button>
             {/if}

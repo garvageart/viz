@@ -46,7 +46,7 @@
     </span>
 
     <div class="delete-actions">
-        <Button variant="secondary" onclick={handleCancel} class="cancel-btn"><span>Cancel</span></Button>
+        <Button variant="secondary" autofocus onclick={handleCancel} class="cancel-btn"><span>Cancel</span></Button>
 
         <div class="confirm-group">
             {#if deletePermanently}
