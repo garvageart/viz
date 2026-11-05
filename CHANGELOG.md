@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.9] - 2026-11-05
+
+* fix(viewfinder): improve keywords layout, search autocomplete, and batch rename builder (7e9ba236)
+* feat(export): embed XMP metadata on export in backend and frontend (a6024447)
+* feat(xmp): extract reusable XMP generation logic and helpers (5e5b0a49)
+
 ## [0.36.8] - 2026-11-05
 
 * test(viewfinder): improve e2e keyword tests and cleanup error handling (a0ac7967)
