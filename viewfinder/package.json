@@ -69,6 +69,7 @@
         "libexif-wasm": "^0.5.5",
         "lodash-es": "^4.18.1",
         "luxon": "^3.7.2",
+        "svelte-awesome-color-picker": "^4.1.3",
         "thumbhash": "^0.1.1",
         "tippy.js": "^6.3.7",
         "wasm-vips": "^0.0.19"

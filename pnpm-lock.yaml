@@ -112,6 +112,9 @@ importers:
       luxon:
         specifier: ^3.7.2
         version: 3.7.2
+      svelte-awesome-color-picker:
+        specifier: ^4.1.3
+        version: 4.1.3(svelte@5.57.2)
       thumbhash:
         specifier: ^0.1.1
         version: 0.1.1
@@ -927,6 +930,9 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  colord@2.10.0:
+    resolution: {integrity: sha512-AidJptpBJmjTclAp9BkLwJi0T93fo5epJnbaZslpg6QVzpHjAiveF55mE9AcUJiGMqRHgMDY8soMsQtuNYMHfw==}
+
   colorette@1.4.0:
     resolution: {integrity: sha512-Y2oEozpomLn7Q3HFP7dpww7AtMJplbM9lGZP6RDfHqmbeRjiwRg4n6VM6j4KLmRke85uWEI7JqF17f3pqdRA0g==}
 
@@ -1499,6 +1505,17 @@ packages:
   supports-color@10.2.2:
     resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==}
     engines: {node: '>=18'}
+
+  svelte-awesome-color-picker@4.1.3:
+    resolution: {integrity: sha512-fYio6XR2vp9WO0ihT6Vlw1Kj278gEZtqfIRde4YBx5OgGjBdQJxFE8jl6OibPQPrmaz625HZPZaSbRflL88/Mg==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  svelte-awesome-slider@2.0.0:
+    resolution: {integrity: sha512-YBkOdYm1Feaqsn2JkJBRs+Kc/X3Qy/3GuVmI7GmoYDjBaHkjx9uH4khTuED22z57Hg3gGWeDhp/clIjWDdLNaw==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   svelte-check@4.7.7:
     resolution: {integrity: sha512-Ge2IMdeTpbJuzNFGRiiMg0RWgbScysKQu7xwcyFJ22+DU9F5nPX51+Q3gHmGqRxYQMx2knreVWt5oCtfe0vf2g==}
@@ -2301,6 +2318,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  colord@2.10.0: {}
+
   colorette@1.4.0: {}
 
   comlink@4.4.2: {}
@@ -2829,6 +2848,16 @@ snapshots:
       inline-style-parser: 0.2.7
 
   supports-color@10.2.2: {}
+
+  svelte-awesome-color-picker@4.1.3(svelte@5.57.2):
+    dependencies:
+      colord: 2.10.0
+      svelte: 5.57.2
+      svelte-awesome-slider: 2.0.0(svelte@5.57.2)
+
+  svelte-awesome-slider@2.0.0(svelte@5.57.2):
+    dependencies:
+      svelte: 5.57.2
 
   svelte-check@4.7.7(picomatch@4.0.7)(svelte@5.57.2)(typescript@6.0.3):
     dependencies:
