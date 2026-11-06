@@ -1,6 +1,6 @@
 import type { MenuItem } from "#lib/context-menu/types.js";
 import { debugMode } from "#lib/states/index.svelte.js";
-import { invalidateAll, preloadData } from "$app/navigation";
+import { preloadData, refreshAll } from "$app/navigation";
 import type { Component } from "svelte";
 
 export type TabDropHandler<T extends any, V = VizView<any, any>> = (data: T, view: V) => Promise<void>;
@@ -30,7 +30,7 @@ let timer: ReturnType<typeof setTimeout> | null = null;
  * Use this instead of `invalidateAll()` when you want to ensure background panels
  * also refresh their data (e.g., after uploading images or modifying collections).
  */
-export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?: boolean }) {
+export async function invalidateViz(opts?: { delay?: number; skipRefreshAll?: boolean }) {
     if (timer) {
         clearTimeout(timer);
     }
@@ -39,8 +39,9 @@ export async function invalidateViz(opts?: { delay?: number; skipInvalidateAll?:
         timer = setTimeout(async () => {
             timer = null;
             invalidationState.version += 1;
-            if (!opts?.skipInvalidateAll) {
-                await invalidateAll();
+
+            if (!opts?.skipRefreshAll) {
+                await refreshAll();
             }
 
             resolve(undefined);

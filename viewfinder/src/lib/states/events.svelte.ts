@@ -17,7 +17,7 @@ class EventsState {
 
     private invalidateApp = async (resourcePath?: string) => {
         console.debug(`[Events] Triggering debounced soft refresh for path: ${resourcePath ?? "all"}`);
-        invalidateViz({ skipInvalidateAll: true });
+        invalidateViz({ skipRefreshAll: true });
 
         if (resourcePath) {
             try {
