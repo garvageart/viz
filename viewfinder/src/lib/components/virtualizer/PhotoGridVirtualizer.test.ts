@@ -104,6 +104,42 @@ describe("PhotoGridVirtualizer", () => {
                 expect(v.rows[1].items.length).toBe(2);
             }
         });
+
+        it("clamps column count in narrow container when minItemWidth is provided", () => {
+            const items = makeItems(6);
+            // Request 4 columns in a 260px container with minItemWidth 220px -> should scale down to 1 column
+            v.updateGrid(items, 260, { columns: 4, minItemWidth: 220, gap: 8 });
+
+            expect(v.getGridColumns()).toBe(1);
+            const firstRow = v.rows[0];
+            expect(firstRow.type).toBe("images");
+            if (firstRow.type === "images") {
+                expect(firstRow.items[0].width).toBe(260);
+            }
+        });
+
+        it("preserves explicit column count when minItemWidth is omitted", () => {
+            const items = makeItems(6);
+            // Request 2 columns in a 260px container without minItemWidth -> should stay 2 columns
+            v.updateGrid(items, 260, { columns: 2, gap: 8 });
+
+            expect(v.getGridColumns()).toBe(2);
+            const firstRow = v.rows[0];
+            expect(firstRow.type).toBe("images");
+            if (firstRow.type === "images") {
+                expect(firstRow.items[0].width).toBe(126);
+                expect(firstRow.items[1].width).toBe(126);
+            }
+        });
+
+        it("derives rowHeight from targetRowHeight and itemWidth when rowHeight is omitted", () => {
+            const items = makeItems(4);
+            // targetRowHeight is 200, itemWidth is 200 -> ratio 1.0
+            v.updateGrid(items, 600, { columns: 2, itemWidth: 200, gap: 0 });
+
+            // columnWidth = 300, rowHeight = 300 * 1.0 = 300
+            expect(v.rows[0].height).toBe(300);
+        });
     });
 
     // -------------------------------------------------------

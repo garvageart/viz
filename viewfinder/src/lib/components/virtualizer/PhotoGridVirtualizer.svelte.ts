@@ -51,6 +51,7 @@ export class PhotoGridVirtualizer<T = any> {
     visibleRows = $state<GridRow<T>[]>([]);
     totalHeight = $state(0);
     loadedHeight = $state(0);
+    columns = $state(0);
 
     // Configuration
     containerWidth = $state(0);
@@ -284,10 +285,12 @@ export class PhotoGridVirtualizer<T = any> {
         config: {
             columns?: number;
             itemWidth?: number;
+            minItemWidth?: number;
             rowHeight?: number;
+            itemHeight?: number;
             aspectRatio?: number;
-            gap: number;
-        }
+            gap?: number;
+        } = {}
     ) {
         if (width <= 0) {
             return;
@@ -295,31 +298,42 @@ export class PhotoGridVirtualizer<T = any> {
         this.containerWidth = width;
         this.groupCache.clear();
 
-        const { gap } = config;
+        const gap = config.gap !== undefined ? config.gap : this.gridGap;
 
-        // Target item width (default 300px)
-        const targetWidth = config.itemWidth && config.itemWidth > 0 ? config.itemWidth : 300;
+        // Target item width (default 270px)
+        const targetWidth = config.itemWidth && config.itemWidth > 0 ? config.itemWidth : 270;
 
-        // Compute max columns that fit inside container
         let columns: number;
-        if (config.columns && config.columns > 0) {
-            columns = config.columns;
-        } else {
+        if (!config.columns || config.columns <= 0) {
             columns = Math.max(1, Math.floor((width + gap) / (targetWidth + gap)));
+        } else if (config.minItemWidth && config.minItemWidth > 0) {
+            const maxColumns = Math.max(1, Math.floor((width + gap) / (config.minItemWidth + gap)));
+            columns = Math.max(1, Math.min(config.columns, maxColumns));
+        } else {
+            columns = config.columns;
         }
 
+        this.columns = columns;
+
         // Compute fluid column width so columns fill 100% of container width
-        const columnWidth = (width - gap * (columns - 1)) / columns;
+        const columnWidth = Math.max(0, (width - gap * (columns - 1)) / columns);
 
         // Grid items start at the left edge of the container
         const startLeft = 0;
 
         // Compute row height
         let rowHeight: number;
-        if (config.aspectRatio && config.aspectRatio > 0) {
-            rowHeight = Math.round(columnWidth * config.aspectRatio);
-        } else if (config.rowHeight && config.rowHeight > 0) {
+        if (config.rowHeight && config.rowHeight > 0) {
             rowHeight = config.rowHeight;
+        } else if (config.itemHeight && config.itemHeight > 0) {
+            rowHeight = config.itemHeight;
+        } else if (config.aspectRatio && config.aspectRatio > 0) {
+            rowHeight = Math.round(columnWidth * config.aspectRatio);
+        } else if (config.itemWidth && config.itemWidth > 0 && this.targetRowHeight > 0) {
+            const ratio = this.targetRowHeight / config.itemWidth;
+            rowHeight = Math.round(columnWidth * ratio);
+        } else if (this.targetRowHeight && this.targetRowHeight > 0) {
+            rowHeight = this.targetRowHeight;
         } else {
             rowHeight = 260;
         }
@@ -405,11 +419,7 @@ export class PhotoGridVirtualizer<T = any> {
         if (this.rows.length === 0) {
             return 0;
         }
-        const firstRow = this.rows[0];
-        if (firstRow.type === "images") {
-            return firstRow.items.length;
-        }
-        return 0;
+        return this.columns || (this.rows[0].type === "images" ? this.rows[0].items.length : 0);
     }
 
     updateScroll(scrollTop: number, viewportHeight: number) {
