@@ -476,10 +476,6 @@
     }
 
     @media (max-width: 40rem) {
-        header {
-            padding: 0 var(--viz-spacing-sm);
-        }
-
         #left-menu-container {
             gap: var(--viz-spacing-xs);
         }
