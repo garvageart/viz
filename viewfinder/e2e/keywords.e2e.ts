@@ -85,7 +85,6 @@ test.describe("Keywords Management & Lifecycle (/keywords)", () => {
         const kwCard = page.locator(`.keyword-card[data-keyword-name="${keywordName}"]`);
         await expect(kwCard).toBeVisible({ timeout: 10000 });
         await expect(kwCard.locator(".keyword-name")).toHaveText(keywordName);
-        await expect(kwCard.locator(".root-badge")).toBeVisible();
 
         // 2. Search filtering
         const searchInput = page.locator("#keywords-search");

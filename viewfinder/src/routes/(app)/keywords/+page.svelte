@@ -4,12 +4,11 @@
     import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
-    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
     import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { tryParseDate } from "#lib/utils/dates.js";
-    import { refreshAll } from "$app/navigation";
+    import { invalidateViz } from "#lib/views/views.svelte.ts";
     import { type Keyword, type KeywordUpdate, createKeyword, deleteKeyword, updateKeyword } from "@viz/api";
     import { DateTime } from "luxon";
     import type { PageProps } from "./$types";
@@ -82,7 +81,7 @@
                             type: "success"
                         });
                         modalsManager.pop();
-                        refreshAll();
+                        invalidateViz();
                     } else {
                         const err = (res.data as { error?: string })?.error ?? "Failed to create keyword";
                         toasts.add({
@@ -134,7 +133,7 @@
                         });
 
                         modalsManager.pop();
-                        refreshAll();
+                        invalidateViz();
                     } else {
                         const err = (res.data as { error?: string })?.error ?? "Failed to update keyword";
                         toasts.add({
@@ -171,14 +170,14 @@
                             type: "success"
                         });
 
-                        refreshAll();
+                        invalidateViz();
                     } else if (res.status === 404) {
                         toasts.add({
                             message: "Keyword not found. It may have already been deleted.",
                             type: "info"
                         });
 
-                        refreshAll();
+                        invalidateViz();
                     }
                 },
                 children: deleteConfirmSnippet
@@ -245,25 +244,28 @@
 
     {#if filteredKeywords.length === 0}
         <div class="empty-state-box">
-            <div class="empty-icon-wrapper">
-                <MaterialIcon iconName="label" size="3.5rem" />
-            </div>
-            {#if keywords.length !== 0}
-                <h3>Create your first keyword</h3>
-                <p>Keywords help organise and filter your image library.</p>
+            {#if keywords.length === 0}
+                <div class="empty-state-text">
+                    <div class="empty-state-row">
+                        <h3>Create your first keyword</h3>
+                        <span>Keywords help organise and filter your image library.</span>
+                    </div>
+                </div>
                 <Button
-                    id="keywords-create-btn"
+                    id="keywords-empty-create-btn"
                     iconName="add"
                     variant="primary"
                     onclick={openCreateModal}
                     title="Create Keyword"
                     aria-label="Create Keyword"
                 >
-                    <span class="create-btn-text">Create Keyword</span>
+                    <span>Create Keyword</span>
                 </Button>
             {:else}
-                <h3>No keywords found</h3>
-                <p>No keywords match "{searchQuery}".</p>
+                <div class="empty-state-row">
+                    <h3>No keywords found</h3>
+                    <span>No keywords match <strong>{searchQuery}</strong>.</span>
+                </div>
             {/if}
         </div>
     {:else}
@@ -297,16 +299,17 @@
                     </div>
 
                     <div class="card-body">
-                        {#if kw.parent && keywordMap.has(kw.parent)}
-                            <div class="parent-chip">
-                                <span class="parent-label">Parent:</span>
-                                <Badge variant="neutral" size="small">
-                                    <span>{keywordMap.get(kw.parent)?.name}</span>
-                                </Badge>
-                            </div>
-                        {:else}
-                            <span class="root-badge">Root</span>
-                        {/if}
+                        <div class="parent-chip">
+                            <Badge
+                                variant="info"
+                                size="small"
+                                weight="regular"
+                                title="Parent Keyword"
+                                aria-label="Parent Keyword"
+                            >
+                                <span>{!kw.parent ? "Root" : keywordMap.get(kw.parent)?.name}</span>
+                            </Badge>
+                        </div>
                     </div>
 
                     <div class="card-footer">
@@ -400,10 +403,6 @@
         flex-shrink: 0;
     }
 
-    .create-btn-text {
-        display: inline;
-    }
-
     .keywords-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
@@ -478,16 +477,6 @@
         gap: var(--viz-spacing-xs);
     }
 
-    .parent-label {
-        font-size: var(--viz-font-size-xs);
-        color: var(--viz-text-muted);
-    }
-
-    .root-badge {
-        font-size: var(--viz-font-size-xs);
-        font-weight: bold;
-    }
-
     .card-footer {
         display: flex;
         align-items: center;
@@ -519,20 +508,37 @@
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
 
-        .empty-icon-wrapper {
-            color: var(--viz-text-muted);
-        }
-
         h3 {
-            font-size: var(--viz-font-size-2xl);
             color: var(--viz-text-primary);
             margin: 0;
+            font-size: var(--viz-font-size-xl);
+            font-weight: 600;
         }
 
-        p {
-            font-size: var(--viz-font-size-base);
+        .empty-state-text {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: var(--viz-spacing-sm);
+        }
+
+        .empty-state-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--viz-spacing-xs);
             color: var(--viz-text-secondary);
-            margin: 0;
+
+            :global(.material-symbols) {
+                color: var(--viz-text-muted);
+            }
+
+            span {
+                color: var(--viz-text-secondary);
+                margin: 0;
+            }
         }
     }
 
