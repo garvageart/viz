@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.12] - 2026-11-06
+
+* feat(viewfinder/keywords): migrate keywords page to virtualized EntityView (32bd09fa)
+* feat(viewfinder/ui): add sizing props and update container classes in EntityView (de848001)
+* feat(viewfinder/virtualizer): support custom item sizing and reactive columns (a0fb1b8c)
+* refactor: rename AssetGrid and asset references to EntityView and entity (145d03ba)
+* refactor(ui): add medium accordion size and display seconds in taken time (e5bd069a)
+* refactor(views): modernize invalidation options to use refreshAll (1bfe15d2)
+* feat(keywords): refine empty state layout and parent chip display (1e82de99)
+* ci: generate random password for CI db (56e88ce2)
+* ci: simplify playwright version check (5c125cf7)
+
 ## [0.36.11] - 2026-11-06
 
 * style(viewfinder): remove redundant mobile header padding override (539ea5cf)
