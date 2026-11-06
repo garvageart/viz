@@ -161,6 +161,70 @@
                 align-items: center;
             }
 
+            @media (max-width: 1024px) {
+                #app-splash {
+                    padding-left: 4rem;
+                }
+
+                #app-splash .splash-text {
+                    font-size: 6rem;
+                }
+            }
+
+            @media (max-width: 768px) {
+                #app-splash {
+                    justify-content: center;
+                    padding-left: 0;
+                    padding: 1.5rem;
+                    background-size: 2rem 2rem;
+                }
+
+                #app-splash .splash-inner {
+                    align-items: center;
+                }
+
+                #app-splash .splash-viewfinder {
+                    padding: 0.625rem 1rem;
+                }
+
+                #app-splash .corner {
+                    width: 1rem;
+                    height: 1rem;
+                }
+
+                #app-splash .corner.top-left {
+                    border-width: 2px 0 0 2px;
+                }
+
+                #app-splash .corner.top-right {
+                    border-width: 2px 2px 0 0;
+                }
+
+                #app-splash .corner.bottom-left {
+                    border-width: 0 0 2px 2px;
+                }
+
+                #app-splash .corner.bottom-right {
+                    border-width: 0 2px 2px 0;
+                }
+
+                #app-splash .splash-text {
+                    font-size: clamp(2rem, 9.5vw, 4rem);
+                    text-align: center;
+                }
+
+                #app-splash .splash-dots {
+                    justify-content: center;
+                    gap: 0.625rem;
+                    margin-top: 1.5rem;
+                }
+
+                #app-splash .splash-dots .dot {
+                    width: 0.625rem;
+                    height: 0.625rem;
+                }
+            }
+
             @keyframes splash-fade-in {
                 from {
                     opacity: 0;
