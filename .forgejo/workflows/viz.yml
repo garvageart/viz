@@ -282,6 +282,7 @@ jobs:
               run: |
                   E2E_PORT="7779"
                   NETWORK_NAME="viz-ci-net-${{ github.run_id }}"
+                  CI_DB_PASSWORD=$(openssl rand -hex 16)
 
                   # Remove any lingering viz-ci test containers & networks across all previous runs
                   docker ps -a --filter "name=viz-ci-" -q | xargs -r docker rm -f 2>/dev/null || true
@@ -294,7 +295,7 @@ jobs:
                     --name "viz-ci-db-${{ github.run_id }}" \
                     --network "$NETWORK_NAME" \
                     -e POSTGRES_USER=postgres \
-                    -e POSTGRES_PASSWORD=postgres \
+                    -e POSTGRES_PASSWORD="$CI_DB_PASSWORD" \
                     -e POSTGRES_DB=viz_e2e \
                     "${{ env.IMAGE_PREFIX }}/viz-db:${{ needs.build-images.outputs.sha }}"
 
@@ -312,7 +313,7 @@ jobs:
                     -e DB_HOST="viz-ci-db-${{ github.run_id }}" \
                     -e DB_PORT=5432 \
                     -e DB_USER=postgres \
-                    -e DB_PASSWORD=postgres \
+                    -e DB_PASSWORD="$CI_DB_PASSWORD" \
                     -e DB_NAME=viz_e2e \
                     -e REDIS_HOST="viz-ci-redis-${{ github.run_id }}" \
                     -e REDIS_PORT=6379 \
