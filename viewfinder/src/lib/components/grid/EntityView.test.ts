@@ -5,7 +5,7 @@ import { fireEvent, render } from "@testing-library/svelte";
 import type { ImageAsset } from "@viz/api";
 import { createRawSnippet } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import AssetView from "./AssetView.svelte";
+import EntityView from "./EntityView.svelte";
 
 const testData: ImageAsset[] = [createTestImageObject(), createTestImageObject(), createTestImageObject()];
 
@@ -16,12 +16,12 @@ const dummyAssetSnippet = createRawSnippet<[ScopeItem, CardVisualState]>((getIte
     };
 });
 
-describe("AssetView", () => {
+describe("EntityView", () => {
     it("renders grid container when type is 'grid'", () => {
-        const { container } = render(AssetView, {
+        const { container } = render(EntityView, {
             data: testData,
             type: "grid",
-            assetSnippet: dummyAssetSnippet
+            entitySnippet: dummyAssetSnippet
         });
 
         expect(container.querySelector(".viz-asset-grid-container")).toBeInTheDocument();
@@ -29,10 +29,10 @@ describe("AssetView", () => {
     });
 
     it("renders table container when type is 'list'", () => {
-        const { container } = render(AssetView, {
+        const { container } = render(EntityView, {
             data: testData,
             type: "list",
-            assetSnippet: dummyAssetSnippet
+            entitySnippet: dummyAssetSnippet
         });
 
         expect(container.querySelector(".viz-asset-table-container")).toBeInTheDocument();
@@ -40,10 +40,10 @@ describe("AssetView", () => {
     });
 
     it("reacts when the type prop is updated", async () => {
-        const { container, rerender } = render(AssetView, {
+        const { container, rerender } = render(EntityView, {
             data: testData,
             type: "grid",
-            assetSnippet: dummyAssetSnippet
+            entitySnippet: dummyAssetSnippet
         });
 
         expect(container.querySelector(".viz-asset-grid-container")).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("AssetView", () => {
         await rerender({
             data: testData,
             type: "list",
-            assetSnippet: dummyAssetSnippet
+            entitySnippet: dummyAssetSnippet
         });
 
         expect(container.querySelector(".viz-asset-table-container")).toBeInTheDocument();
@@ -61,13 +61,13 @@ describe("AssetView", () => {
     it("does not range-select items when navigating backward with Shift+Tab", async () => {
         vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
 
-        const { container } = render(AssetView, {
+        const { container } = render(EntityView, {
             data: testData,
             type: "grid",
-            assetSnippet: dummyAssetSnippet
+            entitySnippet: dummyAssetSnippet
         });
 
-        const cards = container.querySelectorAll("[data-asset-id]");
+        const cards = container.querySelectorAll("[data-entity-id]");
         expect(cards.length).toBe(3);
 
         // Click second card to select it

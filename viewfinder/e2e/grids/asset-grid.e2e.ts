@@ -1,19 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("AssetGrid Functionality", () => {
+test.describe("EntityView Functionality", () => {
     const classRegex = /selected-card/;
     test.beforeEach(async ({ page }) => {
-        // Navigate to /collections where AssetGrid is primarily used
+        // Navigate to /collections where EntityView is primarily used
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
         await expect(page.locator(".viz-workspace, main").first()).toBeVisible({ timeout: 20000 });
     });
 
-    test("should render collections in AssetGrid", async ({ page }) => {
+    test("should render collections in EntityView", async ({ page }) => {
         const grid = page.locator(".viz-asset-grid-container");
         await expect(grid).toBeVisible();
 
-        const collectionCards = grid.locator(".asset-card");
+        const collectionCards = grid.locator(".entity-card");
 
         // Wait for collections to load
         await expect(async () => {
@@ -62,7 +62,7 @@ test.describe("AssetGrid Functionality", () => {
     });
 
     test("should navigate to collection on double click", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .asset-card");
+        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();
@@ -77,7 +77,7 @@ test.describe("AssetGrid Functionality", () => {
     });
 
     test("should show context menu on right click", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .asset-card");
+        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();
@@ -99,7 +99,7 @@ test.describe("AssetGrid Functionality", () => {
     });
 
     test("should handle keyboard navigation in the grid", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .asset-card");
+        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();
@@ -137,7 +137,7 @@ test.describe("AssetGrid Functionality", () => {
             });
 
         if (await collectionsSection.isVisible()) {
-            const collectionCards = collectionsSection.locator(".asset-card");
+            const collectionCards = collectionsSection.locator(".entity-card");
             await expect(collectionCards.first()).toBeVisible();
 
             await collectionCards.first().click();

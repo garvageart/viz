@@ -5,7 +5,7 @@
     import { goto } from "$app/navigation";
     import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
     import { onMount } from "svelte";
-    import AssetGrid from "../grid/AssetView.svelte";
+    import EntityView from "../grid/EntityView.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
     import CollectionModal from "./CollectionModal.svelte";
@@ -151,9 +151,9 @@
 
 <div class="collection-selection-modal-container" role="dialog" aria-modal="true" tabindex="-1">
     <div class="modal-body">
-        <AssetGrid
+        <EntityView
             data={collections}
-            assetSnippet={collectionSnippet}
+            entitySnippet={collectionSnippet}
             {scopeId}
             disableMultiSelection={true}
             disableOutsideUnselect={true}

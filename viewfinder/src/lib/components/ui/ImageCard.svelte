@@ -64,7 +64,7 @@
         class:selected={isSelected}
         role="button"
         tabindex="0"
-        data-asset-id={asset.uid}
+        data-entity-id={asset.uid}
         use:draggable={{
             items: () => {
                 return createImageDragItems(asset);
@@ -92,7 +92,7 @@
         title={asset.name}
         role="button"
         tabindex="0"
-        data-asset-id={asset.uid}
+        data-entity-id={asset.uid}
         use:draggable={{
             items: () => {
                 return createImageDragItems(asset);

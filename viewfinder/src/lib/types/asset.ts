@@ -3,8 +3,8 @@ export interface IPagination {
     page: number;
 }
 
-export type AssetGridArray<T> = {
-    asset: T;
+export type EntityGridArray<T> = {
+    entity: T;
     row: number;
     rowSize: number;
     column: number;
@@ -12,22 +12,22 @@ export type AssetGridArray<T> = {
     size: number;
 }[][];
 
-export type AssetSortOrder = "ASC" | "DESC";
+export type EntitySortOrder = "ASC" | "DESC";
 
-export type AssetSortBy = "name" | "recently_added" | "updated_at" | "taken_at";
+export type EntitySortBy = "name" | "recently_added" | "updated_at" | "taken_at";
 
-export type AssetGroupBy = "none" | "year" | "month" | "day";
+export type EntityGroupBy = "none" | "year" | "month" | "day";
 
-export type AssetDisplay = "list" | "cover";
+export type EntityDisplay = "list" | "cover";
 
-export type AssetViewType = "grid" | "list" | "custom";
+export type EntityViewType = "grid" | "list" | "custom";
 
-export interface AssetSort {
-    order: AssetSortOrder;
-    by: AssetSortBy;
+export interface EntitySort {
+    order: EntitySortOrder;
+    by: EntitySortBy;
     group: {
-        by: AssetGroupBy;
-        order: AssetSortOrder;
+        by: EntityGroupBy;
+        order: EntitySortOrder;
     };
-    display: AssetDisplay;
+    display: EntityDisplay;
 }

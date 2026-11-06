@@ -234,7 +234,7 @@ test.describe("Keyword Modal in Add Mode (Asset Tagging)", () => {
 
     test("should handle add mode keyboard interactions and badge creation", async ({ page }) => {
         // Check if photos exist on grid
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         const count = await photos.count();
         if (count === 0) {
             test.skip(true, "No photos available for asset tagging test");
@@ -310,7 +310,7 @@ test.describe("Keyword Modal in Add Mode (Asset Tagging)", () => {
 
     test("should add keyword on first Enter and save/close modal on second Enter", async ({ page }) => {
         // Check if photos exist on grid
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         const count = await photos.count();
         if (count === 0) {
             test.skip(true, "No photos available for asset tagging test");

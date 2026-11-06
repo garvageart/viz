@@ -1,6 +1,6 @@
 import type { MenuItem } from "#lib/context-menu/types.js";
 import type { SortState } from "#lib/states/sort.svelte.js";
-import type { AssetSort, AssetSortBy } from "#lib/types/asset.js";
+import type { EntitySort, EntitySortBy } from "#lib/types/asset.js";
 import { getTakenAt } from "#lib/utils/images.js";
 import type { Collection, ImageAsset } from "@viz/api";
 import { orderBy } from "lodash-es";
@@ -9,7 +9,7 @@ function getCollectionDate(collection: Collection): Date {
     return new Date(collection.updated_at || collection.created_at);
 }
 
-export function sortCollectionImages(assets: ImageAsset[], sort: AssetSort) {
+export function sortCollectionImages(assets: ImageAsset[], sort: EntitySort) {
     const order = sort.order.toLowerCase() as "asc" | "desc";
     switch (sort.by) {
         case "name":
@@ -25,7 +25,7 @@ export function sortCollectionImages(assets: ImageAsset[], sort: AssetSort) {
     }
 }
 
-export function sortCollections(collections: Collection[], sort: AssetSort) {
+export function sortCollections(collections: Collection[], sort: EntitySort) {
     const order = sort.order.toLowerCase() as "asc" | "desc";
     switch (sort.by) {
         case "name":
@@ -50,14 +50,14 @@ export const sortOptions: MenuItem[] = [
     { id: "sort-taken_at", label: "Taken At" }
 ];
 
-const sortIdByKey: Record<AssetSortBy, string> = {
+const sortIdByKey: Record<EntitySortBy, string> = {
     name: "sort-name",
     recently_added: "sort-recently_added",
     updated_at: "sort-updated_at",
     taken_at: "sort-taken_at"
 };
 
-export function sortIdFromKey(key: AssetSortBy): string {
+export function sortIdFromKey(key: EntitySortBy): string {
     return sortIdByKey[key];
 }
 
@@ -65,8 +65,8 @@ export function currentSortId(state: SortState): string {
     return sortIdByKey[state.value.by];
 }
 
-export function sortByFromId(itemId: string): AssetSortBy | undefined {
-    for (const [by, id] of Object.entries(sortIdByKey) as [AssetSortBy, string][]) {
+export function sortByFromId(itemId: string): EntitySortBy | undefined {
+    for (const [by, id] of Object.entries(sortIdByKey) as [EntitySortBy, string][]) {
         if (id === itemId) {
             return by;
         }
@@ -74,7 +74,7 @@ export function sortByFromId(itemId: string): AssetSortBy | undefined {
     return undefined;
 }
 
-export function applySortSelection(state: SortState, itemId: string): AssetSortBy | undefined {
+export function applySortSelection(state: SortState, itemId: string): EntitySortBy | undefined {
     const by = sortByFromId(itemId);
     if (by) {
         state.value.by = by;

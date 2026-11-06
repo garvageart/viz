@@ -17,7 +17,7 @@ test.describe("ImageLightbox Interactions", () => {
      * Guards: skips if no photos exist.
      */
     async function openLightbox(page: Page) {
-        const photoFirst = page.locator(".asset-photo, .asset-card").first();
+        const photoFirst = page.locator(".asset-photo, .entity-card").first();
         const isVisible = await photoFirst
             .waitFor({ state: "visible", timeout: 15000 })
             .then(() => true)

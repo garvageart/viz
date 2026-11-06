@@ -1,7 +1,7 @@
 <script lang="ts">
     import { CollectionsPaginationState } from "#lib/collections/state.svelte.js";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import CollectionModal from "#lib/components/modals/CollectionModal.svelte";
     import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
     import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
@@ -28,7 +28,7 @@
     import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { collectionsSort } from "#lib/states/sort.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import type { AssetGridArray } from "#lib/types/asset.js";
+    import type { EntityGridArray } from "#lib/types/asset.js";
     import { goto } from "$app/navigation";
     import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
     import { type ComponentProps, untrack } from "svelte";
@@ -167,7 +167,7 @@
         );
     }
 
-    let collectionGridArray: AssetGridArray<Collection> | undefined = $state();
+    let collectionGridArray: EntityGridArray<Collection> | undefined = $state();
 
     let collectionMenuOpts = $derived<CollectionMenuOptions>({
         editCollection: (col: Collection) => {
@@ -194,23 +194,23 @@
 
     let collectionActionMenuItems = $derived(createCollectionMenu(selectionScope.selectedItems, collectionMenuOpts));
 
-    let grid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
-        assetSnippet: collectionSnippet,
+    let grid: ComponentProps<typeof EntityView<Collection>> = $derived({
+        entitySnippet: collectionSnippet,
         type: "grid",
-        assetGridArray: collectionGridArray,
+        entityGridArray: collectionGridArray,
         data: displayData,
         onLoadMore: () => collectionsState.paginate(),
         scopeId: scopeId,
-        assetGridDisplayProps: {
+        entityGridDisplayProps: {
             style: `padding: 1em ${isLayoutPage() ? "1em" : "2em"};`
         },
-        assetDblClick: (_e, asset: Collection) => {
-            openCollection(asset);
+        entityDblClick: (_e, entity: Collection) => {
+            openCollection(entity);
         },
-        onassetcontext: (detail: { asset: Collection; anchor: { x: number; y: number } | HTMLElement }) => {
-            const { asset, anchor } = detail;
-            if (!selectionScope.has(asset) || selectionScope.size <= 1) {
-                selectionScope.select(asset);
+        oncontext: (detail) => {
+            const { entity, anchor } = detail;
+            if (!selectionScope.has(entity) || selectionScope.size <= 1) {
+                selectionScope.select(entity);
             }
             contextMenu.open(collectionActionMenuItems, anchor, { offsetY: 4 });
         }

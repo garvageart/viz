@@ -48,7 +48,7 @@ test.describe("Collection Add Photos Timeline & Disabled States", () => {
         await page.waitForLoadState("networkidle");
 
         // Wait for card to appear in the grid and double click it to go to collection details page
-        const collCard = page.locator(".asset-card, .coll-card").filter({ hasText: collectionName });
+        const collCard = page.locator(".entity-card, .coll-card").filter({ hasText: collectionName });
         await expect(collCard.first()).toBeVisible({ timeout: 15000 });
         await collCard.first().dblclick();
 

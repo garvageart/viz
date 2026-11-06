@@ -1,7 +1,7 @@
 import type { MenuItem } from "#lib/context-menu/types.js";
 import { DbSettings } from "#lib/db/settings.js";
 import type { DownloadFile } from "#lib/download/asset.svelte.js";
-import type { AssetViewType } from "#lib/types/asset.js";
+import type { EntityViewType } from "#lib/types/asset.js";
 import type { UploadImage } from "#lib/upload/asset.svelte.js";
 import { VizCookieStorage, VizLocalStorage } from "#lib/utils/misc.js";
 import { page } from "$app/state";
@@ -150,7 +150,7 @@ export let debugMode = debugState.value;
 
 export class TableColumnSettings {
     storage = new VizLocalStorage<string[]>("tableColumnSettings");
-    // Default columns (Preview is hardcoded in AssetGrid, so we just track the dynamic ones)
+    // Default columns (Preview is hardcoded in EntityView, so we just track the dynamic ones)
     value: string[] = $state(this.storage.get() ?? ["name", "created_at"]);
 
     toggle(column: string) {
@@ -171,11 +171,11 @@ export class TableColumnSettings {
 export const tableColumnSettings = new TableColumnSettings();
 
 class ViewSettingsState {
-    storage = new VizLocalStorage<AssetViewType>("viewSettings");
+    storage = new VizLocalStorage<EntityViewType>("viewSettings");
     showDatesStorage = new VizLocalStorage<boolean>("showGridDates");
     showSimpleStorage = new VizLocalStorage<boolean>("showGridSimple");
 
-    current: AssetViewType = $state(this.storage.get() ?? "grid");
+    current: EntityViewType = $state(this.storage.get() ?? "grid");
     showDates: boolean = $state(this.showDatesStorage.get() ?? false);
     simple: boolean = $state(this.showSimpleStorage.get() ?? false);
 
@@ -185,7 +185,7 @@ class ViewSettingsState {
         { id: "view-custom", label: "Custom" }
     ];
 
-    setView(view: AssetViewType) {
+    setView(view: EntityViewType) {
         this.current = view;
         this.storage.set(view);
     }

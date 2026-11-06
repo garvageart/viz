@@ -1,6 +1,4 @@
 <script lang="ts" generics="T extends ScopeItem">
-    import PhotoTooltip from "#lib/components/tooltips/PhotoTooltip.svelte";
-    import { mountTooltipComponent } from "#lib/components/tooltips/tooltip.js";
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
     import { PhotoGridVirtualizer } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
@@ -13,34 +11,33 @@
         selectionManager
     } from "#lib/states/selection.svelte.js";
     import { type SortState, photosSort } from "#lib/states/sort.svelte.js";
-    import type { AssetGridArray, AssetSortBy, AssetViewType } from "#lib/types/asset.js";
+    import type { EntityGridArray, EntitySortBy, EntityViewType } from "#lib/types/asset.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getScrollParent } from "#lib/utils/dom.js";
-    import { isAssetImage } from "#lib/utils/images.js";
     import { type Snippet, untrack } from "svelte";
     import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
-    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
+    import { hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
     import { touchSelectionAction } from "./actions";
 
-    export interface AssetViewProps<T extends ScopeItem> {
+    export interface EntityViewProps<T extends ScopeItem> {
         data: T[];
-        assetSnippet: Snippet<[T, CardVisualState]>;
+        entitySnippet: Snippet<[T, CardVisualState]>;
         customSnippet?: Snippet;
-        assetGridArray?: AssetGridArray<T>;
-        type?: AssetViewType;
-        assetGridDisplayProps?: SvelteHTMLElements["div"];
+        entityGridArray?: EntityGridArray<T>;
+        type?: EntityViewType;
+        entityGridDisplayProps?: SvelteHTMLElements["div"];
         columnCount?: number;
         searchValue?: string;
-        noAssetsMessage?: string;
+        noEntityMessage?: string;
         disableMultiSelection?: boolean;
-        assetClick?: () => void;
-        assetDblClick?: (e: Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0], asset: T) => void;
+        entityClick?: () => void;
+        entityDblClick?: (e: Parameters<MouseEventHandler<HTMLDivElement | HTMLTableRowElement>>[0], entity: T) => void;
         /** Disable clearing selection when clicking in other grids (useful when multiple grids share one selection set) */
         disableOutsideUnselect?: boolean;
         /** Fetches the next page of data; triggered when the viewport nears the bottom of loaded content */
         onLoadMore?: () => Promise<void> | void;
-        onassetcontext?: (detail: { asset: T; anchor: { x: number; y: number } | HTMLElement }) => void;
+        oncontext?: (detail: { entity: T; anchor: { x: number; y: number } | HTMLElement }) => void;
         /** Optional explicit column definitions or property keys for table view */
         columns?: TableColumn<T>[];
         /** Unique identifier for selection state management */
@@ -52,25 +49,25 @@
 
     let {
         data = $bindable(),
-        assetSnippet,
+        entitySnippet,
         customSnippet,
-        assetGridArray = $bindable(),
+        entityGridArray = $bindable(),
         searchValue = "",
-        noAssetsMessage,
+        noEntityMessage,
         disableMultiSelection = false,
         disableOutsideUnselect = false,
         onLoadMore,
         columnCount = $bindable(),
-        assetClick,
-        assetDblClick,
-        onassetcontext,
+        entityClick,
+        entityDblClick,
+        oncontext,
         type = $bindable("grid"),
-        assetGridDisplayProps = $bindable({}),
+        entityGridDisplayProps = $bindable({}),
         columns = $bindable(),
         scopeId = SelectionScopeNames.DEFAULT as ScopeIdFor<T>,
         disabledUids = new Set(),
         sortState = photosSort
-    }: AssetViewProps<T> = $props();
+    }: EntityViewProps<T> = $props();
 
     // Selection Management
     let selection = $derived(selectionManager.getScope(scopeId) as SelectionScope<T>);
@@ -87,13 +84,13 @@
     });
 
     // HTML Elements & Virtualizer
-    let assetGridDisplayEl: HTMLDivElement | undefined = $state();
+    let entityGridDisplayEl: HTMLDivElement | undefined = $state();
     let containerWidth = $state(0);
     let viewportHeight = $state(800);
 
     const virtualizer = new PhotoGridVirtualizer<T>({ bufferPx: 600 });
 
-    let allAssetsData = $derived(data);
+    let allEntityData = $derived(data);
 
     // Compute grid layout parameters
     let isListView = $derived(type === "list" || sortState.value.display === "list");
@@ -121,26 +118,29 @@
         columnCount = computedColumnCount;
     });
 
-    // Build assetGridArray from virtualizer rows (for backward compat with AssetsShell)
+    // Build entityGridArray from virtualizer rows (for backward compat with AssetsShell)
     let internalGridArray = $derived.by(() => {
         if (isListView) {
             return undefined;
         }
-        const array: { asset: T; row: number; column: number; columnSize: number; size: number; rowSize: number }[][] =
-            [];
+
+        const array: EntityGridArray<T> = [];
+
         let rowIndex = 0;
         for (const row of virtualizer.rows) {
             if (row.type !== "images") {
                 continue;
             }
+
             const gridRow = row.items.map((item, col) => ({
-                asset: item.asset,
+                entity: item.asset,
                 row: rowIndex,
                 column: col,
                 columnSize: item.width,
                 size: item.width * row.height,
                 rowSize: row.height
             }));
+
             array.push(gridRow);
             rowIndex++;
         }
@@ -148,7 +148,7 @@
     });
 
     $effect(() => {
-        assetGridArray = internalGridArray;
+        entityGridArray = internalGridArray;
     });
 
     // Scroll position tracking
@@ -192,11 +192,11 @@
     }
 
     function updateVirtualizerLayout() {
-        if (!assetGridDisplayEl) {
+        if (!entityGridDisplayEl) {
             return;
         }
 
-        const width = computeContentWidth(assetGridDisplayEl);
+        const width = computeContentWidth(entityGridDisplayEl);
         if (width <= 0) {
             return;
         }
@@ -204,9 +204,9 @@
         containerWidth = width;
 
         if (isListView) {
-            virtualizer.updateList(allAssetsData, width, listRowHeight);
+            virtualizer.updateList(allEntityData, width, listRowHeight);
         } else {
-            virtualizer.updateGrid(allAssetsData, width, {
+            virtualizer.updateGrid(allEntityData, width, {
                 columns: columnCount && columnCount > 0 ? columnCount : undefined,
                 itemWidth: gridItemWidth,
                 rowHeight: gridRowHeight,
@@ -228,27 +228,27 @@
 
     // Scroll + Resize handling
     $effect(() => {
-        if (!assetGridDisplayEl) {
+        if (!entityGridDisplayEl) {
             return;
         }
 
-        const parent = getScrollParent(assetGridDisplayEl);
+        const parent = getScrollParent(entityGridDisplayEl);
 
         function recomputeOffset() {
-            if (!assetGridDisplayEl || !(parent instanceof HTMLElement)) {
+            if (!entityGridDisplayEl || !(parent instanceof HTMLElement)) {
                 return;
             }
             const parentRect = parent.getBoundingClientRect();
-            const gridRect = assetGridDisplayEl.getBoundingClientRect();
+            const gridRect = entityGridDisplayEl.getBoundingClientRect();
             gridOffsetTop = gridRect.top - parentRect.top + parent.scrollTop;
         }
 
         function updateScrollPosition() {
-            if (!assetGridDisplayEl) {
+            if (!entityGridDisplayEl) {
                 return;
             }
 
-            containerWidth = computeContentWidth(assetGridDisplayEl);
+            containerWidth = computeContentWidth(entityGridDisplayEl);
 
             if (parent instanceof HTMLElement) {
                 viewportHeight = parent.clientHeight;
@@ -256,7 +256,7 @@
 
                 loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
             } else {
-                const rect = assetGridDisplayEl.getBoundingClientRect();
+                const rect = entityGridDisplayEl.getBoundingClientRect();
                 viewportHeight = window.innerHeight;
                 scrollTop = Math.max(0, -rect.top);
 
@@ -280,9 +280,9 @@
         });
 
         const ro = new ResizeObserver(onResize);
-        ro.observe(assetGridDisplayEl);
+        ro.observe(entityGridDisplayEl);
 
-        if (parent !== assetGridDisplayEl && parent !== window) {
+        if (parent !== entityGridDisplayEl && parent !== window) {
             usingExternalScroll = true;
             scrollParent = parent;
 
@@ -307,7 +307,7 @@
             untrack(() => {
                 updateVirtualizerLayout();
             });
-            if (assetGridDisplayEl && parent instanceof HTMLElement) {
+            if (entityGridDisplayEl && parent instanceof HTMLElement) {
                 loadMoreIfNearBottom(parent.scrollTop, parent.clientHeight, gridOffsetTop);
             }
 
@@ -334,8 +334,8 @@
 
     // Re-run layout when data changes
     $effect(() => {
-        if (assetGridDisplayEl) {
-            void allAssetsData?.length;
+        if (entityGridDisplayEl) {
+            void allEntityData?.length;
             untrack(() => {
                 updateVirtualizerLayout();
             });
@@ -346,11 +346,11 @@
     // the rendered rows. Without this, spacer heights are off and the table content
     // shifts when a virtual spacer is added/removed while scrolling.
     $effect(() => {
-        if (!assetGridDisplayEl || !isListView) {
+        if (!entityGridDisplayEl || !isListView) {
             return;
         }
 
-        const rowEl = assetGridDisplayEl.querySelector("tbody tr.asset-card");
+        const rowEl = entityGridDisplayEl.querySelector("tbody tr.entity-card");
         if (!rowEl) {
             return;
         }
@@ -365,93 +365,18 @@
     });
 
     function handleGridScroll(_e: Event) {
-        if (usingExternalScroll || !assetGridDisplayEl) {
+        if (usingExternalScroll || !entityGridDisplayEl) {
             return;
         }
-        scrollTop = assetGridDisplayEl.scrollTop;
+        scrollTop = entityGridDisplayEl.scrollTop;
         virtualizer.updateScroll(scrollTop, viewportHeight);
 
         loadMoreIfNearBottom(scrollTop, viewportHeight);
     }
 
-    // Tippy tooltip delegation
-    $effect(() => {
-        if (!assetGridDisplayEl || isListView || isMobile) {
-            return;
-        }
-
-        const delegatedTippy = delegate(assetGridDisplayEl, {
-            target: ".asset-card",
-            theme: "viz no-padding",
-            followCursor: "initial",
-            plugins: [followCursor],
-            arrow: false,
-            delay: [600, 0],
-            interactive: true,
-            onShow(instance: Instance<TippyProps>) {
-                hideAll({ duration: 0, exclude: instance });
-
-                const cardEl = instance.reference as HTMLElement;
-                const assetId = cardEl.getAttribute("data-asset-id");
-                const asset = allAssetsData.find((a) => a.uid === assetId);
-                if (!isAssetImage(asset)) {
-                    return false;
-                }
-
-                const imageAsset = asset;
-
-                const { node, destroy } = mountTooltipComponent(PhotoTooltip, {
-                    asset: imageAsset,
-                    clickHandler: (e: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => {
-                        instance.hide();
-                        if (assetDblClick) {
-                            assetDblClick(
-                                e as unknown as MouseEvent & {
-                                    currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
-                                },
-                                asset
-                            );
-                        }
-                    }
-                });
-                (instance as ExtendedTippyInstance)._destroyComponent = destroy;
-                instance.setContent(node);
-            },
-            onHidden(instance: Instance<TippyProps>) {
-                const extInst = instance as ExtendedTippyInstance;
-                const destroy = extInst._destroyComponent;
-                if (destroy) {
-                    destroy();
-                    extInst._destroyComponent = undefined;
-                }
-                instance.setContent("");
-            },
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: "preventOverflow",
-                        options: {
-                            boundary: "window",
-                            altBoundary: true,
-                            padding: 12
-                        }
-                    }
-                ]
-            }
-        });
-
-        return () => {
-            delegatedTippy.destroy();
-        };
-    });
-
-    interface ExtendedTippyInstance extends Instance<TippyProps> {
-        _destroyComponent?: () => void;
-    }
-
     // Inspecting/Debugging
     if (debugMode) {
-        $inspect("selected asset", selection.active);
+        $inspect("selected entity", selection.active);
     }
 
     function getNavigableImages(): T[] {
@@ -474,11 +399,11 @@
             return list;
         }
 
-        return (allAssetsData || []).filter((img) => !disabledUids.has(img.uid));
+        return (allEntityData || []).filter((img) => !disabledUids.has(img.uid));
     }
 
-    function getAssetPosition(assetId: string | undefined) {
-        if (!assetId) {
+    function getEntityPosition(entityId: string | undefined) {
+        if (!entityId) {
             return null;
         }
 
@@ -491,24 +416,26 @@
 
             for (let i = 0; i < row.items.length; i++) {
                 const item = row.items[i];
-                if (item.asset.uid === assetId) {
-                    return {
-                        rowIndex: r,
-                        centerX: item.left + item.width / 2
-                    };
+                if (item.asset.uid !== entityId) {
+                    continue;
                 }
+
+                return {
+                    rowIndex: r,
+                    centerX: item.left + item.width / 2
+                };
             }
         }
 
         return null;
     }
 
-    function scrollToAsset(asset: T, forceToTop = false) {
-        if (!assetGridDisplayEl || !asset?.uid || !virtualizer.rows.length) {
+    function scrollToEntity(asset: T, forceToTop = false) {
+        if (!entityGridDisplayEl || !asset?.uid || !virtualizer.rows.length) {
             return;
         }
 
-        const scroller = usingExternalScroll ? scrollParent : assetGridDisplayEl;
+        const scroller = usingExternalScroll ? scrollParent : entityGridDisplayEl;
         if (!scroller || !(scroller instanceof HTMLElement)) {
             return;
         }
@@ -544,31 +471,17 @@
         scroller.scrollTop = Math.max(0, targetOffset);
     }
 
-    let lastActiveUID: string | null = null;
-
     $effect(() => {
-        const currentActive = selection.active;
-        if (!currentActive) {
-            lastActiveUID = null;
-            return;
-        }
-
-        if (!assetGridDisplayEl) {
-            return;
-        }
-
-        const activeUid = currentActive.uid;
-        if (activeUid === lastActiveUID) {
-            return;
-        }
-
-        lastActiveUID = activeUid;
         untrack(() => {
-            scrollToAsset(currentActive, false);
+            if (!selection.active) {
+                return;
+            }
+
+            scrollToEntity(selection.active, false);
         });
     });
 
-    function handleImageCardSelect(asset: T, e: MouseEvent | KeyboardEvent) {
+    function handleCardSelect(asset: T, e: MouseEvent | KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
             return;
         }
@@ -599,7 +512,7 @@
             selection.select(asset);
         }
 
-        assetClick?.();
+        entityClick?.();
     }
 
     const handleMobileCardTap = (asset: T): MouseEventHandler<HTMLDivElement> => {
@@ -611,11 +524,11 @@
 
             if (selection.size > 0) {
                 selection.toggle(asset);
-                assetClick?.();
+                entityClick?.();
                 return;
             }
 
-            assetDblClick?.(e, asset);
+            entityDblClick?.(e, asset);
         };
     };
 
@@ -625,11 +538,11 @@
         }
         onFocus();
         selection.toggle(asset);
-        assetClick?.();
+        entityClick?.();
     }
 
-    function focusAssetElement(uid: string) {
-        const el = assetGridDisplayEl?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
+    function focusEntityElement(uid: string) {
+        const el = entityGridDisplayEl?.querySelector(`[data-entity-id="${uid}"]`) as HTMLElement | null;
         if (el) {
             el.focus();
         }
@@ -643,7 +556,7 @@
         const key = e.key;
         if (key === "Enter") {
             e.preventDefault();
-            assetDblClick?.(
+            entityDblClick?.(
                 e as unknown as MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
                 asset
             );
@@ -691,20 +604,20 @@
 
             const targetAsset = navList[targetIndex];
 
-            handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
-            scrollToAsset(targetAsset, false);
-            focusAssetElement(targetAsset.uid);
+            handleCardSelect(targetAsset, e as unknown as MouseEvent);
+            scrollToEntity(targetAsset, false);
+            focusEntityElement(targetAsset.uid);
             return;
         }
 
-        const pos = getAssetPosition(activeId);
+        const pos = getEntityPosition(activeId);
         if (!pos) {
             const fallbackIndex = isUp ? Math.max(0, currentIndex - 1) : Math.min(navList.length - 1, currentIndex + 1);
             const targetAsset = navList[fallbackIndex];
 
-            handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
-            scrollToAsset(targetAsset, false);
-            focusAssetElement(targetAsset.uid);
+            handleCardSelect(targetAsset, e as unknown as MouseEvent);
+            scrollToEntity(targetAsset, false);
+            focusEntityElement(targetAsset.uid);
             return;
         }
 
@@ -729,17 +642,17 @@
 
         if (targetRowIndex < 0) {
             const firstNav = navList[0];
-            handleImageCardSelect(firstNav, e as unknown as MouseEvent);
-            scrollToAsset(firstNav, false);
-            focusAssetElement(firstNav.uid);
+            handleCardSelect(firstNav, e as unknown as MouseEvent);
+            scrollToEntity(firstNav, false);
+            focusEntityElement(firstNav.uid);
             return;
         }
 
         if (targetRowIndex >= rows.length) {
             const lastNav = navList[navList.length - 1];
-            handleImageCardSelect(lastNav, e as unknown as MouseEvent);
-            scrollToAsset(lastNav, false);
-            focusAssetElement(lastNav.uid);
+            handleCardSelect(lastNav, e as unknown as MouseEvent);
+            scrollToEntity(lastNav, false);
+            focusEntityElement(lastNav.uid);
             return;
         }
 
@@ -766,9 +679,9 @@
         }
 
         const targetAsset = closestItem.asset;
-        handleImageCardSelect(targetAsset, e as unknown as MouseEvent);
-        scrollToAsset(targetAsset, false);
-        focusAssetElement(targetAsset.uid);
+        handleCardSelect(targetAsset, e as unknown as MouseEvent);
+        scrollToEntity(targetAsset, false);
+        focusEntityElement(targetAsset.uid);
     }
 
     function shouldKeepSelection(target: HTMLElement | null): boolean {
@@ -792,7 +705,7 @@
         }
 
         // 4. Asset cards keep selection
-        return Boolean(target.closest("[data-asset-id]"));
+        return Boolean(target.closest("[data-entity-id]"));
     }
 
     function handleContainerClick(e: MouseEvent) {
@@ -848,7 +761,7 @@
                         return;
                     }
                     e.preventDefault();
-                    selection.selectMultiple(allAssetsData);
+                    selection.selectMultiple(allEntityData);
                 }
             },
             {
@@ -862,7 +775,7 @@
                         return;
                     }
                     e.preventDefault();
-                    assetDblClick?.(
+                    entityDblClick?.(
                         e as unknown as MouseEvent & {
                             currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement);
                         },
@@ -889,13 +802,13 @@
     });
 </script>
 
-{#snippet assetComponentCard(assetData: T)}
+{#snippet entityComponentCard(assetData: T)}
     {@const isSelected = selection.has(assetData) || selection.active === assetData}
     {@const isDisabled = disabledUids.has(assetData.uid)}
     <div
-        class="asset-card"
+        class="entity-card"
         class:disabled-asset={isDisabled}
-        data-asset-id={assetData.uid}
+        data-entity-id={assetData.uid}
         class:max-width-column={computedColumnCount !== undefined && computedColumnCount > 1}
         class:selected-card={isSelected}
         role="button"
@@ -918,7 +831,7 @@
                 handleMobileCardTap(assetData)(e);
                 return;
             }
-            handleImageCardSelect(assetData, e);
+            handleCardSelect(assetData, e);
         }}
         onkeydown={(e) => {
             e.preventDefault();
@@ -930,7 +843,7 @@
                 return;
             }
 
-            assetDblClick?.(e, assetData);
+            entityDblClick?.(e, assetData);
         }}
         oncontextmenu={(e: MouseEvent & { currentTarget: HTMLElement }) => {
             if (isMobile) {
@@ -943,8 +856,8 @@
             if (!selection.has(assetData) || selection.size <= 1) {
                 selection.select(assetData);
             }
-            onassetcontext?.({
-                asset: assetData,
+            oncontext?.({
+                entity: assetData,
                 anchor: { x: e.clientX, y: e.clientY }
             });
         }}
@@ -952,37 +865,37 @@
         {#if isDisabled}
             <div class="disabled-overlay"></div>
         {/if}
-        {@render assetSnippet(assetData, { isSelected })}
+        {@render entitySnippet(assetData, { isSelected })}
     </div>
 {/snippet}
 
-{#snippet assetTable()}
+{#snippet entityTable()}
     <div
-        bind:this={assetGridDisplayEl}
-        class="viz-asset-table-container {assetGridDisplayProps.class}"
+        bind:this={entityGridDisplayEl}
+        class="viz-entity-table-container {entityGridDisplayProps.class}"
         class:is-active={selectionManager.activeScopeId === scopeId}
-        {...assetGridDisplayProps}
+        {...entityGridDisplayProps}
         use:unselectImagesOnClickOutsideAssetContainer
         onclick={handleContainerClick}
         onscroll={handleGridScroll}
     >
         <Table
-            name="asset-grid"
-            data={allAssetsData}
+            name="entity-table"
+            data={allEntityData}
             {columns}
             selectable={true}
             selectedKeys={selection.selectedItems.map((item) => item.uid)}
             columnsEditable={true}
             resizable={true}
             onrowdblclick={(e, asset) => {
-                if (assetDblClick) {
-                    assetDblClick(e, asset);
+                if (entityDblClick) {
+                    entityDblClick(e, asset);
                 }
             }}
             onselectionchange={(keys, rows) => {
                 if (keys.length === 0) {
                     selection.clear();
-                } else if (keys.length >= allAssetsData.length) {
+                } else if (keys.length >= allEntityData.length) {
                     selection.selectAll();
                 } else {
                     selection.selectMultiple(rows);
@@ -994,7 +907,7 @@
             }}
             onsort={(s) => {
                 if (s.key) {
-                    sortState.value.by = s.key as AssetSortBy;
+                    sortState.value.by = s.key as EntitySortBy;
                     sortState.value.order = s.order === "asc" ? "ASC" : "DESC";
                 }
             }}
@@ -1002,28 +915,28 @@
     </div>
 {/snippet}
 
-{#if allAssetsData.length === 0}
+{#if allEntityData.length === 0}
     {#if searchValue}
         <div class="no-results">
-            <span>No results found for "{searchValue}"</span>
+            <span>No results found for <strong>{searchValue}</strong></span>
         </div>
     {:else}
         <div>
-            <p>{noAssetsMessage}</p>
+            <span>{noEntityMessage}</span>
         </div>
     {/if}
 {:else if isListView}
-    {@render assetTable()}
+    {@render entityTable()}
 {:else if type === "custom"}
     {#if customSnippet}
         {@render customSnippet()}
     {/if}
 {:else}
     <div
-        bind:this={assetGridDisplayEl}
-        class="viz-asset-grid-container {assetGridDisplayProps.class}"
+        bind:this={entityGridDisplayEl}
+        class="viz-entity-table-container {entityGridDisplayProps.class}"
         class:is-active={selectionManager.activeScopeId === scopeId}
-        {...assetGridDisplayProps}
+        {...entityGridDisplayProps}
         use:unselectImagesOnClickOutsideAssetContainer
         onclick={handleContainerClick}
         onscroll={handleGridScroll}
@@ -1040,7 +953,7 @@
                                 class="grid-item"
                                 style="position: absolute; left: {item.left}px; width: {item.width}px; height: {row.height}px;"
                             >
-                                {@render assetComponentCard(item.asset)}
+                                {@render entityComponentCard(item.asset)}
                             </div>
                         {/each}
                     </div>
@@ -1051,7 +964,7 @@
 {/if}
 
 <style lang="scss">
-    .viz-asset-grid-container {
+    .viz-entity-table-container {
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
@@ -1059,7 +972,7 @@
         position: relative;
     }
 
-    .viz-asset-table-container {
+    .viz-entity-table-container {
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
@@ -1091,7 +1004,7 @@
         max-width: 100%;
     }
 
-    .asset-card {
+    .entity-card {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -1106,7 +1019,7 @@
         }
     }
 
-    .asset-card.disabled-asset {
+    .entity-card.disabled-asset {
         cursor: not-allowed;
         pointer-events: none;
         opacity: 0.65;

@@ -13,7 +13,7 @@
 
 <script lang="ts">
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
@@ -54,7 +54,7 @@
     import { type CollectionUIDSelectionScope, selectionManager } from "#lib/states/selection.svelte.js";
     import { collectionDetailSort } from "#lib/states/sort.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import type { AssetGridArray } from "#lib/types/asset.js";
+    import type { EntityGridArray } from "#lib/types/asset.js";
     import { type ImageUploadSuccess, uploadManager } from "#lib/upload/manager.svelte.js";
     import { getImageLabel } from "#lib/utils/images.js";
     import type VizView from "#lib/views/views.svelte.js";
@@ -231,7 +231,7 @@
         selectionManager.removeScope(scopeId);
     });
 
-    let imageGridArray: AssetGridArray<ImageAsset> | undefined = $state();
+    let imageGridArray: EntityGridArray<ImageAsset> | undefined = $state();
     let groups: DateGroup[] = $derived.by(() => {
         if (viewSettings.showDates) {
             return groupImagesByDate(displayData);
@@ -281,8 +281,8 @@
     ]);
 
     // Grid props
-    let grid: ComponentProps<typeof AssetGrid<ImageAsset>> = $derived({
-        assetSnippet: imageCard,
+    let grid: ComponentProps<typeof EntityView<ImageAsset>> = $derived({
+        entitySnippet: imageCard,
         customSnippet: justifiedGrid,
         type: viewSettings.current,
         assetGridArray: imageGridArray,
@@ -291,21 +291,21 @@
         scopeId,
         assetGridDisplayProps: { style: `padding: 2em ${isLayoutPage() ? "1em" : "2em"};` },
         columns: imageTableColumns,
-        assetDblClick: (_e, asset?: ImageAsset) => {
+        entityDblClick: (_e, asset?: ImageAsset) => {
             const target = asset ?? selectionFirstImage;
             if (target) {
                 lightbox.open(target);
             }
         },
-        onassetcontext: (detail: { asset: ImageAsset; anchor: { x: number; y: number } | HTMLElement }) => {
-            const { asset, anchor } = detail;
-            if (!selectionScope.has(asset)) {
-                selectionScope.select(asset);
+        oncontext: (detail) => {
+            const { entity, anchor } = detail;
+            if (!selectionScope.has(entity)) {
+                selectionScope.select(entity);
             }
-            selectionScope.active = asset;
+            selectionScope.active = entity;
 
             if (dev) {
-                console.log("asset", $state.snapshot(asset));
+                console.log("entity", $state.snapshot(entity));
             }
 
             openImageContextMenu(anchor);

@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends ScopeItem">
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "#lib/sort/sort.js";
     import { type ScopeItem, selectionManager } from "#lib/states/selection.svelte.js";
@@ -13,7 +13,7 @@
     import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {
-        grid: ComponentProps<typeof AssetGrid<T>>;
+        grid: ComponentProps<typeof EntityView<T>>;
         children?: Snippet;
         leadingSnippet?: Snippet;
         selectionToolbarSnippet?: Snippet;
@@ -43,7 +43,7 @@
         sortState = photosSort
     }: Props = $props();
 
-    let assetGridArray: typeof grid.assetGridArray = $state();
+    let assetGridArray: typeof grid.entityGridArray = $state();
     let columnCount = $state<number | undefined>(undefined);
 
     let selectionScope = $derived(grid.scopeId ? selectionManager.getScope(grid.scopeId) : null);
@@ -58,7 +58,7 @@
         console.table(
             assetGridArray?.map((i) => {
                 return i.map((j) => {
-                    return j.asset?.name ?? j.asset?.uid;
+                    return j.entity?.name ?? j.entity?.uid;
                 });
             })
         );
@@ -99,7 +99,13 @@
                 {/if}
             </div>
         {:else}
-            <AssetGrid {...grid} {sortState} bind:assetGridArray bind:data={gridData} bind:columnCount />
+            <EntityView
+                {...grid}
+                {sortState}
+                bind:entityGridArray={assetGridArray}
+                bind:data={gridData}
+                bind:columnCount
+            />
         {/if}
     </div>
 

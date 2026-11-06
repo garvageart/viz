@@ -142,7 +142,7 @@
     {...props}
     class="coll-card"
     class:selected={isSelected}
-    data-asset-id={collection.uid}
+    data-entity-id={collection.uid}
     title={collection.name}
     use:draggable={{
         items: [

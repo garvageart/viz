@@ -1,11 +1,11 @@
-import type { AssetSort } from "#lib/types/asset.js";
+import type { EntitySort } from "#lib/types/asset.js";
 import { openDB } from "idb";
 import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
 import { SortState } from "./sort.svelte";
 
 const DB_NAME = "viz";
-const DEFAULTS: AssetSort = {
+const DEFAULTS: EntitySort = {
     display: "cover",
     group: { by: "year", order: "ASC" },
     by: "taken_at",
@@ -45,7 +45,7 @@ async function waitForStored(key: string) {
 }
 
 // Poll until the async load has hydrated the instance with the expected value.
-async function waitForValue(state: SortState, expected: AssetSort) {
+async function waitForValue(state: SortState, expected: EntitySort) {
     for (let i = 0; i < 50; i++) {
         if (JSON.stringify(state.value) === JSON.stringify(expected)) {
             return;

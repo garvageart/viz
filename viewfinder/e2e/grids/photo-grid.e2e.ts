@@ -21,7 +21,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await expect(grid).toBeVisible();
 
         // Check for photos
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
 
         // Wait for potential network requests to populate the grid
         await expect(async () => {
@@ -76,7 +76,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should open lightbox on double click and navigate", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
 
         await expect(async () => {
             const count = await photos.count();
@@ -133,7 +133,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should show context menu on right click and handle actions", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
 
         await expect(async () => {
             const count = await photos.count();
@@ -158,7 +158,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should handle keyboard navigation in the grid", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
 
         await expect(async () => {
             const count = await photos.count();
@@ -189,7 +189,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await page.waitForLoadState("networkidle");
         await expect(page.locator("main, .route-scroll, .tab-group-content").first()).toBeVisible({ timeout: 15000 });
 
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         // Wait for search results
         await expect(async () => {
             const count = await photos.count();
@@ -211,7 +211,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             // Double click to navigate to collection (if it's a collection card)
             // But we are testing PhotoAssetGrid here specifically.
             // On search page there are also collections.
-            const collections = page.locator(".coll-card, .asset-card");
+            const collections = page.locator(".coll-card, .entity-card");
             if ((await collections.count()) > 0) {
                 await collections.first().dblclick();
                 await page.waitForLoadState("networkidle");
@@ -225,7 +225,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await page.waitForLoadState("networkidle");
         await expect(page.locator("main, .route-scroll, .tab-group-content").first()).toBeVisible();
 
-        const collectionCard = page.locator(".coll-card, .asset-card").first();
+        const collectionCard = page.locator(".coll-card, .entity-card").first();
 
         // Wait for collections to load
         await expect(async () => {
@@ -254,7 +254,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             }).toPass({ timeout: 15000 });
 
             if (await grid.isVisible()) {
-                const photos = page.locator(".asset-photo, .asset-card");
+                const photos = page.locator(".asset-photo, .entity-card");
                 // Wait for images in collection
                 await expect(async () => {
                     const count = await photos.count();
@@ -284,7 +284,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should keep scroll stable during favourite/unfavourite", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         await expect(async () => {
             expect(await photos.count()).toBeGreaterThan(0);
         }).toPass({ timeout: 10000 });
@@ -317,7 +317,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should scroll selected asset toward the top of viewport on ArrowDown", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         if ((await photos.count()) < 3) {
             return;
         }
@@ -343,7 +343,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should keep selected photo within viewport bounds on keyboard nav", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         if ((await photos.count()) < 3) {
             return;
         }
@@ -364,7 +364,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
         await page.waitForTimeout(300);
 
         // Find the currently selected photo and verify it's visible in the container
-        const selectedPhoto = page.locator(".asset-photo.selected-photo, .asset-card.selected-card").first();
+        const selectedPhoto = page.locator(".asset-photo.selected-photo, .entity-card.selected-card").first();
         await expect(selectedPhoto).toBeVisible();
 
         const containerBox = await container.boundingBox();
@@ -381,7 +381,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should not scroll when clicking a visible photo with the mouse", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         if ((await photos.count()) < 3) {
             return;
         }
@@ -420,7 +420,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     });
 
     test("should support zooming in the lightbox using mouse wheel and trackpad pinch", async ({ page }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
         await expect(async () => {
             const count = await photos.count();
             expect(count).toBeGreaterThan(0);
@@ -472,7 +472,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
     test("shouldKeepSelection: clicking empty space clears selection while interactive controls preserve it", async ({
         page
     }) => {
-        const photos = page.locator(".asset-photo, .asset-card");
+        const photos = page.locator(".asset-photo, .entity-card");
 
         await expect(async () => {
             const count = await photos.count();

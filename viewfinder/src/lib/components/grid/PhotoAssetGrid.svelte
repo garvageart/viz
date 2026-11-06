@@ -193,7 +193,7 @@
     }
 
     function focusAssetElement(uid: string) {
-        const el = photoGridEl?.querySelector(`[data-asset-id="${uid}"]`) as HTMLElement | null;
+        const el = photoGridEl?.querySelector(`[data-entity-id="${uid}"]`) as HTMLElement | null;
         if (el) {
             el.focus();
         }
@@ -934,7 +934,7 @@
         }
 
         // 4. Asset cards keep selection
-        return Boolean(target.closest("[data-asset-id]"));
+        return Boolean(target.closest("[data-entity-id]"));
     }
 
     function handleContainerClick(e: MouseEvent) {
@@ -1059,7 +1059,7 @@
         class:disabled-asset={isDisabled}
         class:selected-photo={isSelected}
         class:multi-selected-photo={isSelected && isMultiSelecting}
-        data-asset-id={asset.uid}
+        data-entity-id={asset.uid}
         aria-current={isActive ? "true" : undefined}
         role="button"
         tabindex={0}

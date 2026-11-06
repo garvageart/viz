@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
@@ -38,7 +38,7 @@
     import { search, viewSettings } from "#lib/states/index.svelte.js";
     import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import type { AssetViewType } from "#lib/types/asset.js";
+    import type { EntityViewType } from "#lib/types/asset.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getImageLabel } from "#lib/utils/images.js";
     import { goto } from "$app/navigation";
@@ -150,8 +150,8 @@
     );
 
     // View Modes
-    let imageViewMode = $state<AssetViewType>(viewSettings.current);
-    let collectionViewMode = $state<AssetViewType>(viewSettings.current);
+    let imageViewMode = $state<EntityViewType>(viewSettings.current);
+    let collectionViewMode = $state<EntityViewType>(viewSettings.current);
 
     // Display options for Images
     let imageDisplayMenuItems: MenuItem[] = $derived([
@@ -220,21 +220,21 @@
 
     let allImagesFlat = $derived(consolidatedGroups.flatMap((g) => g.allImages.map((x) => x.image)));
 
-    // Grid props for Collections (using AssetsShell/AssetGrid)
-    let collectionsGrid: ComponentProps<typeof AssetGrid<Collection>> = $derived({
+    // Grid props for Collections (using AssetsShell/EntityView)
+    let collectionsGrid: ComponentProps<typeof EntityView<Collection>> = $derived({
         data: collections,
-        assetSnippet: collectionCard,
+        entitySnippet: collectionCard,
         searchValue: search.value,
         type: collectionViewMode,
         scopeId: collectionScopeId,
-        onassetcontext: (detail) => {
-            const { asset } = detail;
+        oncontext: (detail) => {
+            const { entity: asset } = detail;
             if (!collectionSelection.has(asset) || collectionSelection.selected.size <= 1) {
                 collectionSelection.select(asset);
             }
             contextMenu.open(collectionActionMenuItems, detail.anchor, { offsetY: 0 });
         },
-        assetDblClick: (_e, asset: Collection) => {
+        entityDblClick: (_e, asset: Collection) => {
             goto(`/collections/${asset.uid}`);
         }
     });
@@ -608,10 +608,10 @@
                                 {/if}
                             </div>
                             <div class="collection-group-container">
-                                <AssetGrid
+                                <EntityView
                                     {...collectionsGrid}
-                                    onassetcontext={(detail) => {
-                                        const { asset } = detail;
+                                    oncontext={(detail) => {
+                                        const { entity: asset } = detail;
                                         if (!collectionSelection.has(asset) || collectionSelection.size <= 1) {
                                             collectionSelection.select(asset);
                                         }
@@ -669,20 +669,20 @@
                             {/snippet}
 
                             <div class="photo-group-container">
-                                <AssetGrid
+                                <EntityView
                                     data={images}
                                     type={imageViewMode}
-                                    assetSnippet={imageCard}
+                                    entitySnippet={imageCard}
                                     customSnippet={justifiedGrid}
                                     onLoadMore={() => paginateSearch()}
                                     scopeId={imageScopeId}
-                                    assetDblClick={(_e, asset) => {
+                                    entityDblClick={(_e, asset) => {
                                         openLightbox(asset);
                                     }}
-                                    onassetcontext={(detail) => {
-                                        const { asset } = detail;
-                                        if (!imageSelection.has(asset) || imageSelection.size <= 1) {
-                                            imageSelection.select(asset);
+                                    oncontext={(detail) => {
+                                        const { entity } = detail;
+                                        if (!imageSelection.has(entity) || imageSelection.size <= 1) {
+                                            imageSelection.select(entity);
                                         }
 
                                         contextMenu.open(imageActionMenuItems, detail.anchor, { offsetY: 0 });

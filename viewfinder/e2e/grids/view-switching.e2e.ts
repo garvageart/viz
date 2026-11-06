@@ -6,7 +6,7 @@ test.describe("View Switching Functionality", () => {
         await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
 
         // Wait for photos to load (toolbar only appears if there are photos)
-        const photo = page.locator(".asset-photo, .asset-card");
+        const photo = page.locator(".asset-photo, .entity-card");
         await expect(async () => {
             const count = await photo.count();
             expect(count).toBeGreaterThan(0);
@@ -46,7 +46,7 @@ test.describe("View Switching Functionality", () => {
         await expect(imagesSection).toBeVisible();
 
         // Wait for images to load in search
-        await expect(imagesSection.locator(".asset-photo, .asset-card").first()).toBeVisible({ timeout: 15000 });
+        await expect(imagesSection.locator(".asset-photo, .entity-card").first()).toBeVisible({ timeout: 15000 });
 
         // Find the Display dropdown within the images section via ID selector
         const imageDisplayDropdown = imagesSection.locator("#search-image-display-dropdown").first();
@@ -68,7 +68,7 @@ test.describe("View Switching Functionality", () => {
         await page.goto("/collections");
         await page.waitForLoadState("networkidle");
 
-        const collectionCard = page.locator(".asset-card, .coll-card").first();
+        const collectionCard = page.locator(".entity-card, .coll-card").first();
         await expect(collectionCard).toBeVisible({ timeout: 15000 });
         await collectionCard.dblclick();
 

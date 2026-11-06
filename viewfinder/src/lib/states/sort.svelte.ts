@@ -1,9 +1,9 @@
 import { DbSettings } from "#lib/db/settings.js";
-import type { AssetSort } from "#lib/types/asset.js";
+import type { EntitySort } from "#lib/types/asset.js";
 
 export type SortSection = "photos" | "collections" | "collection-detail";
 
-const DEFAULTS: AssetSort = {
+const DEFAULTS: EntitySort = {
     display: "cover",
     group: {
         by: "year",
@@ -13,18 +13,18 @@ const DEFAULTS: AssetSort = {
     order: "DESC"
 } as const;
 
-function createDefaults(): AssetSort {
+function createDefaults(): EntitySort {
     return structuredClone(DEFAULTS);
 }
 
 export class SortState {
-    private storage: DbSettings<AssetSort>;
+    private storage: DbSettings<EntitySort>;
     private readyPromise: Promise<void>;
 
-    value: AssetSort = $state(createDefaults());
+    value: EntitySort = $state(createDefaults());
 
     constructor(readonly section: string) {
-        this.storage = new DbSettings<AssetSort>(`sort.${section}`);
+        this.storage = new DbSettings<EntitySort>(`sort.${section}`);
         this.readyPromise = this.load();
 
         $effect.root(() => {

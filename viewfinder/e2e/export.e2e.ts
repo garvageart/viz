@@ -58,7 +58,7 @@ test.describe("Export Pipeline", () => {
         await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
 
         // 2. Select first photo
-        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        const photoGridItems = page.locator(".asset-photo, .entity-card");
         await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
         await photoGridItems.first().click({ button: "right" });
 
@@ -119,7 +119,7 @@ test.describe("Export Pipeline", () => {
         await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
 
         // Wait for photos in grid
-        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        const photoGridItems = page.locator(".asset-photo, .entity-card");
         await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
         const photoCount = await photoGridItems.count();
 
@@ -194,7 +194,7 @@ test.describe("Export Pipeline", () => {
         await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
 
         // 2. Select first photo and open Export panel
-        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        const photoGridItems = page.locator(".asset-photo, .entity-card");
         await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
         await photoGridItems.first().click({ button: "right" });
 
@@ -236,7 +236,7 @@ test.describe("Export Pipeline", () => {
         await page.goto("/photos");
         await expect(page.locator("main, .viz-photo-grid-container").first()).toBeVisible({ timeout: 20000 });
 
-        const photoGridItems = page.locator(".asset-photo, .asset-card");
+        const photoGridItems = page.locator(".asset-photo, .entity-card");
         await expect(photoGridItems.first()).toBeVisible({ timeout: 20000 });
         await photoGridItems.first().click({ button: "right" });
 

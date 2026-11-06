@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
-    import AssetGrid from "#lib/components/grid/AssetView.svelte";
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
@@ -434,21 +434,21 @@
         {/snippet}
 
         <div class="photo-group-container">
-            <AssetGrid
+            <EntityView
                 data={galleryState.images}
                 type={viewSettings.current}
-                assetSnippet={imageCard}
+                entitySnippet={imageCard}
                 sortState={photosSort}
                 customSnippet={justifiedGrid}
                 onLoadMore={() => galleryState.paginate()}
                 {scopeId}
-                assetDblClick={(
+                entityDblClick={(
                     _e: MouseEvent & { currentTarget: EventTarget & (HTMLDivElement | HTMLTableRowElement) },
                     asset: ImageAsset
                 ) => {
                     openLightbox(asset);
                 }}
-                onassetcontext={(detail) => {
+                oncontext={(detail) => {
                     contextMenu.open(actionMenuItems, detail.anchor, { offsetY: 0 });
                 }}
             />
