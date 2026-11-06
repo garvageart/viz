@@ -28,7 +28,6 @@
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
-    import { SvelteSet } from "svelte/reactivity";
     import { fade } from "svelte/transition";
     import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
     import "tippy.js/dist/tippy.css";
@@ -472,6 +471,7 @@
     // ALL GRID IMAGE RENDERING STUFF
     // ----------------------------
     let isMultiSelecting = $derived(isMobile ? selection.size > 0 : selection.size > 1);
+    const loadedImageUIDs = new Set<string>();
 
     const groupLookup = $derived.by(() => {
         const map = new Map<string, ImageAsset[]>();
@@ -846,8 +846,6 @@
             }
         });
     }
-
-    const loadedImageUIDs = new SvelteSet<string>();
 
     function handleImageCardSelect(asset: ImageAsset, e: MouseEvent | KeyboardEvent) {
         if (disabledUids.has(asset.uid)) {
