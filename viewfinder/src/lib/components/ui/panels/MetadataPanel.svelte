@@ -625,7 +625,8 @@
                                         <div class="value-sub">
                                             {getTakenAt(currentAsset).toLocaleTimeString(undefined, {
                                                 hour: "numeric",
-                                                minute: "numeric"
+                                                minute: "numeric",
+                                                second: "numeric"
                                             })}
                                             {getTimezoneAbbreviation()}
                                         </div>
@@ -659,27 +660,31 @@
                     </div>
                 </div>
 
-                <!-- Exposure & Lighting Card -->
+                <!-- Exposure -->
+                {#if selectedImages.some((img) => img.exif?.exposure_time || img.exif?.iso || img.exif?.exposure_bias_value || img.exif?.exposure_value)}
+                    <div class="exif-card">
+                        <div class="card-row main-row center">
+                            <MaterialIcon iconName="camera" class="exif-material-icon" />
+                            <div class="card-values">
+                                {@render metaValue(
+                                    (img) =>
+                                        [
+                                            img.exif?.exposure_time,
+                                            img.exif?.iso ? `ISO ${img.exif.iso}` : null,
+                                            img.exif?.exposure_bias_value ?? img.exif?.exposure_value
+                                        ]
+                                            .filter(Boolean)
+                                            .join("  ·  "),
+                                    "big"
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Lighting Card -->
                 {#if selectedImages.some((img) => img.exif && !isEmpty(img.exif))}
                     <div class="exif-card">
-                        {#if selectedImages.some((img) => img.exif?.exposure_time || img.exif?.iso || img.exif?.exposure_bias_value || img.exif?.exposure_value)}
-                            <div class="card-row main-row">
-                                <MaterialIcon iconName="camera" class="exif-material-icon" />
-                                <div class="card-values">
-                                    {@render metaValue(
-                                        (img) =>
-                                            [
-                                                img.exif?.exposure_time,
-                                                img.exif?.iso ? `ISO ${img.exif.iso}` : null,
-                                                img.exif?.exposure_bias_value ?? img.exif?.exposure_value
-                                            ]
-                                                .filter(Boolean)
-                                                .join("  ·  "),
-                                        "big"
-                                    )}
-                                </div>
-                            </div>
-                        {/if}
                         {#if selectedImages.some((img) => getShootingMode(img))}
                             <div class="card-row meta-row">
                                 <MaterialIcon iconName="settings_photo_camera" class="exif-material-icon" />

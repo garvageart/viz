@@ -2,7 +2,7 @@
     export type AccordionIconPosition = "left" | "right";
     export type AccordionIconType = "chevron" | "arrow" | "none";
     export type AccordionVariant = "default" | "subtle" | "bordered" | "flush";
-    export type AccordionSize = "compact" | "standard" | "large";
+    export type AccordionSize = "compact" | "standard" | "medium" | "large";
 </script>
 
 <script lang="ts">
@@ -210,7 +210,6 @@
         color: var(--viz-text-primary);
         font-family: var(--viz-display-font);
         font-weight: 600;
-        text-align: left;
         gap: var(--viz-spacing-xs);
         transition:
             background-color 0.2s ease,
@@ -228,6 +227,10 @@
 
     .viz-accordion-header.size-standard {
         padding: var(--viz-spacing-xs) var(--viz-spacing-sm);
+    }
+
+    .viz-accordion-header.size-medium {
+        padding: var(--viz-spacing-sm) var(--viz-spacing-md);
     }
 
     .viz-accordion-header.size-large {
