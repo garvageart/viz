@@ -16,12 +16,15 @@
     import { selectionManager } from "#lib/states/selection.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import {
+        formatAltitude,
         formatBytes,
+        formatCoordinates,
         formatExifTag,
         formatExifVersion,
         formatFocalLengthInfo,
         formatMeteringMode,
         formatOrientation,
+        formatSpeed,
         getCameraName,
         getCommonValue,
         getFlashInfo,
@@ -790,8 +793,11 @@
                             <MaterialIcon iconName="location_on" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="name-row">
-                                    <div class="value-big">
-                                        {currentAsset.exif.latitude}, {currentAsset.exif.longitude}
+                                    <div
+                                        class="value-big"
+                                        title={`${currentAsset.exif.latitude}, ${currentAsset.exif.longitude}`}
+                                    >
+                                        {formatCoordinates(currentAsset.exif.latitude, currentAsset.exif.longitude)}
                                     </div>
                                     <Button
                                         variant="ghost"
@@ -818,13 +824,13 @@
                                     <div class="value-sub">
                                         {[
                                             currentAsset.exif.gps_altitude
-                                                ? `Altitude: ${currentAsset.exif.gps_altitude}`
+                                                ? `Altitude: ${formatAltitude(currentAsset.exif.gps_altitude)}`
                                                 : null,
                                             currentAsset.exif.gps_img_direction
                                                 ? `Direction: ${currentAsset.exif.gps_img_direction}° ${currentAsset.exif.gps_img_direction_ref ?? ""}`.trim()
                                                 : null,
                                             currentAsset.exif.gps_speed
-                                                ? `Speed: ${currentAsset.exif.gps_speed} ${currentAsset.exif.gps_speed_ref ?? "km/h"}`.trim()
+                                                ? `Speed: ${formatSpeed(currentAsset.exif.gps_speed, currentAsset.exif.gps_speed_ref)}`
                                                 : null
                                         ]
                                             .filter(Boolean)

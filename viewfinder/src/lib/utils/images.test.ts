@@ -5,10 +5,13 @@ import {
     compareByTakenAtDesc,
     convertEXIFDateTime,
     createTransformEtag,
+    formatAltitude,
     formatBytes,
+    formatCoordinates,
     formatMegapixels,
     formatSeconds,
     formatShutterSpeed,
+    formatSpeed,
     getByteUnitString,
     getBytesWithUnit,
     getCommonValue,
@@ -515,5 +518,66 @@ describe("getCommonValue", () => {
             isMixed: true,
             value: undefined
         });
+    });
+});
+
+describe("formatCoordinates", () => {
+    it("formats decimal degrees into human-friendly DMS format", () => {
+        expect(formatCoordinates("-26.217339", "28.045579")).toBe("26°13′02″ S, 28°02′44″ E");
+    });
+
+    it("formats positive latitudes and negative longitudes", () => {
+        expect(formatCoordinates("48.856667", "-2.351111")).toBe("48°51′24″ N, 2°21′04″ W");
+    });
+
+    it("returns raw string if not decimal coordinates", () => {
+        expect(formatCoordinates("26", "28")).toBe("26, 28");
+    });
+
+    it("returns empty string if coordinates missing", () => {
+        expect(formatCoordinates(null, null)).toBe("");
+    });
+});
+
+describe("formatAltitude", () => {
+    it("appends m to integer altitude", () => {
+        expect(formatAltitude("1773.00")).toBe("1773 m");
+    });
+
+    it("appends m to decimal altitude", () => {
+        expect(formatAltitude("1773.5")).toBe("1773.5 m");
+    });
+
+    it("keeps existing unit if present", () => {
+        expect(formatAltitude("1773 m")).toBe("1773 m");
+    });
+
+    it("returns empty string on empty input", () => {
+        expect(formatAltitude("")).toBe("");
+        expect(formatAltitude(null)).toBe("");
+    });
+});
+
+describe("formatSpeed", () => {
+    it("translates K to km/h", () => {
+        expect(formatSpeed("0.0", "K")).toBe("0 km/h");
+        expect(formatSpeed("25.5", "K")).toBe("25.5 km/h");
+    });
+
+    it("translates M to mph", () => {
+        expect(formatSpeed("60", "M")).toBe("60 mph");
+    });
+
+    it("translates N to knots", () => {
+        expect(formatSpeed("12", "N")).toBe("12 knots");
+    });
+
+    it("defaults to km/h if no ref provided", () => {
+        expect(formatSpeed("10")).toBe("10 km/h");
+    });
+
+    it("returns empty string on empty speed", () => {
+        expect(formatSpeed("")).toBe("");
+        expect(formatSpeed(null)).toBe("");
     });
 });

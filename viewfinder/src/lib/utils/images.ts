@@ -911,3 +911,93 @@ export function getCommonValue<T, V>(items: T[], getter: (item: T) => V): { isMi
 
     return { isMixed: false, value: unique.values().next().value };
 }
+
+function toDMS(val: number, isLat: boolean): string {
+    const dir = isLat ? (val < 0 ? "S" : "N") : val < 0 ? "W" : "E";
+    const absoluteVal = Math.abs(val);
+    const deg = Math.floor(absoluteVal);
+
+    const minFloat = (absoluteVal - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = Math.round((minFloat - min) * 60);
+
+    return `${deg}°${min.toString().padStart(2, "0")}′${sec.toString().padStart(2, "0")}″ ${dir}`;
+}
+
+/**
+ * Formats GPS coordinates for display. Converts decimal coordinates to DMS
+ * (e.g. `26°13′02″ S, 28°02′44″ E`), while falling back gracefully.
+ */
+export function formatCoordinates(latitude?: string | null, longitude?: string | null): string {
+    if (!latitude || !longitude) {
+        return "";
+    }
+
+    const lat = latitude.trim();
+    const lon = longitude.trim();
+
+    const latNum = parseFloat(lat);
+    const lonNum = parseFloat(lon);
+
+    if (!isNaN(latNum) && !isNaN(lonNum) && (lat.includes(".") || lon.includes("."))) {
+        return `${toDMS(latNum, true)}, ${toDMS(lonNum, false)}`;
+    }
+
+    return `${lat}, ${lon}`;
+}
+
+/**
+ * Formats GPS altitude into human-readable text with units (e.g. "1773 m").
+ */
+export function formatAltitude(altitude?: string | null): string {
+    if (!altitude) {
+        return "";
+    }
+
+    const trimmed = altitude.trim();
+    if (/[a-zA-Z]/.test(trimmed)) {
+        return trimmed;
+    }
+
+    const num = parseFloat(trimmed);
+    if (!isNaN(num)) {
+        if (Number.isInteger(num)) {
+            return `${num} m`;
+        }
+        return `${num.toFixed(1)} m`;
+    }
+
+    return `${trimmed} m`;
+}
+
+/**
+ * Formats GPS speed with correct unit conversion (e.g. "K" -> "km/h", "M" -> "mph", "N" -> "knots").
+ */
+export function formatSpeed(speed?: string | null, speedRef?: string | null): string {
+    if (!speed) {
+        return "";
+    }
+
+    const ref = speedRef?.trim().toUpperCase();
+    let unit = "km/h";
+    if (ref === "K") {
+        unit = "km/h";
+    } else if (ref === "M") {
+        unit = "mph";
+    } else if (ref === "N") {
+        unit = "knots";
+    } else if (speedRef && speedRef.trim()) {
+        unit = speedRef.trim();
+    }
+
+    const num = parseFloat(speed.trim());
+    if (!isNaN(num)) {
+        if (Number.isInteger(num)) {
+            return `${num} ${unit}`;
+        }
+
+        return `${num.toFixed(1)} ${unit}`;
+    }
+
+    return `${speed} ${unit}`.trim();
+}

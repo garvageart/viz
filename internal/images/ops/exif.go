@@ -103,6 +103,7 @@ func CleanExifVal(s string) string {
 func CleanDescription(s string) string {
 	s = strings.TrimSpace(s)
 	lower := strings.ToLower(s)
+
 	if strings.HasPrefix(lower, "charset=ascii ") {
 		s = strings.TrimSpace(s[14:])
 	} else if strings.HasPrefix(lower, "ascii") {
@@ -130,6 +131,159 @@ func GetExifDescription(exifData map[string]string) *string {
 	return &cleaned
 }
 
+func parseRationalOrFloat(s string) (float64, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, false
+	}
+	if slashIdx := strings.Index(s, "/"); slashIdx > 0 {
+		numStr := strings.TrimSpace(s[:slashIdx])
+		denStr := strings.TrimSpace(s[slashIdx+1:])
+		num, err1 := strconv.ParseFloat(numStr, 64)
+		den, err2 := strconv.ParseFloat(denStr, 64)
+		if err1 == nil && err2 == nil && den != 0 {
+			return num / den, true
+		}
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return v, true
+	}
+	return 0, false
+}
+
+// FindRawExif returns the uncleaned raw string for the first matching EXIF key.
+func FindRawExif(exifData map[string]string, keys ...string) *string {
+	if len(exifData) == 0 {
+		return nil
+	}
+
+	search := func(k string) (string, bool) {
+		if v, ok := exifData[k]; ok {
+			return v, true
+		}
+
+		if v, ok := exifData["exif-"+k]; ok {
+			return v, true
+		}
+
+		for _, ifd := range []string{"ifd0", "ifd1", "ifd2", "ifd3", "ifd4"} {
+			key := "exif-" + ifd + "-" + k
+			if v, ok := exifData[key]; ok {
+				return v, true
+			}
+		}
+
+		return "", false
+	}
+
+	for _, k := range keys {
+		if v, ok := search(k); ok {
+			trimmed := strings.TrimSpace(v)
+			if trimmed != "" {
+				return &trimmed
+			}
+		}
+	}
+
+	return nil
+}
+
+var reDMS = regexp.MustCompile(`(?i)^\s*(\d+(?:\.\d+)?)\s*(?:deg|°|d)?\s*(\d+(?:\.\d+)?)\s*['′m]?\s*(\d+(?:\.\d+)?)\s*["″s]?\s*([NSEW])?\s*$`)
+
+func applyRef(val float64, ref string) float64 {
+	switch strings.ToUpper(strings.TrimSpace(ref)) {
+	case "S", "SOUTH", "W", "WEST":
+		if val > 0 {
+			return -val
+		}
+	case "N", "NORTH", "E", "EAST":
+		if val < 0 {
+			return -val
+		}
+	}
+	return val
+}
+
+func extractCoordinateTokens(raw string) []float64 {
+	target := raw
+	if pIdx := strings.Index(raw, " ("); pIdx > 0 {
+		target = raw[:pIdx]
+	} else if strings.HasPrefix(raw, "(") {
+		end := strings.Index(raw, ")")
+		if end > 0 {
+			target = raw[1:end]
+		}
+
+		if rIdx := strings.Index(target, "Rational"); rIdx > 0 {
+			target = target[:rIdx]
+		}
+	}
+
+	target = strings.ReplaceAll(target, ",", " ")
+	var nums []float64
+	for token := range strings.FieldsSeq(target) {
+		val, ok := parseRationalOrFloat(token)
+		if !ok {
+			continue
+		}
+
+		nums = append(nums, val)
+	}
+
+	return nums
+}
+
+// ParseGPSCoordinate converts EXIF GPS latitude or longitude from various formats
+// (rational triples from libvips, DMS strings, or decimal strings) into signed
+// decimal degrees (e.g. "-26.217339").
+func ParseGPSCoordinate(rawCoord string, rawRef string) *string {
+	rawCoord = strings.TrimSpace(rawCoord)
+	if rawCoord == "" {
+		return nil
+	}
+
+	if matches := reDMS.FindStringSubmatch(rawCoord); len(matches) >= 4 {
+		deg, err1 := strconv.ParseFloat(matches[1], 64)
+		min, err2 := strconv.ParseFloat(matches[2], 64)
+		sec, err3 := strconv.ParseFloat(matches[3], 64)
+
+		if err1 == nil && err2 == nil && err3 == nil {
+			degVal := deg + (min / 60.0) + (sec / 3600.0)
+			ref := rawRef
+
+			if len(matches) >= 5 && matches[4] != "" {
+				ref = matches[4]
+			}
+
+			degVal = applyRef(degVal, ref)
+			res := fmt.Sprintf("%.6f", degVal)
+			return &res
+		}
+	}
+
+	nums := extractCoordinateTokens(rawCoord)
+	if len(nums) == 0 {
+		return nil
+	}
+
+	var degVal float64
+	switch len(nums) {
+	case 3:
+		degVal = nums[0] + (nums[1] / 60.0) + (nums[2] / 3600.0)
+	case 2:
+		degVal = nums[0] + (nums[1] / 60.0)
+	case 1:
+		degVal = nums[0]
+	default:
+		return nil
+	}
+
+	degVal = applyRef(degVal, rawRef)
+	res := fmt.Sprintf("%.6f", degVal)
+	return &res
+}
+
 // CleanRawExifMap produces a clean map of all raw EXIF tags with human-readable keys
 func CleanRawExifMap(exifData map[string]string) *map[string]string {
 	if len(exifData) == 0 {
@@ -138,14 +292,41 @@ func CleanRawExifMap(exifData map[string]string) *map[string]string {
 
 	out := make(map[string]string, len(exifData))
 	for k, v := range exifData {
-		cleanedVal := CleanExifVal(v)
-		if cleanedVal == "" {
-			continue
-		}
-
 		key := strings.TrimPrefix(k, "exif-")
 		for _, ifd := range []string{"ifd0-", "ifd1-", "ifd2-", "ifd3-", "ifd4-"} {
 			key = strings.TrimPrefix(key, ifd)
+		}
+
+		var cleanedVal string
+		switch key {
+		case "GPSLatitude":
+			ref := FindExif(exifData, "GPSLatitudeRef", "LatitudeRef")
+			refStr := ""
+			if ref != nil {
+				refStr = *ref
+			}
+			if parsed := ParseGPSCoordinate(v, refStr); parsed != nil {
+				cleanedVal = *parsed
+			} else {
+				cleanedVal = CleanExifVal(v)
+			}
+		case "GPSLongitude":
+			ref := FindExif(exifData, "GPSLongitudeRef", "LongitudeRef")
+			refStr := ""
+			if ref != nil {
+				refStr = *ref
+			}
+			if parsed := ParseGPSCoordinate(v, refStr); parsed != nil {
+				cleanedVal = *parsed
+			} else {
+				cleanedVal = CleanExifVal(v)
+			}
+		default:
+			cleanedVal = CleanExifVal(v)
+		}
+
+		if cleanedVal == "" {
+			continue
 		}
 		out[key] = cleanedVal
 	}
@@ -165,10 +346,12 @@ func FindExif(exifData map[string]string, keys ...string) *string {
 		if v, ok := exifData[k]; ok {
 			return v, true
 		}
+
 		// Try common libvips prefixes and IFD groups
 		if v, ok := exifData["exif-"+k]; ok { // rarely present but cheap to check
 			return v, true
 		}
+
 		for _, ifd := range []string{"ifd0", "ifd1", "ifd2", "ifd3", "ifd4"} {
 			key := "exif-" + ifd + "-" + k
 			if v, ok := exifData[key]; ok {
@@ -177,15 +360,18 @@ func FindExif(exifData map[string]string, keys ...string) *string {
 		}
 		return "", false
 	}
+
 	for _, k := range keys {
 		if v, ok := search(k); ok {
 			raw = v
 			break
 		}
 	}
+
 	if raw == "" {
 		return nil
 	}
+
 	val := CleanExifVal(raw)
 	if val == "" {
 		return nil
@@ -235,6 +421,36 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		return out, time.Time{}, time.Time{}
 	}
 
+	var lat *string
+	if rawLat := FindRawExif(exifData, "GPSLatitude", "Latitude"); rawLat != nil {
+		latRef := FindExif(exifData, "GPSLatitudeRef", "LatitudeRef")
+		refStr := ""
+		if latRef != nil {
+			refStr = *latRef
+		}
+
+		lat = ParseGPSCoordinate(*rawLat, refStr)
+	}
+
+	if lat == nil {
+		lat = FindExif(exifData, "GPSLatitude", "Latitude")
+	}
+
+	var lon *string
+	if rawLon := FindRawExif(exifData, "GPSLongitude", "Longitude"); rawLon != nil {
+		lonRef := FindExif(exifData, "GPSLongitudeRef", "LongitudeRef")
+		refStr := ""
+		if lonRef != nil {
+			refStr = *lonRef
+		}
+
+		lon = ParseGPSCoordinate(*rawLon, refStr)
+	}
+
+	if lon == nil {
+		lon = FindExif(exifData, "GPSLongitude", "Longitude")
+	}
+
 	out = dto.ImageEXIF{
 		Aperture:                 FindExif(exifData, "ApertureValue", "FNumber", "Aperture"),
 		FNumber:                  FindExif(exifData, "FNumber"),
@@ -271,8 +487,8 @@ func BuildImageEXIF(exifData map[string]string) (dto.ImageEXIF, time.Time, time.
 		Software:                 FindExif(exifData, "Software"),
 		Artist:                   FindExif(exifData, "Artist", "Author", "Creator", "By-line"),
 		Copyright:                FindExif(exifData, "Copyright", "Rights", "CopyrightNotice"),
-		Longitude:                FindExif(exifData, "GPSLongitude", "Longitude"),
-		Latitude:                 FindExif(exifData, "GPSLatitude", "Latitude"),
+		Longitude:                lon,
+		Latitude:                 lat,
 		GpsAltitude:              FindExif(exifData, "GPSAltitude"),
 		GpsImgDirection:          FindExif(exifData, "GPSImgDirection"),
 		GpsImgDirectionRef:       FindExif(exifData, "GPSImgDirectionRef"),
