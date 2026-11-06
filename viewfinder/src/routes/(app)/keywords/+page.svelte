@@ -1,11 +1,14 @@
 <script lang="ts">
+    import EntityView from "#lib/components/grid/EntityView.svelte";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
     import KeywordModal from "#lib/components/modals/KeywordModal.svelte";
     import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
+    import { MAX_MOBILE_WIDTH } from "#lib/constants.ts";
     import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
+    import { SelectionScopeNames } from "#lib/states/selection.svelte.ts";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { tryParseDate } from "#lib/utils/dates.js";
     import { invalidateViz } from "#lib/views/views.svelte.ts";
@@ -17,7 +20,7 @@
 
     let keywords = $derived(data.keywords);
     let searchQuery = $state("");
-    let keywordToDelete = $state<Keyword | null>(null);
+    let keywordToDelete = $state<Keyword>();
 
     let keywordMap = $derived(new Map(keywords.map((k) => [k.uid, k])));
 
@@ -36,6 +39,9 @@
 
         return [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
     });
+
+    let keywordPageWidth: number | undefined = $state();
+    let columnCount = $derived(keywordPageWidth && keywordPageWidth <= MAX_MOBILE_WIDTH ? 2 : undefined);
 
     function formatDate(dateStr?: string): string {
         if (!dateStr) {
@@ -62,7 +68,7 @@
                     if (exists) {
                         toasts.add({
                             title: "Duplicate keyword",
-                            message: `A keyword named "${formData.name}" already exists`,
+                            message: `A keyword named **${formData.name}** already exists`,
                             type: "warning"
                         });
                         return;
@@ -83,7 +89,7 @@
                         modalsManager.pop();
                         invalidateViz();
                     } else {
-                        const err = (res.data as { error?: string })?.error ?? "Failed to create keyword";
+                        const err = res.data.error ?? "Failed to create keyword";
                         toasts.add({
                             title: "Error",
                             message: err,
@@ -190,9 +196,9 @@
 {#snippet deleteConfirmSnippet()}
     {#if keywordToDelete}
         <div class="delete-confirm-content">
-            <p>
+            <span>
                 Are you sure you want to delete keyword <strong>{keywordToDelete.name}</strong>? This cannot be undone.
-            </p>
+            </span>
         </div>
     {/if}
 {/snippet}
@@ -203,7 +209,52 @@
     {/if}
 </svelte:head>
 
-<div class="keywords-page">
+{#snippet keywordSnippet(keyword: Keyword)}
+    <div class="keyword-card" data-keyword-name={keyword.name}>
+        <div class="card-header">
+            <div class="keyword-title-wrap">
+                <span class="keyword-name">{keyword.name}</span>
+            </div>
+            <div class="card-actions">
+                <Button
+                    class="keyword-edit-btn"
+                    iconName="edit"
+                    size="small"
+                    variant="ghost"
+                    onclick={() => openEditModal(keyword)}
+                    title="Edit Keyword"
+                    aria-label="Edit Keyword"
+                />
+                <Button
+                    class="keyword-delete-btn"
+                    iconName="delete"
+                    size="small"
+                    variant="ghost"
+                    onclick={() => openDeleteModal(keyword)}
+                    title="Delete Keyword"
+                    aria-label="Delete Keyword"
+                />
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="parent-chip">
+                <Badge variant="info" size="small" weight="regular" title="Parent Keyword" aria-label="Parent Keyword">
+                    <span>{!keyword.parent ? "Root" : keywordMap.get(keyword.parent)?.name}</span>
+                </Badge>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span class="created-date">{formatDate(keyword.created_at)}</span>
+            {#if keyword.colour}
+                <span class="colour-dot" style="background-color: {keyword.colour};"></span>
+            {/if}
+        </div>
+    </div>
+{/snippet}
+
+<div class="keywords-page" bind:clientWidth={keywordPageWidth}>
     <div id="viz-info-container" class:std-route={!isLayoutPage()}>
         <div id="keywords-header-row">
             <div id="keywords-name-container">
@@ -269,58 +320,17 @@
             {/if}
         </div>
     {:else}
-        <div class="keywords-grid">
-            {#each filteredKeywords as kw (kw.uid)}
-                <div class="keyword-card" data-keyword-name={kw.name}>
-                    <div class="card-header">
-                        <div class="keyword-title-wrap">
-                            <span class="keyword-name">{kw.name}</span>
-                        </div>
-                        <div class="card-actions">
-                            <Button
-                                class="keyword-edit-btn"
-                                iconName="edit"
-                                size="small"
-                                variant="ghost"
-                                onclick={() => openEditModal(kw)}
-                                title="Edit Keyword"
-                                aria-label="Edit Keyword"
-                            />
-                            <Button
-                                class="keyword-delete-btn"
-                                iconName="delete"
-                                size="small"
-                                variant="ghost"
-                                onclick={() => openDeleteModal(kw)}
-                                title="Delete Keyword"
-                                aria-label="Delete Keyword"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="parent-chip">
-                            <Badge
-                                variant="info"
-                                size="small"
-                                weight="regular"
-                                title="Parent Keyword"
-                                aria-label="Parent Keyword"
-                            >
-                                <span>{!kw.parent ? "Root" : keywordMap.get(kw.parent)?.name}</span>
-                            </Badge>
-                        </div>
-                    </div>
-
-                    <div class="card-footer">
-                        <span class="created-date">{formatDate(kw.created_at)}</span>
-                        {#if kw.colour}
-                            <span class="colour-dot" style="background-color: {kw.colour};"></span>
-                        {/if}
-                    </div>
-                </div>
-            {/each}
-        </div>
+        <EntityView
+            data={filteredKeywords}
+            type="grid"
+            rowHeight={100}
+            bind:columnCount
+            scopeId={SelectionScopeNames.KEYWORDS}
+            entitySnippet={keywordSnippet}
+            entityGridDisplayProps={{
+                style: "padding: 0;"
+            }}
+        />
     {/if}
 </div>
 
@@ -403,17 +413,12 @@
         flex-shrink: 0;
     }
 
-    .keywords-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-        gap: var(--viz-spacing-md);
-        width: 100%;
-    }
-
     .keyword-card {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        box-sizing: border-box;
+        height: 100%;
         background-color: var(--viz-surface-panel);
         border: var(--viz-border-thin);
         border-radius: var(--viz-border-radius-md);
@@ -545,10 +550,6 @@
     @container (max-width: 40rem) {
         .create-btn-text {
             display: none;
-        }
-
-        .keywords-grid {
-            grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
         }
     }
 </style>

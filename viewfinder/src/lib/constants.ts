@@ -6,5 +6,7 @@ export const IS_MOBILE =
 export const IS_MOBILE_VIEWPORT = window.matchMedia("(max-width: 40rem)").matches;
 export const BROWSER_BASE_URL = window.location.hostname;
 export const DYNAMIC_ROUTE_REGEX = /\[.*\].*$/;
+export const ROOT_FONT_SIZE = 12;
+export const MAX_MOBILE_WIDTH = ROOT_FONT_SIZE * 40;
 
 export { VizMimeTypes, StandardMimeTypes, VendorMimeTypes, type DragMimeType } from "./mime";

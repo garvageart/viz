@@ -1,4 +1,4 @@
-import type { Collection, ImageAsset } from "@viz/api";
+import type { Collection, ImageAsset, Keyword } from "@viz/api";
 import { untrack } from "svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
@@ -12,7 +12,8 @@ export enum SelectionScopeNames {
     SEARCH_COLLECTIONS = "search-collections",
     FILMSTRIP = "filmstrip",
     ADD_PHOTOS_MODAL = "add-photos-modal",
-    COLLECTIONS_SELECTION_MODAL = "collections-selection-modal"
+    COLLECTIONS_SELECTION_MODAL = "collections-selection-modal",
+    KEYWORDS = "keywords-main"
 }
 
 export type CollectionUIDSelectionScope = `collection-${string}`;
@@ -28,6 +29,7 @@ export interface ScopeTypeMap {
     [SelectionScopeNames.SEARCH_COLLECTIONS]: Collection;
     [SelectionScopeNames.COLLECTIONS_SELECTION_MODAL]: Collection;
     [key: CollectionUIDSelectionScope]: ImageAsset;
+    [SelectionScopeNames.KEYWORDS]: Keyword;
 }
 
 export type ImageScopeId =
