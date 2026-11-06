@@ -16,7 +16,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
 
     test("should render photo grid and handle selection on /photos", async ({ page }) => {
         const grid = page
-            .locator(".viz-photo-grid-container, .viz-asset-grid-container, .viz-asset-table-container")
+            .locator(".viz-photo-grid-container, .viz-entity-grid-container, .viz-entity-table-container")
             .first();
         await expect(grid).toBeVisible();
 
@@ -243,7 +243,7 @@ test.describe("PhotoAssetGrid Functionality", () => {
             // Should be on a collection page now
             await expect(page).toHaveURL(/\/collections\/.+/);
 
-            const grid = page.locator(".viz-photo-grid-container, .viz-asset-grid-container, main").first();
+            const grid = page.locator(".viz-photo-grid-container, .viz-entity-grid-container, main").first();
             const emptyState = page.locator("#add_to_collection-container, .no-photos, .empty-state").first();
 
             // Wait for either the photo grid or the empty state to appear

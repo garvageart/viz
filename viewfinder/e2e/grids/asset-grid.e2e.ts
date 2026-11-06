@@ -10,7 +10,7 @@ test.describe("EntityView Functionality", () => {
     });
 
     test("should render collections in EntityView", async ({ page }) => {
-        const grid = page.locator(".viz-asset-grid-container");
+        const grid = page.locator(".viz-entity-grid-container");
         await expect(grid).toBeVisible();
 
         const collectionCards = grid.locator(".entity-card");
@@ -62,7 +62,7 @@ test.describe("EntityView Functionality", () => {
     });
 
     test("should navigate to collection on double click", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
+        const collectionCards = page.locator(".viz-entity-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();
@@ -77,7 +77,7 @@ test.describe("EntityView Functionality", () => {
     });
 
     test("should show context menu on right click", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
+        const collectionCards = page.locator(".viz-entity-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();
@@ -99,7 +99,7 @@ test.describe("EntityView Functionality", () => {
     });
 
     test("should handle keyboard navigation in the grid", async ({ page }) => {
-        const collectionCards = page.locator(".viz-asset-grid-container .entity-card");
+        const collectionCards = page.locator(".viz-entity-grid-container .entity-card");
 
         await expect(async () => {
             const count = await collectionCards.count();

@@ -24,8 +24,8 @@ describe("EntityView", () => {
             entitySnippet: dummyAssetSnippet
         });
 
-        expect(container.querySelector(".viz-asset-grid-container")).toBeInTheDocument();
-        expect(container.querySelector(".viz-asset-table-container")).not.toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-grid-container")).toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-table-container")).not.toBeInTheDocument();
     });
 
     it("renders table container when type is 'list'", () => {
@@ -35,8 +35,8 @@ describe("EntityView", () => {
             entitySnippet: dummyAssetSnippet
         });
 
-        expect(container.querySelector(".viz-asset-table-container")).toBeInTheDocument();
-        expect(container.querySelector(".viz-asset-grid-container")).not.toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-table-container")).toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-grid-container")).not.toBeInTheDocument();
     });
 
     it("reacts when the type prop is updated", async () => {
@@ -46,7 +46,7 @@ describe("EntityView", () => {
             entitySnippet: dummyAssetSnippet
         });
 
-        expect(container.querySelector(".viz-asset-grid-container")).toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-grid-container")).toBeInTheDocument();
 
         await rerender({
             data: testData,
@@ -54,8 +54,8 @@ describe("EntityView", () => {
             entitySnippet: dummyAssetSnippet
         });
 
-        expect(container.querySelector(".viz-asset-table-container")).toBeInTheDocument();
-        expect(container.querySelector(".viz-asset-grid-container")).not.toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-table-container")).toBeInTheDocument();
+        expect(container.querySelector(".viz-entity-grid-container")).not.toBeInTheDocument();
     });
 
     it("does not range-select items when navigating backward with Shift+Tab", async () => {
@@ -81,5 +81,19 @@ describe("EntityView", () => {
         // First card should now be selected alone (not range-selected with second card)
         expect(cards[0].className).toContain("selected-card");
         expect(cards[1].className).not.toContain("selected-card");
+    });
+
+    it("applies custom sizing props", () => {
+        const { container } = render(EntityView, {
+            data: testData,
+            type: "grid",
+            columnCount: 4,
+            itemWidth: 220,
+            rowHeight: 116,
+            gap: 12,
+            entitySnippet: dummyAssetSnippet
+        });
+
+        expect(container.querySelector(".viz-entity-grid-container")).toBeInTheDocument();
     });
 });

@@ -14,7 +14,7 @@ test.describe("View Switching Functionality", () => {
 
         // 1. Check container is visible
         const photoGrid = page
-            .locator(".viz-photo-grid-container, .viz-asset-grid-container, .viz-asset-table-container")
+            .locator(".viz-photo-grid-container, .viz-entity-grid-container, .viz-entity-table-container")
             .first();
         await expect(photoGrid).toBeVisible();
 
@@ -24,7 +24,7 @@ test.describe("View Switching Functionality", () => {
 
         // 3. Switch to List view
         await page.locator('#display-list, [id="display-list"]').first().click();
-        await expect(page.locator(".viz-asset-table-container")).toBeVisible();
+        await expect(page.locator(".viz-entity-table-container")).toBeVisible();
 
         // 4. Switch back to Grid view
         await displayDropdown.click();
@@ -34,7 +34,7 @@ test.describe("View Switching Functionality", () => {
         // 5. Switch to Thumbnails view
         await displayDropdown.click();
         await page.locator('#display-grid, [id="display-grid"]').first().click();
-        await expect(page.locator(".viz-asset-grid-container")).toBeVisible();
+        await expect(page.locator(".viz-entity-grid-container")).toBeVisible();
     });
 
     test("should switch views on /search", async ({ page }) => {
@@ -54,12 +54,12 @@ test.describe("View Switching Functionality", () => {
 
         // Switch to List
         await page.locator('#img-display-list, #display-list, [id="display-list"]').first().click();
-        await expect(imagesSection.locator(".viz-asset-table-container")).toBeVisible();
+        await expect(imagesSection.locator(".viz-entity-table-container")).toBeVisible();
 
         // Switch back to Grid
         await imageDisplayDropdown.click();
         await page.locator('#img-display-custom, #display-custom, [id="display-custom"]').first().click();
-        await expect(imagesSection.locator(".viz-photo-grid-container, .viz-asset-grid-container")).toBeVisible();
+        await expect(imagesSection.locator(".viz-photo-grid-container, .viz-entity-grid-container")).toBeVisible();
     });
 
     test("should switch views on /collections/[uid]", async ({ page }) => {
@@ -82,7 +82,7 @@ test.describe("View Switching Functionality", () => {
 
         // 4. Switch to List view
         await page.locator('#display-list, [id="display-list"]').first().click();
-        await expect(page.locator(".viz-asset-table-container")).toBeVisible();
+        await expect(page.locator(".viz-entity-table-container")).toBeVisible();
 
         // 5. Switch back to Grid view
         await displayDropdown.click();
@@ -90,6 +90,6 @@ test.describe("View Switching Functionality", () => {
             .locator('#display-custom, #display-grid, [id="display-custom"], [id="display-grid"]')
             .first()
             .click();
-        await expect(page.locator(".viz-photo-grid-container, .viz-asset-grid-container")).toBeVisible();
+        await expect(page.locator(".viz-photo-grid-container, .viz-entity-grid-container")).toBeVisible();
     });
 });

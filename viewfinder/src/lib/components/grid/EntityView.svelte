@@ -45,6 +45,18 @@
         disabledUids?: Set<string>;
         /** Sort state that drives display mode and table-header sorting */
         sortState?: SortState;
+        /** Target/maximum number of columns for grid view */
+        itemWidth?: number;
+        /** Minimum item width before reducing column count */
+        minItemWidth?: number;
+        /** Explicit row height in pixels for grid rows */
+        rowHeight?: number;
+        /** Alias for rowHeight */
+        itemHeight?: number;
+        /** Aspect ratio (height / width) to compute row height from column width */
+        aspectRatio?: number;
+        /** Spacing between grid items in pixels */
+        gap?: number;
     }
 
     let {
@@ -58,6 +70,12 @@
         disableOutsideUnselect = false,
         onLoadMore,
         columnCount = $bindable(),
+        itemWidth,
+        minItemWidth,
+        rowHeight,
+        itemHeight,
+        aspectRatio,
+        gap,
         entityClick,
         entityDblClick,
         oncontext,
@@ -95,60 +113,43 @@
     // Compute grid layout parameters
     let isListView = $derived(type === "list" || sortState.value.display === "list");
 
-    // TODO: pass this in as configuration perhaps?
-    let gridItemWidth = $derived(type === "custom" ? 352 : 270);
-    let gridGap = $state(8);
-    let gridRowHeight = $derived(type === "custom" ? 264 : 260);
+    let gridItemWidth = $derived(itemWidth ?? (type === "custom" ? 352 : 270));
+    let gridGap = $derived(gap ?? 8);
+    let gridRowHeight = $derived(rowHeight ?? itemHeight ?? (type === "custom" ? 264 : undefined));
+    let gridAspectRatio = $derived(aspectRatio ?? (type === "custom" ? 3 / 4 : undefined));
 
-    // Column count: use explicit prop if set, otherwise compute
-    let computedColumnCount = $derived.by(() => {
+    // Desired column count: targetColumnCount takes precedence, otherwise columnCount if initially set
+    let desiredColumnCount = $derived(columnCount);
+
+    let maxFittingColumns = $derived.by(() => {
         if (isListView) {
             return 1;
         }
 
         if (containerWidth <= 0) {
-            return columnCount && columnCount > 0 ? columnCount : 4;
+            return desiredColumnCount && desiredColumnCount > 0 ? desiredColumnCount : 4;
         }
 
         return Math.max(1, Math.floor((containerWidth + gridGap) / (gridItemWidth + gridGap)));
     });
 
-    // Expose columnCount back to parent
-    $effect(() => {
-        columnCount = computedColumnCount;
-    });
-
-    // Build entityGridArray from virtualizer rows (for backward compat with AssetsShell)
-    let internalGridArray = $derived.by(() => {
+    // Column count: use explicit desired count, otherwise compute
+    let computedColumnCount = $derived.by(() => {
         if (isListView) {
-            return undefined;
+            return 1;
         }
 
-        const array: EntityGridArray<T> = [];
-
-        let rowIndex = 0;
-        for (const row of virtualizer.rows) {
-            if (row.type !== "images") {
-                continue;
-            }
-
-            const gridRow = row.items.map((item, col) => ({
-                entity: item.asset,
-                row: rowIndex,
-                column: col,
-                columnSize: item.width,
-                size: item.width * row.height,
-                rowSize: row.height
-            }));
-
-            array.push(gridRow);
-            rowIndex++;
+        if (!desiredColumnCount || desiredColumnCount <= 0) {
+            return maxFittingColumns;
         }
-        return array;
-    });
 
-    $effect(() => {
-        entityGridArray = internalGridArray;
+        const minWidth = minItemWidth ?? itemWidth;
+        if (minWidth && minWidth > 0) {
+            const maxCols = Math.max(1, Math.floor((containerWidth + gridGap) / (minWidth + gridGap)));
+            return Math.max(1, Math.min(desiredColumnCount, maxCols));
+        }
+
+        return desiredColumnCount;
     });
 
     // Scroll position tracking
@@ -207,10 +208,11 @@
             virtualizer.updateList(allEntityData, width, listRowHeight);
         } else {
             virtualizer.updateGrid(allEntityData, width, {
-                columns: columnCount && columnCount > 0 ? columnCount : undefined,
-                itemWidth: gridItemWidth,
+                columns: computedColumnCount,
+                itemWidth,
+                minItemWidth,
                 rowHeight: gridRowHeight,
-                aspectRatio: type === "custom" ? 3 / 4 : undefined,
+                aspectRatio: gridAspectRatio,
                 gap: gridGap
             });
         }
@@ -332,10 +334,18 @@
         };
     });
 
-    // Re-run layout when data changes
+    // Re-run layout when data or layout parameters change
     $effect(() => {
+        void allEntityData?.length;
+        void computedColumnCount;
+        void gridItemWidth;
+        void gridRowHeight;
+        void gridAspectRatio;
+        void gridGap;
+        void isListView;
+        void listRowHeight;
+
         if (entityGridDisplayEl) {
-            void allEntityData?.length;
             untrack(() => {
                 updateVirtualizerLayout();
             });
@@ -934,7 +944,7 @@
 {:else}
     <div
         bind:this={entityGridDisplayEl}
-        class="viz-entity-table-container {entityGridDisplayProps.class}"
+        class="viz-entity-grid-container {entityGridDisplayProps.class}"
         class:is-active={selectionManager.activeScopeId === scopeId}
         {...entityGridDisplayProps}
         use:unselectImagesOnClickOutsideAssetContainer
@@ -964,15 +974,8 @@
 {/if}
 
 <style lang="scss">
-    .viz-entity-table-container {
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 100%;
-        text-overflow: clip;
-        position: relative;
-    }
-
-    .viz-entity-table-container {
+    .viz-entity-table-container,
+    .viz-entity-grid-container {
         box-sizing: border-box;
         width: 100%;
         max-width: 100%;
