@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.13] - 2026-11-07
+
+* fix: remove all missed type errors (f1697723)
+* feat(viewfinder): add image context menu and detail route for keywords (a9a48082)
+* feat(viewfinder): update keywords page with draggable cards and navigation (9f9d95f1)
+* refactor(viewfinder): simplify photo grid props and support keyword drag-drop (b4c88aa5)
+* feat(api): make keyword update properties optional (054b8d87)
+
 ## [0.36.12] - 2026-11-06
 
 * feat(viewfinder/keywords): migrate keywords page to virtualized EntityView (32bd09fa)
