@@ -1457,7 +1457,16 @@ type KeywordListResponse struct {
 }
 
 // KeywordUpdate defines model for KeywordUpdate.
-type KeywordUpdate = KeywordCreate
+type KeywordUpdate struct {
+	// Colour Hex color code for the keyword
+	Colour *string `json:"colour,omitempty"`
+
+	// Name The name of the keyword
+	Name *string `json:"name,omitempty"`
+
+	// Parent The UID of the parent keyword, if any
+	Parent *string `json:"parent,omitempty"`
+}
 
 // Label User-assigned label color for the image
 type Label string

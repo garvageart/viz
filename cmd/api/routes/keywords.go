@@ -264,13 +264,6 @@ func KeywordsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				return
 			}
 
-			name := strings.TrimSpace(body.Name)
-			if name == "" {
-				render.Status(req, http.StatusBadRequest)
-				render.JSON(res, req, dto.ErrorResponse{Error: "Keyword name is required"})
-				return
-			}
-
 			var keyword entities.Keyword
 			if err := db.WithContext(req.Context()).Where("uid = ?", keywordUID).First(&keyword).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -281,6 +274,16 @@ func KeywordsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 
 				libhttp.ServerError(res, req, err, logger, nil, "failed to find keyword for update", "Failed to update keyword")
 				return
+			}
+
+			if body.Name != nil {
+				name := strings.TrimSpace(*body.Name)
+				if name == "" {
+					render.Status(req, http.StatusBadRequest)
+					render.JSON(res, req, dto.ErrorResponse{Error: "Keyword name is required"})
+					return
+				}
+				keyword.Name = name
 			}
 
 			if body.Parent != nil && *body.Parent != "" {
@@ -298,7 +301,6 @@ func KeywordsRouter(db *gorm.DB, logger *slog.Logger) *chi.Mux {
 				}
 			}
 
-			keyword.Name = name
 			keyword.Colour = body.Colour
 			keyword.Parent = body.Parent
 

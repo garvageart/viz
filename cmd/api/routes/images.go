@@ -1497,7 +1497,10 @@ func resolveKeywords(tx *gorm.DB, kwUpdates []dto.KeywordUpdate) ([]entities.Key
 	seen := make(map[string]bool)
 
 	for _, kw := range kwUpdates {
-		name := strings.TrimSpace(kw.Name)
+		if kw.Name == nil {
+			continue
+		}
+		name := strings.TrimSpace(*kw.Name)
 		if name == "" {
 			continue
 		}

@@ -524,15 +524,14 @@ export type DeleteAssetsResponse = {
     /** Summary message of the operation */
     message?: string;
 };
-export type KeywordCreate = {
+export type KeywordUpdate = {
     /** The name of the keyword */
-    name: string;
+    name?: string;
     /** The UID of the parent keyword, if any */
     parent?: string;
     /** Hex color code for the keyword */
     colour?: string;
 };
-export type KeywordUpdate = KeywordCreate;
 export type ImageUpdate = {
     /** Image name */
     name?: string;
@@ -656,6 +655,14 @@ export type DeleteImagesResponse = {
     deleted: boolean;
     /** Error message if failed */
     error?: string;
+};
+export type KeywordCreate = {
+    /** The name of the keyword */
+    name: string;
+    /** The UID of the parent keyword, if any */
+    parent?: string;
+    /** Hex color code for the keyword */
+    colour?: string;
 };
 export type KeywordListResponse = {
     /** List of keywords */

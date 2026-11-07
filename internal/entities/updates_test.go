@@ -41,9 +41,9 @@ func TestImageAsset_ApplyUpdate(t *testing.T) {
 			Rating: &ratingHigh,
 		},
 		Keywords: &[]dto.KeywordUpdate{
-			{Name: "  Nature  "},
-			{Name: "   "},
-			{Name: "Landscape"},
+			{Name: new("  Nature  ")},
+			{Name: new("   ")},
+			{Name: new("Landscape")},
 		},
 	}
 

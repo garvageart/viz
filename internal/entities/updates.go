@@ -39,7 +39,10 @@ func (image *ImageAsset) ApplyUpdate(update dto.ImageUpdate) {
 	if update.Keywords != nil {
 		var kws []Keyword
 		for _, kw := range *update.Keywords {
-			kwName := strings.TrimSpace(kw.Name)
+			if kw.Name == nil {
+				continue
+			}
+			kwName := strings.TrimSpace(*kw.Name)
 			if kwName != "" {
 				kws = append(kws, Keyword{
 					Name:   kwName,

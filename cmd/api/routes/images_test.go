@@ -63,8 +63,8 @@ func TestUpdateImage_Keywords_Success(t *testing.T) {
 	payload := dto.ImageUpdate{
 		Description: &desc,
 		Keywords: &[]dto.KeywordUpdate{
-			{Name: "night"},
-			{Name: "Parktown"},
+			{Name: new("night")},
+			{Name: new("Parktown")},
 		},
 	}
 
@@ -123,9 +123,9 @@ func TestUpdateImage_Keywords_EdgeCases(t *testing.T) {
 	// Payload with case-mismatched "  ENVIRONMENT  ", duplicate "environment", and blank "   "
 	payload := dto.ImageUpdate{
 		Keywords: &[]dto.KeywordUpdate{
-			{Name: "  ENVIRONMENT  "},
-			{Name: "   "},
-			{Name: "environment"},
+			{Name: new("  ENVIRONMENT  ")},
+			{Name: new("   ")},
+			{Name: new("environment")},
 		},
 	}
 
@@ -265,9 +265,9 @@ func TestUpdateImage_Keywords_NewDuplicates(t *testing.T) {
 
 	payload := dto.ImageUpdate{
 		Keywords: &[]dto.KeywordUpdate{
-			{Name: "brandnew"},
-			{Name: "BRANDNEW"},
-			{Name: "  brandnew  "},
+			{Name: new("brandnew")},
+			{Name: new("BRANDNEW")},
+			{Name: new("  brandnew  ")},
 		},
 	}
 
@@ -310,8 +310,8 @@ func TestBatchUpdateImages_Keywords(t *testing.T) {
 		Uids: []string{img1.Uid, img2.Uid},
 		Update: dto.ImageUpdate{
 			Keywords: &[]dto.KeywordUpdate{
-				{Name: "nature"},
-				{Name: "sunset"},
+				{Name: new("nature")},
+				{Name: new("sunset")},
 			},
 		},
 	}
@@ -364,7 +364,7 @@ func TestUpdateImage_FailureModes(t *testing.T) {
 	// 1. 404 on non-existent image
 	{
 		payload := dto.ImageUpdate{
-			Keywords: &[]dto.KeywordUpdate{{Name: "test"}},
+			Keywords: &[]dto.KeywordUpdate{{Name: new("test")}},
 		}
 		body, _ := json.Marshal(payload)
 		req := httptest.NewRequest(http.MethodPatch, "/images/non-existent-uid", bytes.NewReader(body))
@@ -379,7 +379,7 @@ func TestUpdateImage_FailureModes(t *testing.T) {
 	// 2. 403 on updating another user's image without admin role
 	{
 		payload := dto.ImageUpdate{
-			Keywords: &[]dto.KeywordUpdate{{Name: "test"}},
+			Keywords: &[]dto.KeywordUpdate{{Name: new("test")}},
 		}
 		body, _ := json.Marshal(payload)
 		req := httptest.NewRequest(http.MethodPatch, "/images/"+otherImage.Uid, bytes.NewReader(body))

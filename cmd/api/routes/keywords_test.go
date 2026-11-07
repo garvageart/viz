@@ -182,6 +182,22 @@ func TestKeywordListAndCreateRoutes(t *testing.T) {
 	var fetched dto.Keyword
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &fetched))
 	assert.Equal(t, created.Uid, fetched.Uid)
+
+	updatedName := "Travel-edited"
+	updateBody, err := json.Marshal(dto.KeywordUpdate{Name: &updatedName})
+	require.NoError(t, err)
+
+	req = httptest.NewRequest(http.MethodPut, "/keyword/"+created.Uid, bytes.NewReader(updateBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: libhttp.AuthTokenCookie, Value: token})
+	rec = httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var updated dto.Keyword
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &updated))
+	assert.Equal(t, "Travel-edited", updated.Name)
 }
 
 func TestDeleteKeyword_CascadeAssociationsAndChildren(t *testing.T) {
