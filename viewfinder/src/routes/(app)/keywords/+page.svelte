@@ -6,13 +6,15 @@
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
-    import { MAX_MOBILE_WIDTH } from "#lib/constants.ts";
+    import { MAX_MOBILE_WIDTH, VizMimeTypes } from "#lib/constants.ts";
+    import { draggable } from "#lib/drag-drop/directives.svelte.ts";
     import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import { SelectionScopeNames } from "#lib/states/selection.svelte.ts";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { tryParseDate } from "#lib/utils/dates.js";
     import { invalidateViz } from "#lib/views/views.svelte.ts";
-    import { type Keyword, type KeywordUpdate, createKeyword, deleteKeyword, updateKeyword } from "@viz/api";
+    import { goto } from "$app/navigation";
+    import { type Keyword, createKeyword, deleteKeyword, updateKeyword } from "@viz/api";
     import { DateTime } from "luxon";
     import type { PageProps } from "./$types";
 
@@ -63,14 +65,25 @@
                 heading: "Create Keyword",
                 buttonText: "Create Keyword",
                 keywords,
-                modalAction: async (formData: KeywordUpdate) => {
-                    const exists = keywords.some((k) => k.name.toLowerCase() === formData.name.toLowerCase());
+                modalAction: async (formData) => {
+                    const exists = keywords.some((k) => k.name.toLowerCase() === formData.name?.toLowerCase());
                     if (exists) {
                         toasts.add({
                             title: "Duplicate keyword",
                             message: `A keyword named **${formData.name}** already exists`,
                             type: "warning"
                         });
+
+                        return;
+                    }
+
+                    if (!formData.name) {
+                        toasts.add({
+                            title: "Failed to create keyword",
+                            message: "Keyword cannot be blank",
+                            type: "error"
+                        });
+
                         return;
                     }
 
@@ -86,6 +99,7 @@
                             message: "Created keyword successfully",
                             type: "success"
                         });
+
                         modalsManager.pop();
                         invalidateViz();
                     } else {
@@ -110,9 +124,9 @@
                 buttonText: "Save Changes",
                 data: keyword,
                 keywords,
-                modalAction: async (formData: KeywordUpdate) => {
+                modalAction: async (formData) => {
                     const exists = keywords.some(
-                        (k) => k.uid !== keyword.uid && k.name.toLowerCase() === formData.name.toLowerCase()
+                        (k) => k.uid !== keyword.uid && k.name.toLowerCase() === formData.name?.toLowerCase()
                     );
 
                     if (exists) {
@@ -160,7 +174,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Delete Keyword",
                 confirmText: "Delete",
                 buttonVariant: "danger",
                 onConfirm: async () => {
@@ -210,10 +223,24 @@
 </svelte:head>
 
 {#snippet keywordSnippet(keyword: Keyword)}
-    <div class="keyword-card" data-keyword-name={keyword.name}>
+    <div
+        class="keyword-card"
+        data-keyword-name={keyword.name}
+        use:draggable={{
+            items: () => {
+                return [
+                    {
+                        mimeType: VizMimeTypes.KEYWORD_UIDS,
+                        payload: keyword,
+                        label: keyword.name
+                    }
+                ];
+            }
+        }}
+    >
         <div class="card-header">
             <div class="keyword-title-wrap">
-                <span class="keyword-name">{keyword.name}</span>
+                <span class="keyword-name" title={keyword.name}>{keyword.name}</span>
             </div>
             <div class="card-actions">
                 <Button
@@ -237,19 +264,24 @@
             </div>
         </div>
 
-        <div class="card-body">
-            <div class="parent-chip">
-                <Badge variant="info" size="small" weight="regular" title="Parent Keyword" aria-label="Parent Keyword">
-                    <span>{!keyword.parent ? "Root" : keywordMap.get(keyword.parent)?.name}</span>
-                </Badge>
-            </div>
-        </div>
-
         <div class="card-footer">
             <span class="created-date">{formatDate(keyword.created_at)}</span>
-            {#if keyword.colour}
-                <span class="colour-dot" style="background-color: {keyword.colour};"></span>
-            {/if}
+            <span class="right-side">
+                {#if keyword.colour}
+                    <span class="colour-dot" style="background-color: {keyword.colour};"></span>
+                {/if}
+
+                <Badge
+                    class="parent-chip"
+                    variant="info"
+                    size="small"
+                    weight="regular"
+                    title="Parent Keyword"
+                    aria-label="Parent Keyword"
+                >
+                    <span>{!keyword.parent ? "Root" : keywordMap.get(keyword.parent)?.name}</span>
+                </Badge>
+            </span>
         </div>
     </div>
 {/snippet}
@@ -329,6 +361,9 @@
             entitySnippet={keywordSnippet}
             entityGridDisplayProps={{
                 style: "padding: 0;"
+            }}
+            entityDblClick={(_e, keyword) => {
+                goto(`/keywords/${keyword.name}`);
             }}
         />
     {/if}
@@ -447,16 +482,8 @@
         min-width: 0;
     }
 
-    .colour-dot {
-        width: 1rem;
-        height: 1rem;
-        border-radius: var(--viz-border-radius-pill);
-        border: var(--viz-border-thin);
-        flex-shrink: 0;
-    }
-
     .keyword-name {
-        font-size: var(--viz-font-size-lg);
+        font-size: var(--viz-font-size-xl);
         font-weight: 600;
         color: var(--viz-text-primary);
         overflow: hidden;
@@ -471,23 +498,26 @@
         flex-shrink: 0;
     }
 
-    .card-body {
-        display: flex;
-        align-items: center;
-    }
-
-    .parent-chip {
-        display: flex;
-        align-items: center;
-        gap: var(--viz-spacing-xs);
-    }
-
     .card-footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
         border-top: var(--viz-border-thin);
-        padding: var(--viz-spacing-xs) 0;
+        padding: var(--viz-spacing-sm) 0;
+
+        .right-side {
+            display: flex;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+
+            .colour-dot {
+                width: 1rem;
+                height: 1rem;
+                border-radius: var(--viz-border-radius-pill);
+                border: var(--viz-border-thin);
+                flex-shrink: 0;
+            }
+        }
     }
 
     .created-date {
