@@ -25,7 +25,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Clear Image Cache",
                 confirmText: "Clear Cache",
                 onConfirm: handleClearCache,
                 children: confirmBody

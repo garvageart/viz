@@ -36,7 +36,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Clear Event History",
                 confirmText: "Clear History",
                 onConfirm: handleClearConfirm
             },

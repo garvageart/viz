@@ -127,7 +127,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Delete User",
                 get confirmText() {
                     return forceDelete ? "Force Delete User" : "Delete User";
                 },

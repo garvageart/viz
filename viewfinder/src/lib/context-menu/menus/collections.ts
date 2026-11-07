@@ -228,7 +228,6 @@ export function deleteSelectedCollections(
     modalsManager.open(
         ConfirmationModal,
         {
-            title,
             confirmText: title,
             message,
             buttonVariant: "danger",

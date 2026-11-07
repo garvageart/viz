@@ -139,7 +139,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Delete API Key",
                 confirmText: "Delete Key",
                 onConfirm: handleDeleteKey,
                 children: deleteKeySnippet
@@ -220,7 +219,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Revoke Session",
                 confirmText: "Revoke Session",
                 onConfirm: handleRevokeSession,
                 children: revokeSessionSnippet

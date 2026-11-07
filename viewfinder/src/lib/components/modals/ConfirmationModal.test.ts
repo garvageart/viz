@@ -19,7 +19,6 @@ describe("ConfirmationModal", () => {
     it("renders cancel as a non-submit button and confirm as a submit button", () => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?"
         });
 
@@ -34,7 +33,6 @@ describe("ConfirmationModal", () => {
     it("renders custom confirm and cancel text", () => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?",
             confirmText: "Delete",
             cancelText: "Keep"
@@ -48,7 +46,6 @@ describe("ConfirmationModal", () => {
         const onConfirm = vi.fn();
         const { container } = render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?",
             onConfirm
         });
@@ -64,7 +61,6 @@ describe("ConfirmationModal", () => {
     it("closes the modal on submit even when onConfirm is not provided", async () => {
         const { container } = render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?"
         });
 
@@ -78,7 +74,6 @@ describe("ConfirmationModal", () => {
         const onCancel = vi.fn();
         render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?",
             onCancel
         });
@@ -92,7 +87,6 @@ describe("ConfirmationModal", () => {
     it("applies the primary variant class by default", () => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?"
         });
 
@@ -103,7 +97,6 @@ describe("ConfirmationModal", () => {
     it.each(COLOUR_VARIANTS)("applies the %s variant class", (variant) => {
         render(ConfirmationModal, {
             id: "delete-collection-modal",
-            title: "Delete Collection?",
             message: "Are you sure you want to delete this collection?",
             buttonVariant: variant
         });

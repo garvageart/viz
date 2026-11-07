@@ -275,7 +275,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Upload Options",
                 children: uploadConfirmSnippet,
                 actions: uploadConfirmActions
             },
