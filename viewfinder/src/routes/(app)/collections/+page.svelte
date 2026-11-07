@@ -524,7 +524,7 @@
 
     .create-collection-empty-dropzone {
         display: inline-flex;
-        border-radius: var(--viz-radius-sm, 4px);
+        border-radius: var(--viz-border-radius-sm);
 
         &:global(.drop-active) :global(#create_collection-button) {
             outline: 2px solid var(--viz-primary);

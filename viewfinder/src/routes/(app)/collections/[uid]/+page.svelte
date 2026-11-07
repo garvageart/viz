@@ -232,25 +232,6 @@
     });
 
     let imageGridArray: EntityGridArray<ImageAsset> | undefined = $state();
-    let groups: DateGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return groupImagesByDate(displayData);
-        }
-        return [];
-    });
-
-    let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return getConsolidatedGroups(groups);
-        }
-        return [];
-    });
-
-    let allImagesFlat = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return consolidatedGroups.flatMap((g) => g.allImages.map((x) => x.image));
-        }
-    });
 
     let gridCtxMenu = $derived(
         getImageGridDisplay({
@@ -268,6 +249,9 @@
             ? sortCollectionImages(searchData, collectionDetailSort.value)
             : sortCollectionImages(filterManager.apply(collectionState.images), collectionDetailSort.value)
     );
+
+    let groups: DateGroup[] = $derived(groupImagesByDate(displayData));
+    let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 
     let imageTableColumns: TableColumn<ImageAsset>[] = $derived([
         {
@@ -454,7 +438,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Delete Collection",
                 children: deleteCollectionSnippet,
                 confirmText: "Delete",
                 buttonVariant: "danger",
@@ -502,7 +485,6 @@
         modalsManager.open(
             ConfirmationModal,
             {
-                title: "Remove Images",
                 message: `Remove ${count} selected image(s) from collection?`,
                 confirmText: "Remove",
                 onConfirm: executeDeleteSelected
@@ -791,11 +773,9 @@
 {#snippet justifiedGrid()}
     <div class="viz-justified-grid">
         <PhotoAssetGrid
-            data={displayData}
-            allData={viewSettings.showDates ? allImagesFlat : undefined}
-            groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
-            showDateHeaders={viewSettings.showDates}
             {scopeId}
+            groups={consolidatedGroups}
+            showDateHeaders={viewSettings.showDates}
             totalItemCount={collectionState.totalCount}
             onLoadMore={() => collectionState.paginate(data.uid)}
             assetDblClick={(_e, asset) => {

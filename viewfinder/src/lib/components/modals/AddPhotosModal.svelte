@@ -230,7 +230,7 @@
                         <PhotoAssetGrid
                             bind:allData={allImagesFlat}
                             data={filteredImages}
-                            groupedData={consolidatedGroups}
+                            groups={consolidatedGroups}
                             showDateHeaders={true}
                             {scopeId}
                             disabledUids={existingUids}

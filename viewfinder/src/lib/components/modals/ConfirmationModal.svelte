@@ -5,7 +5,6 @@
 
     interface Props {
         id: string;
-        title: string;
         message?: string;
         children?: Snippet<[any]>;
         actions?: Snippet<[any]>;

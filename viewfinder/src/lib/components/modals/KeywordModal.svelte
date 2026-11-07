@@ -5,7 +5,7 @@
     import ColourPicker from "#lib/components/ui/ColourPicker.svelte";
     import InputCombobox, { type InputOption } from "#lib/components/ui/InputCombobox.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
-    import { type Keyword, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
+    import { type Keyword, type KeywordCreate, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
     import { onMount } from "svelte";
 
     interface Props {
@@ -16,7 +16,7 @@
         keywords?: Keyword[];
         selectedKeywords?: (Keyword | KeywordUpdate)[];
         buttonText?: string;
-        modalAction?: (data: KeywordUpdate) => Promise<void> | void;
+        modalAction?: (data: KeywordCreate | KeywordUpdate) => Promise<void> | void;
         onAdd?: (keywords: KeywordUpdate[]) => Promise<void> | void;
     }
 
@@ -51,12 +51,12 @@
 
         const initialNames = new Set(
             selectedKeywords.map((k) => {
-                return k.name.toLowerCase();
+                return k.name?.toLowerCase();
             })
         );
 
         return activeKeywords.some((k) => {
-            return !initialNames.has(k.name.toLowerCase());
+            return !initialNames.has(k.name?.toLowerCase());
         });
     });
 
@@ -67,7 +67,7 @@
         }
 
         return !availableKeywords.some((k) => {
-            return k.name.toLowerCase() === trimmed;
+            return k.name?.toLowerCase() === trimmed;
         });
     });
 
@@ -130,8 +130,8 @@
         const trimmed = newKeywordInput.trim();
         const baseOptions = availableKeywords
             .filter((k) => {
-                const activeNames = new Set(activeKeywords.map((ak) => ak.name.toLowerCase()));
-                return !activeNames.has(k.name.toLowerCase());
+                const activeNames = new Set(activeKeywords.map((ak) => ak.name?.toLowerCase()));
+                return !activeNames.has(k.name?.toLowerCase());
             })
             .map((k) => ({
                 value: k.uid,
@@ -173,7 +173,7 @@
         }
 
         const match = availableKeywords.find((k) => {
-            return k.uid === selectedValue || k.name.toLowerCase() === selectedValue.toLowerCase();
+            return k.uid === selectedValue || k.name?.toLowerCase() === selectedValue.toLowerCase();
         });
 
         if (match) {
@@ -195,9 +195,9 @@
     }
 
     function addKeywordToImages(kw: Keyword | KeywordUpdate) {
-        const lowerName = kw.name.toLowerCase();
+        const lowerName = kw.name?.toLowerCase();
         const exists = activeKeywords.some((k) => {
-            return k.name.toLowerCase() === lowerName;
+            return k.name?.toLowerCase() === lowerName;
         });
 
         if (exists) {
@@ -239,7 +239,7 @@
 
     function removeKeyword(kw: KeywordUpdate) {
         activeKeywords = activeKeywords.filter((k) => {
-            return k.name.toLowerCase() !== kw.name.toLowerCase();
+            return k.name?.toLowerCase() !== kw.name?.toLowerCase();
         });
     }
 
@@ -266,7 +266,7 @@
 
         const lowerExisting = new Set(
             activeKeywords.map((k) => {
-                return k.name.toLowerCase();
+                return k.name?.toLowerCase();
             })
         );
         const toAdd: KeywordUpdate[] = [];
@@ -280,7 +280,7 @@
             lowerExisting.add(partLower);
 
             const match = availableKeywords.find((k) => {
-                return k.name.toLowerCase() === partLower;
+                return k.name?.toLowerCase() === partLower;
             });
 
             if (match) {
@@ -326,10 +326,10 @@
         const exactMatch = availableKeywords.find((k) => {
             const activeNames = new Set(
                 activeKeywords.map((ak) => {
-                    return ak.name.toLowerCase();
+                    return ak.name?.toLowerCase();
                 })
             );
-            return !activeNames.has(k.name.toLowerCase()) && k.name.toLowerCase() === query;
+            return !activeNames.has(k.name?.toLowerCase()) && k.name?.toLowerCase() === query;
         });
 
         if (exactMatch) {

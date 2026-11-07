@@ -13,7 +13,8 @@ export enum SelectionScopeNames {
     FILMSTRIP = "filmstrip",
     ADD_PHOTOS_MODAL = "add-photos-modal",
     COLLECTIONS_SELECTION_MODAL = "collections-selection-modal",
-    KEYWORDS = "keywords-main"
+    KEYWORDS = "keywords-main",
+    KEYWORDS_ASSETS = "keywords-assets"
 }
 
 export type CollectionUIDSelectionScope = `collection-${string}`;
@@ -30,6 +31,7 @@ export interface ScopeTypeMap {
     [SelectionScopeNames.COLLECTIONS_SELECTION_MODAL]: Collection;
     [key: CollectionUIDSelectionScope]: ImageAsset;
     [SelectionScopeNames.KEYWORDS]: Keyword;
+    [SelectionScopeNames.KEYWORDS_ASSETS]: ImageAsset;
 }
 
 export type ImageScopeId =
@@ -39,7 +41,8 @@ export type ImageScopeId =
     | SelectionScopeNames.SEARCH_IMAGES
     | SelectionScopeNames.FILMSTRIP
     | SelectionScopeNames.ADD_PHOTOS_MODAL
-    | CollectionUIDSelectionScope;
+    | CollectionUIDSelectionScope
+    | SelectionScopeNames.KEYWORDS_ASSETS;
 
 export type CollectionScopeId =
     | SelectionScopeNames.COLLECTIONS_MAIN

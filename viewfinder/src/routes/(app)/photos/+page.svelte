@@ -89,27 +89,12 @@
         scope.updateFacets(galleryState.images);
     });
 
-    // Page state — sort client-side using persisted SortState
-    let sortedFilteredImages = $derived.by(() => {
-        const sData = sortCollectionImages(filterManager.apply(galleryState.images), photosSort.value);
-        return sData;
-    });
-
-    let groups: DateGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            const gData = groupImagesByDate(sortedFilteredImages);
-            return gData;
-        }
-        return [];
-    });
-
-    let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        if (groups.length) {
-            const gData = getConsolidatedGroups(groups);
-            return gData;
-        }
-        return [];
-    });
+    // Page View Data
+    let sortedFilteredImages = $derived(
+        sortCollectionImages(filterManager.apply(galleryState.images), photosSort.value)
+    );
+    let groups: DateGroup[] = $derived(groupImagesByDate(sortedFilteredImages));
+    let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 
     let imageThumbnailVariant = $derived<Omit<ImageVariant, "mini">>(
         viewSettings.current === "grid" && viewSettings.simple ? "simple" : "full"
@@ -414,14 +399,12 @@
 
         {#snippet justifiedGrid()}
             <PhotoAssetGrid
-                bind:allData={sortedFilteredImages}
-                data={galleryState.images}
-                groupedData={viewSettings.showDates ? consolidatedGroups : undefined}
+                {scopeId}
+                groups={consolidatedGroups}
                 gridConfig={{
                     headerHeight: 40
                 }}
                 showDateHeaders={viewSettings.showDates}
-                {scopeId}
                 totalItemCount={galleryState.totalCount}
                 onLoadMore={() => galleryState.paginate()}
                 assetDblClick={(_e, asset) => {
@@ -456,6 +439,52 @@
 
         <VizToolbar {selectionScope}>
             {#snippet selectionActions()}
+                <Button
+                    iconName="collections_bookmark"
+                    class="action toolbar-button"
+                    role="tooltip"
+                    title="Add to Collection"
+                    aria-label="Add to Collection"
+                    onclick={() => {
+                        openAddToCollectionModal(
+                            selectionScope.selectedItems.map((img) => {
+                                return img.uid;
+                            }),
+                            handleCollectionSelect
+                        );
+                    }}
+                    ondragenter={(e) => {
+                        e.currentTarget.classList.add("on-enter");
+                    }}
+                    ondragleave={(e) => {
+                        const related = e.relatedTarget;
+                        if (related instanceof Node && e.currentTarget.contains(related)) {
+                            return;
+                        }
+                        e.currentTarget.classList.remove("on-enter");
+                    }}
+                    ondragover={(e) => {
+                        e.preventDefault();
+                    }}
+                    ondrop={(e) => {
+                        if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
+                            return;
+                        }
+
+                        const uidsData = DragData.getData<string[]>(e.dataTransfer!, VizMimeTypes.IMAGE_UIDS)?.payload;
+
+                        if (!uidsData) {
+                            return;
+                        }
+
+                        e.currentTarget.classList.remove("on-enter");
+
+                        openAddToCollectionModal(uidsData, handleCollectionSelect);
+                    }}
+                >
+                    <span>Add to collection</span>
+                </Button>
+                <div class="toolbar-separator"></div>
                 <div class="triage-group">
                     <ImageLabelViewer
                         variant="expanded"
@@ -556,49 +585,7 @@
                     />
                 </div>
                 <div class="toolbar-separator"></div>
-                <Button
-                    iconName="collections_bookmark"
-                    class="action toolbar-button"
-                    role="tooltip"
-                    title="Add to Collection"
-                    aria-label="Add to Collection"
-                    onclick={() => {
-                        openAddToCollectionModal(
-                            selectionScope.selectedItems.map((img) => {
-                                return img.uid;
-                            }),
-                            handleCollectionSelect
-                        );
-                    }}
-                    ondragenter={(e) => {
-                        e.currentTarget.classList.add("on-enter");
-                    }}
-                    ondragleave={(e) => {
-                        const related = e.relatedTarget;
-                        if (related instanceof Node && e.currentTarget.contains(related)) {
-                            return;
-                        }
-                        e.currentTarget.classList.remove("on-enter");
-                    }}
-                    ondragover={(e) => {
-                        e.preventDefault();
-                    }}
-                    ondrop={(e) => {
-                        if (!e.dataTransfer?.types.includes(VizMimeTypes.IMAGE_UIDS)) {
-                            return;
-                        }
 
-                        const uidsData = DragData.getData<string[]>(e.dataTransfer!, VizMimeTypes.IMAGE_UIDS)?.payload;
-
-                        if (!uidsData) {
-                            return;
-                        }
-
-                        e.currentTarget.classList.remove("on-enter");
-
-                        openAddToCollectionModal(uidsData, handleCollectionSelect);
-                    }}
-                />
                 <Button
                     iconName="delete"
                     class="toolbar-button"

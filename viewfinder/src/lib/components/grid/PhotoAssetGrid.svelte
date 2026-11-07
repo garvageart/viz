@@ -10,21 +10,23 @@
         type PhotoGridConfig,
         PhotoGridVirtualizer
     } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
-    import { createImageDragItems, draggable } from "#lib/drag-drop/directives.svelte.js";
+    import { createImageDragItems, draggable, dropZone } from "#lib/drag-drop/directives.svelte.js";
     import {
         type HotkeysEvent,
         KbdShortcutTier,
         KeybindAction,
         keyboardManager
     } from "#lib/keyboard/keyboard.svelte.js";
+    import { VizMimeTypes } from "#lib/mime.ts";
     import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
     import { type ImageScopeId, SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.ts";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getScrollParent } from "#lib/utils/dom.js";
     import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
-    import { type ImageAsset } from "@viz/api";
+    import { type ImageAsset, type Keyword, updateImage } from "@viz/api";
     import { DateTime } from "luxon";
     import { type Snippet, onMount, untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
@@ -38,9 +40,7 @@
     }
 
     interface PhotoSpecificProps {
-        data: ImageAsset[];
-        allData?: ImageAsset[];
-        groupedData?: ConsolidatedGroup[];
+        groups: ConsolidatedGroup[];
         photoCardSnippet?: Snippet<[ImageAsset, ImageResolution, CardVisualState]>;
         gridConfig?: PhotoGridConfig;
         showDateHeaders?: boolean;
@@ -64,9 +64,7 @@
     }
 
     let {
-        data = $bindable([]),
-        allData = $bindable(),
-        groupedData,
+        groups,
         gridConfig = {},
         showDateHeaders = false,
         scopeId = SelectionScopeNames.PHOTOS_MAIN,
@@ -87,29 +85,15 @@
     let selection = $derived(selectionManager.getScope(scopeId));
     let selectedItems = $derived(selection.selectedItems);
 
+    // Apply filters
+    let allData = $derived(groups.flatMap((g) => g.allImages.flatMap((i) => i.image)));
+    let displayData = $derived(filterManager.apply(allData));
+
     // Sync data source to selection scope so filters can access it
     // Set source as the exact image objects to ensure object equality for selection tracking outside of the grid
     $effect(() => {
-        if (groupedData && groupedData.length > 0) {
-            selection.setSource(
-                groupedData.flatMap((g) => g.allImages.map((x) => x.image)),
-                (image) => image.uid
-            );
-
-            return;
-        }
-
-        const source = allData || data;
-        if (source) {
-            selection.setSource(source, (image) => image.uid);
-        }
+        selection.setSource(displayData, (image) => image.uid);
     });
-
-    // Apply filters
-    // If we have grouped data, we assume the parent has already filtered it or passed it correctly.
-    // However, if `data` is passed (flat mode), we filter it locally.
-    // For the timeline view, `data` might be the flattened version of `groupedData`.
-    let filteredData = $derived(filterManager.apply(data) as ImageAsset[]);
 
     // this is sort weird to track idk
     function onFocus() {
@@ -128,7 +112,7 @@
             onselectAll();
         } else {
             // Select filtered data, not hidden or disabled data
-            const selectionData = filteredData.filter((img) => !disabledUids.has(img.uid));
+            const selectionData = displayData.filter((img) => !disabledUids.has(img.uid));
             selection.selectMultiple(selectionData);
         }
     }
@@ -166,8 +150,7 @@
             return list;
         }
 
-        const source = allData && allData.length > 0 ? allData : filteredData;
-        return source.filter((img) => !disabledUids.has(img.uid));
+        return displayData.filter((img) => !disabledUids.has(img.uid));
     }
 
     function getAssetPosition(assetId: string) {
@@ -180,12 +163,14 @@
 
             for (let i = 0; i < row.items.length; i++) {
                 const item = row.items[i];
-                if (item.asset.image.uid === assetId) {
-                    return {
-                        rowIndex: r,
-                        centerX: item.left + item.width / 2
-                    };
+                if (item.asset.image.uid !== assetId) {
+                    continue;
                 }
+
+                return {
+                    rowIndex: r,
+                    centerX: item.left + item.width / 2
+                };
             }
         }
 
@@ -324,6 +309,7 @@
         for (const item of realItems) {
             const itemCenterX = item.left + item.width / 2;
             const diff = Math.abs(itemCenterX - pos.centerX);
+
             if (diff < minDiff) {
                 minDiff = diff;
                 closestItem = item;
@@ -381,7 +367,7 @@
     });
 
     // Styling stuff
-    const assetLookup = $derived(new Map(data.map((a: ImageAsset) => [a.uid, a])));
+    const assetLookup = $derived(new Map(allData.map((a) => [a.uid, a])));
 
     function getAssetFromElement(el: HTMLElement): ImageAsset | undefined {
         const assetId = el.dataset.assetId;
@@ -475,8 +461,8 @@
 
     const groupLookup = $derived.by(() => {
         const map = new Map<string, ImageAsset[]>();
-        if (groupedData) {
-            for (const g of groupedData) {
+        if (groups) {
+            for (const g of groups) {
                 map.set(
                     g.label,
                     g.allImages.map((x) => x.image)
@@ -525,12 +511,16 @@
             return;
         }
 
-        const searchList = () => (allData && allData.length > 0 ? allData : data);
+        const searchList = () => allData;
         let currentImages = initialImages;
 
         while (currentImages.length > 0) {
             const lastImage = currentImages[currentImages.length - 1];
             const list = searchList();
+            if (!list) {
+                break;
+            }
+
             // The group's last known image must still be the last loaded item for the
             // group to possibly continue past the current page.
             if (list.length === 0 || list[list.length - 1].uid !== lastImage.uid) {
@@ -540,7 +530,7 @@
             const beforeLength = list.length;
             await onLoadMore();
 
-            if (searchList().length <= beforeLength) {
+            if (list.length <= beforeLength) {
                 break;
             }
 
@@ -629,19 +619,19 @@
         }
 
         // Pass to virtualizer
-        if (groupedData && groupedData.length > 0) {
+        if (groups && groups.length > 0) {
             if (showDateHeaders) {
-                virtualizer.update(groupedData, availableWidth);
+                virtualizer.update(groups, availableWidth);
             } else {
                 // If headers are off, flatten the grouped data to keep the date labels/badges
-                const flatWithLabels = groupedData.flatMap((g) => g.allImages);
+                const flatWithLabels = groups.flatMap((g) => g.allImages);
                 virtualizer.updateFlat(flatWithLabels, availableWidth);
             }
         } else if (allData && allData.length > 0) {
             // Fallback to allData if groupedData is not present (might already be labelled)
             virtualizer.updateFlat(allData, availableWidth);
         } else {
-            virtualizer.updateFlat(filteredData, availableWidth);
+            virtualizer.updateFlat(displayData, availableWidth);
         }
 
         virtualizer.updateScroll(scrollTop, vH);
@@ -788,15 +778,7 @@
 
     // Re-run layout when data changes
     $effect(() => {
-        void data?.length;
-        void allData?.length;
-        void filteredData?.length;
-        void groupedData?.length;
-        if (groupedData) {
-            for (const group of groupedData) {
-                void group.allImages?.length;
-            }
-        }
+        void displayData.length;
 
         if (photoGridEl) {
             untrack(() => {
@@ -1079,6 +1061,42 @@
             disabled: disabledUids.has(asset.uid),
             onLongPress: () => {
                 handleMobileLongPress(asset);
+            }
+        }}
+        use:dropZone={{
+            id: "add-keyword",
+            types: [VizMimeTypes.KEYWORD_UIDS],
+            onDragOver: () => {
+                return {
+                    intent: "copy",
+                    label: "Add Keyword to Photo"
+                };
+            },
+            onDrop: async (data, e) => {
+                const dropKeywords = data.payload as Keyword;
+                const assetKeywords = asset.keywords ?? [];
+
+                const res = await updateImage(asset.uid, {
+                    keywords: [...assetKeywords, dropKeywords]
+                });
+
+                if (res.status !== 200) {
+                    toasts.add({
+                        type: "error",
+                        title: "Error adding keyword",
+                        message: res.data.error
+                    });
+
+                    return;
+                }
+
+                (e.currentTarget as HTMLElement).classList.remove("ondragenter");
+
+                toasts.add({
+                    type: "success",
+                    title: res.data.name,
+                    message: "Successfully added keyword to image"
+                });
             }
         }}
         onclick={(e) => {
@@ -1455,6 +1473,22 @@
         &.multi-selected-photo .photo-card-content {
             transform: scale(0.95);
         }
+    }
+
+    :global(.asset-photo.drop-active) {
+        background-color: color-mix(in srgb, var(--viz-primary) 12%, var(--viz-surface-panel));
+        border-color: var(--viz-primary);
+    }
+
+    :global(.asset-photo.drop-active::after) {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--viz-primary);
+        border-radius: inherit;
+        pointer-events: none;
+        z-index: 2;
+        background-color: color-mix(in srgb, var(--viz-primary) 8%, transparent);
     }
 
     .disabled-asset {

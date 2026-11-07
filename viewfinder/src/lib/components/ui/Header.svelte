@@ -198,6 +198,13 @@
                 title="Go to Collections"
                 href="/collections"
             />
+            <Button
+                variant="ghost"
+                class="page-nav-btn header-button"
+                iconName="label"
+                title="Go to Keywords"
+                href="/keywords"
+            />
         </div>
     </div>
     <div class="center-container">

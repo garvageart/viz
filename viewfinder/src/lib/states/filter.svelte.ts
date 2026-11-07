@@ -1,11 +1,11 @@
 import { initDB } from "#lib/db/client.js";
 import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
 import { getImageLabel } from "#lib/utils/images.js";
-import { type Collection, type ImageAsset } from "@viz/api";
+import { type Collection, type ImageAsset, type Keyword } from "@viz/api";
 import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
 
-export type Asset = ImageAsset | Collection;
+export type FilterEntity = ImageAsset | Collection | Keyword;
 
 export interface DateRange {
     after?: string;
@@ -164,7 +164,7 @@ export class FilterScope<F> {
         return this.type === "collections";
     }
 
-    updateFacets<T extends Asset>(items: T[]) {
+    updateFacets<T extends FilterEntity>(items: T[]) {
         if (this.isImageScope()) {
             const cameras = new Map<string, number>();
             const lenses = new Map<string, number>();
@@ -181,69 +181,71 @@ export class FilterScope<F> {
                 maxFL = -Infinity;
 
             for (const item of items) {
-                if ("image_metadata" in item) {
-                    const img = item as ImageAsset;
-                    const exif = img.exif || {};
+                if ("image_metadata" in item === false) {
+                    continue;
+                }
 
-                    if (exif.model) {
-                        const model = exif.model.trim();
-                        cameras.set(model, (cameras.get(model) || 0) + 1);
+                const img = item as ImageAsset;
+                const exif = img.exif || {};
+
+                if (exif.model) {
+                    const model = exif.model.trim();
+                    cameras.set(model, (cameras.get(model) || 0) + 1);
+                }
+
+                if (exif.lens_model) {
+                    const lens = exif.lens_model.trim();
+                    lenses.set(lens, (lenses.get(lens) || 0) + 1);
+                }
+
+                if (img.keywords) {
+                    for (const kw of img.keywords) {
+                        tags.set(kw.name, (tags.get(kw.name) || 0) + 1);
                     }
+                }
 
-                    if (exif.lens_model) {
-                        const lens = exif.lens_model.trim();
-                        lenses.set(lens, (lenses.get(lens) || 0) + 1);
+                const label = getImageLabel(img);
+                if (label) {
+                    labels.set(label, (labels.get(label) || 0) + 1);
+                }
+
+                const iso = parseISO(exif.iso);
+                if (iso !== undefined) {
+                    if (iso < minIso) {
+                        minIso = iso;
                     }
-
-                    if (img.keywords) {
-                        for (const kw of img.keywords) {
-                            tags.set(kw.name, (tags.get(kw.name) || 0) + 1);
-                        }
+                    if (iso > maxIso) {
+                        maxIso = iso;
                     }
+                }
 
-                    const label = getImageLabel(img);
-                    if (label) {
-                        labels.set(label, (labels.get(label) || 0) + 1);
+                const f = parseFStop(exif.aperture ?? exif.f_number);
+                if (f !== undefined) {
+                    if (f < minF) {
+                        minF = f;
                     }
-
-                    const iso = parseISO(exif.iso);
-                    if (iso !== undefined) {
-                        if (iso < minIso) {
-                            minIso = iso;
-                        }
-                        if (iso > maxIso) {
-                            maxIso = iso;
-                        }
+                    if (f > maxF) {
+                        maxF = f;
                     }
+                }
 
-                    const f = parseFStop(exif.aperture ?? exif.f_number);
-                    if (f !== undefined) {
-                        if (f < minF) {
-                            minF = f;
-                        }
-                        if (f > maxF) {
-                            maxF = f;
-                        }
+                const ss = parseShutterSpeed(exif.exposure_time);
+                if (ss !== undefined) {
+                    if (ss < minSS) {
+                        minSS = ss;
                     }
-
-                    const ss = parseShutterSpeed(exif.exposure_time);
-                    if (ss !== undefined) {
-                        if (ss < minSS) {
-                            minSS = ss;
-                        }
-                        if (ss > maxSS) {
-                            maxSS = ss;
-                        }
+                    if (ss > maxSS) {
+                        maxSS = ss;
                     }
+                }
 
-                    const fl = parseFocalLength(exif.focal_length);
-                    if (fl !== undefined) {
-                        if (fl < minFL) {
-                            minFL = fl;
-                        }
-                        if (fl > maxFL) {
-                            maxFL = fl;
-                        }
+                const fl = parseFocalLength(exif.focal_length);
+                if (fl !== undefined) {
+                    if (fl < minFL) {
+                        minFL = fl;
+                    }
+                    if (fl > maxFL) {
+                        maxFL = fl;
                     }
                 }
             }
@@ -275,7 +277,7 @@ export class FilterScope<F> {
         }
     }
 
-    apply<T extends Asset>(items: T[]): T[] {
+    apply<T extends FilterEntity>(items: T[]): T[] {
         if (this.isImageScope()) {
             const criteria = this.criteria;
             const hasActiveFilters =
@@ -539,7 +541,7 @@ class FilterManager {
         }
     }
 
-    apply<T extends Asset = Asset>(items: T[]): T[] {
+    apply<T extends FilterEntity = FilterEntity>(items: T[]): T[] {
         if (!this.activeScope) {
             return items;
         }

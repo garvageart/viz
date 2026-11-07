@@ -648,9 +648,7 @@
 
                             {#snippet justifiedGrid()}
                                 <PhotoAssetGrid
-                                    bind:allData={allImagesFlat}
-                                    data={images}
-                                    groupedData={consolidatedGroups}
+                                    groups={consolidatedGroups}
                                     showDateHeaders={true}
                                     scopeId={imageScopeId}
                                     onLoadMore={() => paginateSearch()}
