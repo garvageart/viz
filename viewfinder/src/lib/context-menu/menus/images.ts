@@ -14,6 +14,7 @@ import {
     type Collection,
     type CollectionDetailResponse,
     type ImageAsset,
+    type Keyword,
     addCollectionImages,
     batchUpdateImages,
     deleteCollectionImages,
@@ -21,6 +22,7 @@ import {
     getAssetImagePath,
     getDownloadUrl,
     getFullImagePath,
+    removeAssetsFromKeywords,
     signDownload,
     updateCollection
 } from "@viz/api";
@@ -31,8 +33,10 @@ export interface ImageMenuOptions {
     onDelete?: (deletedUIDs: string[]) => void;
     onUpdate?: (updated: ImageAsset) => void;
     collection?: Collection | CollectionDetailResponse;
+    keyword?: Keyword;
     includeAddToCollection?: boolean;
     onAddToCollection?: (collection: Collection, uids: string[]) => void;
+    onRemoveFromKeyword?: (uids: string[]) => void;
 }
 
 /**
@@ -299,6 +303,55 @@ export async function removeImagesFromCollection(
 }
 
 /**
+ * Removes selected images from a keyword.
+ */
+export async function removeImagesFromKeyword(
+    keyword: Keyword,
+    selectionScope: SelectionScope<ImageAsset>,
+    onDelete?: (deletedUIDs: string[]) => void
+) {
+    const items = selectionScope.selectedItems;
+    if (items.length === 0) {
+        return;
+    }
+
+    const uids = items.map((i) => {
+        return i.uid;
+    });
+
+    try {
+        const res = await removeAssetsFromKeywords({
+            keyword_uids: [keyword.uid],
+            asset_uids: uids
+        });
+
+        if (res.status === 204) {
+            toasts.add({
+                type: "success",
+                title: keyword.name,
+                message: `Removed ${uids.length} image(s)`
+            });
+
+            if (onDelete) {
+                onDelete(uids);
+            }
+
+            selectionScope.clear();
+        } else {
+            toasts.add({
+                type: "error",
+                message: res.data?.error || "Failed to remove images from keyword"
+            });
+        }
+    } catch (err) {
+        toasts.add({
+            type: "error",
+            message: `Remove failed: ${err}`
+        });
+    }
+}
+
+/**
  * Sets an image as the thumbnail for a collection.
  */
 export async function setCollectionThumbnail(collection: Collection | CollectionDetailResponse, asset: ImageAsset) {
@@ -377,7 +430,15 @@ export function createImageMenu(
     selectionScope: SelectionScope<ImageAsset>,
     options: ImageMenuOptions = {}
 ): MenuItem[] {
-    const { onDelete, onUpdate, collection, includeAddToCollection = true, onAddToCollection } = options;
+    const {
+        onDelete,
+        onUpdate,
+        collection,
+        keyword,
+        includeAddToCollection = true,
+        onAddToCollection,
+        onRemoveFromKeyword
+    } = options;
     const items = selectionScope.selectedItems;
     const allFavourited =
         items.length > 0 &&
@@ -479,6 +540,23 @@ export function createImageMenu(
 
         actionMenuItems.push({
             id: "divider-3",
+            separator: true
+        });
+    }
+
+    if (keyword) {
+        actionMenuItems.push({
+            id: "act-remove-from-keyword",
+            label: "Remove from Keyword",
+            iconName: "label_off",
+            disabled: selectionScope.size === 0,
+            action: () => {
+                return removeImagesFromKeyword(keyword, selectionScope, onRemoveFromKeyword ?? onDelete);
+            }
+        });
+
+        actionMenuItems.push({
+            id: "divider-keyword",
             separator: true
         });
     }
