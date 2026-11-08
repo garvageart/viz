@@ -259,11 +259,11 @@
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.activeImage || allImagesFlat.length === 0) {
+        if (!lightbox.image || allImagesFlat.length === 0) {
             return;
         }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightbox.activeImage!.uid);
+        const idx = allImagesFlat.findIndex((i) => i.uid === lightbox.image!.uid);
         if (idx === -1) {
             return;
         }
@@ -339,9 +339,9 @@
     <title>Search{search.value ? ` - ${search.value}` : ""}</title>
 </svelte:head>
 
-{#if lightbox.activeImage}
+{#if lightbox.image}
     <ImageLightbox
-        lightboxImage={lightbox.activeImage}
+        lightboxImage={lightbox.image}
         show={lightbox.show}
         onClose={() => lightbox.close()}
         {nextLightboxImage}

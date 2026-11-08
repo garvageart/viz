@@ -1,16 +1,10 @@
+import { selectionManager } from "#lib/states/selection.svelte.ts";
+import { isAssetImage } from "#lib/utils/images.ts";
 import type { ImageAsset } from "@viz/api";
 
 export class ImageLightboxState {
     show = $state(false);
-    image = $state<ImageAsset>();
-
-    get activeImage() {
-        if (this.show && this.image) {
-            return this.image;
-        }
-
-        return undefined;
-    }
+    image = $derived(isAssetImage(selectionManager.focusedItem) ? selectionManager.focusedItem : undefined);
 
     open(image?: ImageAsset) {
         if (image) {

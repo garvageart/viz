@@ -604,7 +604,7 @@
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.activeImage) {
+        if (!lightbox.image) {
             return;
         }
 
@@ -613,7 +613,7 @@
             return;
         }
 
-        const idx = arr.findIndex((i) => i.uid === lightbox.activeImage!.uid);
+        const idx = arr.findIndex((i) => i.uid === lightbox.image!.uid);
         if (idx === -1) {
             return;
         }
@@ -727,22 +727,13 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-{#if lightbox.activeImage}
+{#if lightbox.image}
     <ImageLightbox
-        lightboxImage={lightbox.activeImage}
+        bind:lightboxImage={lightbox.image}
         show={lightbox.show}
         onClose={() => lightbox.close()}
         {prevLightboxImage}
         {nextLightboxImage}
-        onImageUpdated={(image) => {
-            lightbox.image = image;
-            collectionState.images = collectionState.images.map((i) => {
-                if (i.uid === image.uid) {
-                    return image;
-                }
-                return i;
-            });
-        }}
     />
 {/if}
 

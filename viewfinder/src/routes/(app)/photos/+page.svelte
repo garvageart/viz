@@ -152,11 +152,11 @@
     let pendingNextUid = $state<string | null>(null);
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.activeImage || sortedFilteredImages.length === 0) {
+        if (!lightbox.image || sortedFilteredImages.length === 0) {
             return;
         }
 
-        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightbox.activeImage!.uid);
+        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightbox.image!.uid);
         if (idx === -1) {
             return;
         }
@@ -168,7 +168,7 @@
 
         if (nextIdx >= sortedFilteredImages.length) {
             if (galleryState.hasMore && delta === 1) {
-                pendingNextUid = lightbox.activeImage.uid;
+                pendingNextUid = lightbox.image.uid;
                 galleryState.paginate();
             }
             return;
@@ -346,9 +346,9 @@
 
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
 
-{#if lightbox.activeImage}
+{#if lightbox.image}
     <ImageLightbox
-        lightboxImage={lightbox.activeImage}
+        lightboxImage={lightbox.image}
         show={lightbox.show}
         onClose={() => lightbox.close()}
         {prevLightboxImage}

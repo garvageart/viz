@@ -2,15 +2,19 @@
     import CropOverlay from "#lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "#lib/components/image-tools/CropTools.svelte";
     import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import Filmstrip from "#lib/components/panels/workspace/Filmstrip.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import StatusIndicator from "#lib/components/ui/StatusIndicator.svelte";
     import ExportPanel, { modalOptions as exportModalOptions } from "#lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
+    import { DbSettings } from "#lib/db/settings.js";
     import { ImageLoader } from "#lib/images/loader/image-loader.svelte.js";
     import type { ActiveCropLayout, CropRect } from "#lib/images/zoom/crop-utils.js";
     import { ImageZoomState } from "#lib/images/zoom/zoom-utils.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import { isMobile } from "#lib/states/index.svelte.js";
+    import Pane from "#lib/third-party/svelte-splitpanes/Pane.svelte";
+    import Splitpanes from "#lib/third-party/svelte-splitpanes/Splitpanes.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { downloadOriginalImageFile } from "#lib/utils/http.js";
     import { dev } from "$app/env";
@@ -22,6 +26,26 @@
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
     import Lightbox from "./Lightbox.svelte";
+
+    interface ImageLightboxSettings {
+        filmstrip?: {
+            visible?: boolean;
+            position?: "bottom" | "side";
+        };
+        sidePanel?: {
+            visible?: boolean;
+        };
+    }
+
+    interface ImageLightboxState {
+        filmstrip: {
+            visible: boolean;
+            position: "bottom" | "side";
+        };
+        sidePanel: {
+            visible: boolean;
+        };
+    }
 
     interface Props {
         lightboxImage: ImageAsset;
@@ -363,7 +387,40 @@
         };
     });
 
-    let showSidePanel = $state(!isMobile);
+    // Lightbox view state
+    const lightboxSettings = new DbSettings<ImageLightboxSettings>("image_lightbox");
+    const savedLightboxSettings = await lightboxSettings.load();
+
+    let lightboxState = $state<ImageLightboxState>({
+        filmstrip: {
+            visible: savedLightboxSettings?.filmstrip?.visible ?? true,
+            position: savedLightboxSettings?.filmstrip?.position ?? "bottom"
+        },
+        sidePanel: {
+            visible: savedLightboxSettings?.sidePanel?.visible ?? !isMobile
+        }
+    });
+
+    $effect(() => {
+        void lightboxSettings.save({
+            filmstrip: {
+                visible: lightboxState.filmstrip.visible,
+                position: lightboxState.filmstrip.position
+            },
+            sidePanel: {
+                visible: lightboxState.sidePanel.visible
+            }
+        });
+    });
+
+    // 🫨🫨🫨🫨🫨
+    let lightboxMainSnippets = $derived(
+        lightboxState.filmstrip.visible
+            ? lightboxState.filmstrip.position === "bottom"
+                ? [imagePane, filmstripPane]
+                : [filmstripPane, imagePane]
+            : [imagePane]
+    );
 
     function goToPrev() {
         if (isCropping) {
@@ -628,35 +685,44 @@
     </div>
 {/snippet}
 
-<Lightbox
-    bind:show
-    onclose={closeLightbox}
-    backgroundOpacity={1}
-    closeOnEsc={false}
-    onclick={() => {
-        if (zoomState.wasDragging) {
-            return;
-        }
-        handleContainerClick();
-    }}
->
-    <div class="lightbox-layout">
+{#snippet imagePane()}
+    <Pane minSize={20}>
         <div
-            class="lightbox-main"
+            class="image-viewport"
+            class:can-pan={zoomState.canPan}
+            class:is-panning={zoomState.isDragging}
+            bind:this={viewportEl}
+            role="presentation"
+            onwheel={handleWheel}
+            ondblclick={handleDoubleClick}
+            onpointerdown={zoomState.handlePointerDown}
+            onpointermove={zoomState.handlePointerMove}
+            onpointerup={zoomState.handlePointerUp}
+            onpointercancel={zoomState.handlePointerUp}
             onclick={(e) => {
                 if (zoomState.wasDragging) {
-                    e.stopPropagation();
                     return;
                 }
-
-                // Only handle clicks on the container background (not on buttons or image)
-                if (e.currentTarget === viewportEl) {
+                // Only close on clicking the viewport background or stage target, not on image or buttons
+                if (
+                    e.target === e.currentTarget ||
+                    (e.target as HTMLElement)?.classList.contains("image-viewport") ||
+                    (e.target as HTMLElement)?.classList.contains("image-stage")
+                ) {
                     handleContainerClick();
                 }
             }}
-            role="presentation"
         >
-            <div class="lightbox-header-bar">
+            {#if dev && showImageStateDebugPanel}
+                {@render zoomStateDebug()}
+            {/if}
+            <div
+                class="lightbox-header-bar"
+                role="toolbar"
+                aria-label="Lightbox toolbar"
+                tabindex={0}
+                onpointerdown={(e) => e.stopPropagation()}
+            >
                 <div class="lightbox-header-left">
                     <Button
                         id="lightbox-icon-close"
@@ -678,6 +744,30 @@
                     {/if}
                 </div>
                 <div class="image-icon-buttons">
+                    <Button
+                        id="act-expand-lightbox"
+                        class="lightbox-button-icon"
+                        title={lightboxState.filmstrip.visible ? "Hide Filmstrip" : "Show Filmstrip"}
+                        iconName={lightboxState.filmstrip.visible ? "collapse_content" : "expand_content"}
+                        onclick={() => {
+                            lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
+                        }}
+                    />
+                    {#if lightboxState.filmstrip.visible}
+                        <Button
+                            id="act-move-filmstrip"
+                            class="lightbox-button-icon"
+                            title="Move Filmstrip"
+                            iconName={lightboxState.filmstrip.position === "bottom"
+                                ? "bottom_panel_open"
+                                : "left_panel_open"}
+                            onclick={() => {
+                                lightboxState.filmstrip.position =
+                                    lightboxState.filmstrip.position === "bottom" ? "side" : "bottom";
+                            }}
+                        />
+                    {/if}
+                    <div class="image-icon-button-separator"></div>
                     {#if !isCropping}
                         {#if dev}
                             <Button
@@ -700,11 +790,9 @@
                                 }
 
                                 const newFav = !lightboxImage.favourited;
-                                lightboxImage.favourited = newFav;
                                 try {
                                     await updateImage(lightboxImage.uid, { favourited: newFav });
                                 } catch (err) {
-                                    lightboxImage.favourited = !newFav;
                                     toasts.add({
                                         type: "error",
                                         message: `Failed to update favourite status: ${err}`
@@ -752,110 +840,64 @@
                         id="lightbox-toggle-info"
                         class="lightbox-button-icon"
                         // TODO: Make i18n safe
-                        title={// TODO: Make i18n safe
-                        `${showSidePanel ? "Hide" : "Show"} Info`}
+                        title={`${lightboxState.sidePanel.visible ? "Hide" : "Show"} Info`}
                         onclick={(e) => {
                             e.stopPropagation();
-                            showSidePanel = !showSidePanel;
+                            lightboxState.sidePanel.visible = !lightboxState.sidePanel.visible;
                         }}
                         iconName="info"
                     />
                 </div>
             </div>
-
             <div
-                class="image-viewport"
+                class="image-stage"
+                class:has-crop={!!activeCrop}
                 class:can-pan={zoomState.canPan}
                 class:is-panning={zoomState.isDragging}
-                bind:this={viewportEl}
+                data-zoom={zoomState.value}
+                data-pos-x={zoomState.posX}
+                data-pos-y={zoomState.posY}
+                oncontextmenu={handleContextMenu}
                 role="presentation"
-                onwheel={handleWheel}
-                ondblclick={handleDoubleClick}
-                onpointerdown={zoomState.handlePointerDown}
-                onpointermove={zoomState.handlePointerMove}
-                onpointerup={zoomState.handlePointerUp}
-                onpointercancel={zoomState.handlePointerUp}
-                onclick={(e) => {
-                    if (zoomState.wasDragging) {
-                        e.stopPropagation();
-                        return;
-                    }
-                    // Only close on clicking the viewport background or stage target, not on image or buttons
-                    if (
-                        e.target === e.currentTarget ||
-                        (e.target as HTMLElement)?.classList.contains("image-viewport") ||
-                        (e.target as HTMLElement)?.classList.contains("image-stage")
-                    ) {
-                        handleContainerClick();
-                    }
-                }}
+                style="{activeCropDimensions
+                    ? `width: ${activeCropDimensions.frame.width.toFixed(2)}px; height: ${activeCropDimensions.frame.height.toFixed(2)}px;`
+                    : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: center center;"
             >
-                {#if dev && showImageStateDebugPanel}
-                    {@render zoomStateDebug()}
-                {/if}
-                <div
-                    class="image-stage"
-                    class:has-crop={!!activeCrop}
-                    class:can-pan={zoomState.canPan}
-                    class:is-panning={zoomState.isDragging}
-                    data-zoom={zoomState.value}
-                    data-pos-x={zoomState.posX}
-                    data-pos-y={zoomState.posY}
+                <AssetImage
+                    naked={true}
+                    bind:imageElement={imageEl}
+                    asset={lightboxImage}
+                    objectFit="contain"
+                    priority={true}
+                    placeholder="none"
+                    src={loader.displayURL}
+                    class="lightbox-image main {isCropping ? 'is-crop' : ''}"
+                    style={cropStyle}
+                    crossorigin="use-credentials"
+                    data-image-id={lightboxImage.uid}
+                    onload={() => {
+                        loader.handleLoad(imageEl?.naturalWidth, imageEl?.naturalHeight);
+                    }}
+                    onerror={() => loader.handleError()}
+                    ondragstart={(e) => e.preventDefault()}
                     oncontextmenu={handleContextMenu}
-                    role="presentation"
-                    style="{activeCropDimensions
-                        ? `width: ${activeCropDimensions.frame.width.toFixed(2)}px; height: ${activeCropDimensions.frame.height.toFixed(2)}px;`
-                        : ''} transform: translate({zoomState.posX}px, {zoomState.posY}px) scale({zoomState.value}); transform-origin: center center;"
-                >
-                    <AssetImage
-                        naked={true}
-                        bind:imageElement={imageEl}
-                        asset={lightboxImage}
-                        objectFit="contain"
-                        priority={true}
-                        placeholder="none"
-                        src={loader.displayURL}
-                        class="lightbox-image main {isCropping ? 'is-crop' : ''}"
-                        style={cropStyle}
-                        crossorigin="use-credentials"
-                        data-image-id={lightboxImage.uid}
-                        onload={() => {
-                            loader.handleLoad(imageEl?.naturalWidth, imageEl?.naturalHeight);
-                        }}
-                        onerror={() => loader.handleError()}
-                        ondragstart={(e) => e.preventDefault()}
-                        oncontextmenu={handleContextMenu}
+                />
+
+                {#if isCropping && renderedImageDimensions.width > 0 && renderedImageDimensions.height > 0}
+                    <CropOverlay
+                        width={renderedImageDimensions.width}
+                        height={renderedImageDimensions.height}
+                        bind:crop={currentCrop}
+                        scale={zoomState.value}
+                        aspectRatio={cropAspectRatio}
                     />
-
-                    {#if isCropping && renderedImageDimensions.width > 0 && renderedImageDimensions.height > 0}
-                        <CropOverlay
-                            width={renderedImageDimensions.width}
-                            height={renderedImageDimensions.height}
-                            bind:crop={currentCrop}
-                            scale={zoomState.value}
-                            aspectRatio={cropAspectRatio}
-                        />
-                    {/if}
-                </div>
-
-                <!-- TODO: Change this to a general action status indicator to support all actions -->
-                <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
-                <div class="status-indicator-container">
-                    <StatusIndicator bind:this={statusIndicator} />
-                </div>
-
-                {#if isCropping && cropMenuPosition}
-                    <FloatingPanel x={cropMenuPosition.x} y={cropMenuPosition.y}>
-                        <CropTools
-                            onApply={handleCropApply}
-                            onReset={handleCropReset}
-                            onCancel={() => {
-                                cropMenuPosition = undefined;
-                            }}
-                            onAspectRatioChange={handleAspectRatioChange}
-                        />
-                    </FloatingPanel>
                 {/if}
+            </div>
+
+            <!-- TODO: Change this to a general action status indicator to support all actions -->
+            <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
+            <div class="status-indicator-container">
+                <StatusIndicator bind:this={statusIndicator} />
             </div>
 
             {#if prevLightboxImage && nextLightboxImage && !isCropping}
@@ -880,24 +922,97 @@
                     />
                 </div>
             {/if}
-        </div>
-
-        {#if showSidePanel}
-            <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
-                {#if isCropping}
+            {#if isCropping && cropMenuPosition}
+                <FloatingPanel x={cropMenuPosition.x} y={cropMenuPosition.y}>
                     <CropTools
                         onApply={handleCropApply}
                         onReset={handleCropReset}
                         onCancel={() => {
-                            toggleCropMode();
+                            cropMenuPosition = undefined;
                         }}
                         onAspectRatioChange={handleAspectRatioChange}
                     />
-                {:else}
-                    <MetadataPanel asset={lightboxImage} showCloseIcon={isMobile} {onImageUpdated} />
-                {/if}
-            </div>
-        {/if}
+                </FloatingPanel>
+            {/if}
+        </div>
+    </Pane>
+{/snippet}
+
+{#snippet filmstripPane()}
+    <Pane
+        size={lightboxState.filmstrip.position === "bottom" ? 20 : 15}
+        minSize={lightboxState.filmstrip.position === "bottom" ? 20 : 15}
+    >
+        <div class="lightbox-filmstrip-container" class:side={lightboxState.filmstrip.position === "side"}>
+            <Filmstrip />
+        </div>
+    </Pane>
+{/snippet}
+
+<Lightbox
+    bind:show
+    onclose={closeLightbox}
+    backgroundOpacity={1}
+    closeOnEsc={false}
+    onclick={() => {
+        if (zoomState.wasDragging) {
+            return;
+        }
+        handleContainerClick();
+    }}
+>
+    <div class="lightbox-layout">
+        <Splitpanes id="image-lightbox-splitpanes" class="image-lightbox-splitpanes">
+            <Pane>
+                <div
+                    class="lightbox-main"
+                    class:filmstrip-side={lightboxState.filmstrip.position === "side"}
+                    onclick={(e) => {
+                        if (zoomState.wasDragging) {
+                            // e.stopPropagation();
+                            return;
+                        }
+
+                        // Only handle clicks on the container background (not on buttons or image)
+                        if (e.currentTarget === viewportEl) {
+                            handleContainerClick();
+                        }
+                    }}
+                    role="presentation"
+                >
+                    <Splitpanes
+                        id="image-lightbox-main-splitpanes"
+                        class="image-lightbox-main-splitpanes"
+                        horizontal={lightboxState.filmstrip.position === "bottom"}
+                        rtl={lightboxState.filmstrip.position === "bottom"}
+                        swapPaneOrder={true}
+                    >
+                        {#each lightboxMainSnippets as ls (ls)}
+                            {@render ls()}
+                        {/each}
+                    </Splitpanes>
+                </div>
+            </Pane>
+
+            {#if lightboxState.sidePanel.visible}
+                <Pane size={20}>
+                    <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
+                        {#if isCropping}
+                            <CropTools
+                                onApply={handleCropApply}
+                                onReset={handleCropReset}
+                                onCancel={() => {
+                                    toggleCropMode();
+                                }}
+                                onAspectRatioChange={handleAspectRatioChange}
+                            />
+                        {:else}
+                            <MetadataPanel asset={lightboxImage} showCloseIcon={isMobile} {onImageUpdated} />
+                        {/if}
+                    </div>
+                </Pane>
+            {/if}
+        </Splitpanes>
     </div>
 </Lightbox>
 
@@ -908,18 +1023,26 @@
         align-items: center;
         height: 100%;
         width: 100%;
-        pointer-events: auto;
+    }
+
+    /* gosh */
+    :global(#image-lightbox-splitpanes > .splitpanes__pane),
+    :global(#image-lightbox-main-splitpanes > .splitpanes__pane) {
+        background: transparent !important;
     }
 
     .lightbox-main {
         position: relative;
         display: flex;
+        flex-direction: column;
         justify-content: center;
-        align-items: center;
         flex: 1 1 0%;
         min-width: 0;
         height: 100%;
-        pointer-events: auto;
+
+        &.filmstrip-side {
+            flex-direction: row-reverse;
+        }
     }
 
     .lightbox-header-bar {
@@ -932,7 +1055,6 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--viz-spacing-md);
-        pointer-events: none;
     }
 
     .lightbox-header-left {
@@ -941,7 +1063,6 @@
         gap: var(--viz-spacing-sm);
         min-width: 0;
         flex: 0 1 auto;
-        pointer-events: auto;
     }
 
     :global(#lightbox-icon-close) {
@@ -970,9 +1091,18 @@
         display: flex;
         align-items: center;
         gap: 0.5em;
+        height: stretch;
         flex-shrink: 0;
         margin-left: auto;
-        pointer-events: auto;
+        box-sizing: border-box;
+    }
+
+    .image-icon-button-separator {
+        width: 1px;
+        background-color: var(--viz-border-subtle);
+        margin: 0 var(--viz-spacing-xxs);
+        flex-shrink: 0;
+        height: 80%;
     }
 
     :global(.lightbox-button-icon) {
@@ -1013,7 +1143,6 @@
         height: 100%;
         width: 100%;
         overflow: hidden;
-        pointer-events: auto;
         box-sizing: border-box;
 
         &.can-pan {
@@ -1025,6 +1154,12 @@
         }
     }
 
+    .lightbox-filmstrip-container {
+        width: 100%;
+        height: 100%;
+        background-color: var(--viz-surface-panel);
+    }
+
     .image-stage {
         position: relative;
         display: flex;
@@ -1034,7 +1169,6 @@
         max-height: 100%;
         width: 100%;
         height: 100%;
-        pointer-events: auto;
 
         &.has-crop {
             overflow: hidden !important;
@@ -1050,7 +1184,6 @@
             width: auto !important;
             height: auto !important;
             object-fit: contain !important;
-            pointer-events: auto;
 
             &.placeholder {
                 position: absolute;
@@ -1062,7 +1195,6 @@
                 &.loaded,
                 &.hidden {
                     opacity: 0;
-                    pointer-events: none;
                 }
             }
 
@@ -1091,7 +1223,6 @@
         display: flex;
         flex-direction: column;
         transform: translateY(-50%);
-        pointer-events: none;
     }
 
     :global(.lightbox-nav-btn) {
@@ -1101,7 +1232,6 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        pointer-events: auto;
     }
 
     :global(.exif-material-icon) {
@@ -1122,12 +1252,8 @@
         background-color: var(--viz-surface-panel);
         height: 100%;
         width: auto;
-        min-width: 30rem;
-        max-width: 30rem;
-        pointer-events: auto;
         box-sizing: border-box;
         overflow-y: auto;
-        border-left: 1px solid var(--viz-border-subtle);
 
         &.crop-mode {
             padding: var(--viz-spacing-std);
@@ -1148,7 +1274,6 @@
         color: var(--viz-text-primary);
         max-width: 20rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        pointer-events: auto;
 
         h3 {
             margin: 0 0 var(--viz-spacing-sm) 0;

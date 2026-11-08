@@ -363,7 +363,7 @@
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.activeImage) {
+        if (!lightbox.image) {
             return;
         }
 
@@ -372,7 +372,7 @@
             return;
         }
 
-        const idx = arr.findIndex((i) => i.uid === lightbox.activeImage!.uid);
+        const idx = arr.findIndex((i) => i.uid === lightbox.image!.uid);
         if (idx === -1) {
             return;
         }
@@ -444,9 +444,9 @@
     />
 {/snippet}
 
-{#if lightbox.activeImage}
+{#if lightbox.image}
     <ImageLightbox
-        lightboxImage={lightbox.activeImage}
+        lightboxImage={lightbox.image}
         show={lightbox.show}
         onClose={() => lightbox.close()}
         {prevLightboxImage}
