@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.14] - 2026-11-08
+
+* feat(viewfinder): synchronize ImageLightbox and embedded Filmstrip selection (e4d6713b)
+* refactor(viewfinder): unify modals and overlays under LightboxManager (cd6e7f54)
+* chore(viewfinder): upgrade material-symbols and generate missing icons (fdc8fc0e)
+* feat(viewfinder): add embedded filmstrip and splitpane layout to ImageLightbox (dd9726cd)
+* feat(viewfinder): add keyword type guard and support keyword selection in Filmstrip (3400adcb)
+* feat(viewfinder): migrate filter tags to keywords and add state restore check (a72c19be)
+* refactor(viewfinder): clean up workspace panel styles and grid selection handler (691ae3b4)
+* refactor(viewfinder): enhance splitpanes order sync and export default theme (b8bdb530)
+
 ## [0.36.13] - 2026-11-07
 
 * fix: remove all missed type errors (f1697723)
