@@ -1,4 +1,4 @@
-import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import { ZIndex } from "#lib/constants/z-index.js";
 import type { MenuItem } from "./types";
 
@@ -24,8 +24,8 @@ export class ContextMenuManager {
             return this.options.zIndex;
         }
 
-        if (modalsManager.modals.length > 0) {
-            return modalsManager.baseZIndex + modalsManager.modals.length * 10 + 10;
+        if (lightboxManager.stack.length > 0) {
+            return lightboxManager.baseZIndex + lightboxManager.stack.length * 10 + 10;
         }
 
         return ZIndex.Popover;

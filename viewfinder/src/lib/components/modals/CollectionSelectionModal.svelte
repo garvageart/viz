@@ -1,7 +1,9 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
+    import { generateRandomString } from "#lib/utils/misc.js";
     import { goto } from "$app/navigation";
     import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
     import { onMount } from "svelte";
@@ -9,8 +11,7 @@
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";
     import CollectionModal from "./CollectionModal.svelte";
-    import type { ModalOptions } from "./manager/ModalManager.svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
     interface AugmentedCollection extends Collection {
         isFullyContained: boolean;
@@ -18,18 +19,12 @@
     }
 
     interface Props {
-        id: string;
+        id?: string;
         onSelect: (collection: Collection, newImageUids: string[]) => void;
         imageUidsToAdd: string[];
     }
 
     let { id, onSelect, imageUidsToAdd = [] }: Props = $props();
-
-    export const modalOptions: ModalOptions = $state({
-        width: "95%",
-        height: "95%",
-        applyPadding: false
-    });
 
     const scopeId = SelectionScopeNames.COLLECTIONS_SELECTION_MODAL;
 
@@ -69,69 +64,66 @@
             return;
         }
         onSelect(collection, collection.newImageUids);
-        modalsManager.close(id);
+        lightboxManager.close(id);
     }
 
     async function openCreateCollectionModal() {
-        modalsManager.open(
-            CollectionModal,
-            {
-                heading: "Create Collection",
-                buttonText: "Create",
-                modalAction: async (newData) => {
-                    const { name, description, private: isPrivate } = newData;
+        void lightboxManager.open(CollectionModal, {
+            id: generateRandomString(8),
+            heading: "Create Collection",
+            buttonText: "Create",
+            modalAction: async (newData) => {
+                const { name, description, private: isPrivate } = newData;
 
-                    const createRes = await createCollection({
-                        name: name,
-                        description: description,
-                        private: isPrivate
+                const createRes = await createCollection({
+                    name: name,
+                    description: description,
+                    private: isPrivate
+                });
+
+                if (createRes.status !== 201) {
+                    toasts.add({
+                        type: "error",
+                        message: createRes.data.error ?? `Failed to create collection (${createRes.status})`,
+                        timeout: 4000
                     });
 
-                    if (createRes.status !== 201) {
-                        toasts.add({
-                            type: "error",
-                            message: createRes.data.error ?? `Failed to create collection (${createRes.status})`,
-                            timeout: 4000
-                        });
-
-                        return;
-                    }
-
-                    const collectionUid = createRes.data.uid;
-                    const addRes = await addCollectionImages(collectionUid, {
-                        uids: imageUidsToAdd
-                    });
-
-                    if (addRes.status === 200) {
-                        toasts.add({
-                            type: "success",
-                            message: `Collection created with ${imageUidsToAdd.length} image(s)`,
-                            timeout: 4000
-                        });
-
-                        modalsManager.pop(); // Close Create Modal
-                        modalsManager.close(id); // Close Selection Modal
-                        goto(`/collections/${collectionUid}`);
-                    } else {
-                        toasts.add({
-                            type: "warning",
-                            message: `Collection created but failed to add images (${addRes.status})`,
-                            timeout: 4000
-                        });
-                    }
+                    return;
                 }
-            },
-            { heading: "Create Collection" }
-        );
+
+                const collectionUid = createRes.data.uid;
+                const addRes = await addCollectionImages(collectionUid, {
+                    uids: imageUidsToAdd
+                });
+
+                if (addRes.status === 200) {
+                    toasts.add({
+                        type: "success",
+                        message: `Collection created with ${imageUidsToAdd.length} image(s)`,
+                        timeout: 4000
+                    });
+
+                    lightboxManager.pop(); // Close Create Modal
+                    lightboxManager.close(id); // Close Selection Modal
+                    goto(`/collections/${collectionUid}`);
+                } else {
+                    toasts.add({
+                        type: "warning",
+                        message: `Collection created but failed to add images (${addRes.status})`,
+                        timeout: 4000
+                    });
+                }
+            }
+        });
     }
 </script>
 
 {#snippet collectionSnippet(collection: AugmentedCollection, cardState: CardVisualState)}
     <div
-        role="button"
-        tabindex="0"
         class="collection-card-wrapper"
         class:disabled={collection.isFullyContained}
+        role="button"
+        tabindex="0"
         onclick={(e) => {
             if (collection.isFullyContained) {
                 e.preventDefault();
@@ -149,35 +141,37 @@
     </div>
 {/snippet}
 
-<div class="collection-selection-modal-container" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="modal-body">
-        <EntityView
-            data={collections}
-            entitySnippet={collectionSnippet}
-            {scopeId}
-            disableMultiSelection={true}
-            disableOutsideUnselect={true}
-        />
-    </div>
+<Modal {id} heading="Add to Collection" width="95%" height="95%" applyPadding={false}>
+    <div class="collection-selection-modal-container" role="dialog" aria-modal="true" tabindex="-1">
+        <div class="modal-body">
+            <EntityView
+                data={collections}
+                entitySnippet={collectionSnippet}
+                {scopeId}
+                disableMultiSelection={true}
+                disableOutsideUnselect={true}
+            />
+        </div>
 
-    <div class="modal-footer">
-        <div class="selection-status">
-            {#if selectedCollection}
-                <span class="selection-count">{selectedCollection.name}</span>
-            {/if}
-        </div>
-        <div class="footer-actions">
-            <Button variant="secondary" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
-            <Button
-                variant="primary"
-                disabled={!selectedCollection || selectedCollection.isFullyContained}
-                onclick={() => handleSelect(selectedCollection!)}
-            >
-                <span>Confirm</span>
-            </Button>
+        <div class="modal-footer">
+            <div class="selection-status">
+                {#if selectedCollection}
+                    <span class="selection-count">{selectedCollection.name}</span>
+                {/if}
+            </div>
+            <div class="footer-actions">
+                <Button variant="secondary" onclick={openCreateCollectionModal}><span>Create Collection</span></Button>
+                <Button
+                    variant="primary"
+                    disabled={!selectedCollection || selectedCollection.isFullyContained}
+                    onclick={() => handleSelect(selectedCollection!)}
+                >
+                    <span>Confirm</span>
+                </Button>
+            </div>
         </div>
     </div>
-</div>
+</Modal>
 
 <style lang="scss">
     .collection-selection-modal-container {

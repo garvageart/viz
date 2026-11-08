@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { type ModalOptions, modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import ColourPicker from "#lib/components/ui/ColourPicker.svelte";
@@ -7,6 +7,7 @@
     import InputText from "#lib/components/ui/InputText.svelte";
     import { type Keyword, type KeywordCreate, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
     import { onMount } from "svelte";
+    import Modal from "./Modal.svelte";
 
     interface Props {
         id?: string;
@@ -20,13 +21,35 @@
         onAdd?: (keywords: KeywordUpdate[]) => Promise<void> | void;
     }
 
-    export const modalOptions: ModalOptions = {
-        width: "30%"
-    };
-
-    let { mode, data, keywords = [], selectedKeywords = [], buttonText, modalAction, onAdd }: Props = $props();
+    let {
+        id,
+        mode,
+        heading,
+        data,
+        keywords = [],
+        selectedKeywords = [],
+        buttonText,
+        modalAction,
+        onAdd
+    }: Props = $props();
 
     let currentMode = $derived<"edit" | "create" | "add">(mode ?? (data ? "edit" : "create"));
+
+    const modalHeading = $derived.by(() => {
+        if (heading) {
+            return heading;
+        }
+
+        if (currentMode === "create") {
+            return "Create Keyword";
+        }
+
+        if (currentMode === "edit") {
+            return "Edit Keyword";
+        }
+
+        return "Add Keywords";
+    });
 
     // Form state for edit/create
     let name = $derived(data?.name ?? "");
@@ -468,148 +491,155 @@
     }
 </script>
 
-<div id="viz-keyword-modal" class="mode-{currentMode}">
-    <form id="keyword-form" autocomplete="off" onsubmit={handleSubmit}>
-        {#if currentMode === "add"}
-            <div class="search-row">
-                <div class="combobox-field">
-                    <InputCombobox
-                        id="keyword-search-input"
-                        label="Search"
-                        placeholder="Type keyword and press Enter (or comma)..."
-                        options={comboboxOptions}
-                        autofocus
-                        bind:value={comboboxSelectedValue}
-                        bind:inputValue={newKeywordInput}
-                        bind:open={isComboboxOpen}
-                        bind:inputElement={comboboxInputEl}
-                        onchange={handleComboboxSelect}
-                        onkeydown={handleInputKeydown}
-                    />
-                </div>
-                {#if isNewKeyword}
-                    <Button
-                        variant="primary"
-                        iconName="add"
-                        type="button"
-                        class="create-keyword-btn"
-                        title="Create keyword"
-                        aria-label="Create keyword"
-                        disabled={isCreatingKeyword}
-                        onclick={handleCreateAndAddKeyword}
-                    />
-                {/if}
-            </div>
-
-            {#if activeKeywords.length > 0}
-                <div class="form-field">
-                    <span class="field-label">Keywords</span>
-                    <div class="keywords-list">
-                        {#each activeKeywords as keyword (keyword.name)}
-                            <Badge size="large" class="keyword-badge">
-                                <Button
-                                    variant="ghost"
-                                    size="mini"
-                                    iconName="close"
-                                    class="keyword-remove-btn"
-                                    title="Remove Keyword"
-                                    aria-label="Remove Keyword"
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        removeKeyword(keyword);
-                                    }}
-                                />
-                                <span class="keyword-text">{keyword.name}</span>
-                                {#if keyword.colour}
-                                    <span
-                                        class="keyword-colour-dot"
-                                        style="background-color: {keyword.colour ??
-                                            'inherit'}; width: 0.5rem; height: 0.5rem; border: var(--viz-border-thin); border-radius: var(--viz-border-radius-pill); display: inline-block;"
-                                    ></span>
-                                {/if}
-                            </Badge>
-                        {/each}
+<Modal {id} heading={modalHeading} iconName="label" width="30%">
+    <div id="viz-keyword-modal" class="mode-{currentMode}">
+        <form id="keyword-form" autocomplete="off" onsubmit={handleSubmit}>
+            {#if currentMode === "add"}
+                <div class="search-row">
+                    <div class="combobox-field">
+                        <InputCombobox
+                            id="keyword-search-input"
+                            label="Search"
+                            placeholder="Type keyword and press Enter (or comma)..."
+                            options={comboboxOptions}
+                            autofocus
+                            bind:value={comboboxSelectedValue}
+                            bind:inputValue={newKeywordInput}
+                            bind:open={isComboboxOpen}
+                            bind:inputElement={comboboxInputEl}
+                            onchange={handleComboboxSelect}
+                            onkeydown={handleInputKeydown}
+                        />
                     </div>
-                </div>
-            {/if}
-        {:else}
-            <!-- Create / Edit Mode Form -->
-            <InputText
-                id="keyword-name"
-                name="name"
-                label="Name"
-                placeholder="Keyword"
-                type="text"
-                autocomplete="off"
-                autofocus
-                bind:value={name}
-                selectOnFocus={false}
-                required
-                spellcheck="false"
-            />
-
-            <div class="form-field colour-field">
-                <span class="field-label">Colour</span>
-                <div class="colour-row">
-                    <!-- <input
-                        id="keyword-colour-picker"
-                        type="color"
-                        value={colour}
-                        onchange={(e) => {
-                            colour = e.currentTarget.value;
-                        }}
-                        class="colour-picker"
-                        aria-label="Select keyword colour"
-                    /> -->
-                    <ColourPicker id="keyword-colour-picker" bind:hex={colour} />
-                    <InputText
-                        id="keyword-colour-text"
-                        name="colour"
-                        placeholder="None"
-                        autocomplete="off"
-                        bind:value={colour}
-                        spellcheck="false"
-                        class="colour-text-input"
-                    />
-                    {#if colour}
+                    {#if isNewKeyword}
                         <Button
-                            variant="ghost"
-                            size="small"
-                            iconName="close"
+                            variant="primary"
+                            iconName="add"
                             type="button"
-                            onclick={() => {
-                                colour = "";
-                            }}
-                            title="Clear colour"
-                            aria-label="Clear colour"
+                            class="create-keyword-btn"
+                            title="Create keyword"
+                            aria-label="Create keyword"
+                            disabled={isCreatingKeyword}
+                            onclick={handleCreateAndAddKeyword}
                         />
                     {/if}
                 </div>
-            </div>
 
-            <div class="form-field">
-                <InputCombobox id="keyword-parent" label="Parent Keyword" options={parentOptions} bind:value={parent} />
-            </div>
-        {/if}
+                {#if activeKeywords.length > 0}
+                    <div class="form-field">
+                        <span class="field-label">Keywords</span>
+                        <div class="keywords-list">
+                            {#each activeKeywords as keyword (keyword.name)}
+                                <Badge size="large" class="keyword-badge">
+                                    <Button
+                                        variant="ghost"
+                                        size="mini"
+                                        iconName="close"
+                                        class="keyword-remove-btn"
+                                        title="Remove Keyword"
+                                        aria-label="Remove Keyword"
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeKeyword(keyword);
+                                        }}
+                                    />
+                                    <span class="keyword-text">{keyword.name}</span>
+                                    {#if keyword.colour}
+                                        <span
+                                            class="keyword-colour-dot"
+                                            style="background-color: {keyword.colour ??
+                                                'inherit'}; width: 0.5rem; height: 0.5rem; border: var(--viz-border-thin); border-radius: var(--viz-border-radius-pill); display: inline-block;"
+                                        ></span>
+                                    {/if}
+                                </Badge>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+            {:else}
+                <!-- Create / Edit Mode Form -->
+                <InputText
+                    id="keyword-name"
+                    name="name"
+                    label="Name"
+                    placeholder="Keyword"
+                    type="text"
+                    autocomplete="off"
+                    autofocus
+                    bind:value={name}
+                    selectOnFocus={false}
+                    required
+                    spellcheck="false"
+                />
 
-        <div class="form-actions">
-            <Button variant="danger" type="button" onclick={() => modalsManager.pop()}>
-                <span>Cancel</span>
-            </Button>
-            <Button
-                id="keyword-submit-btn"
-                bind:element={submitButtonEl}
-                variant="primary"
-                type="submit"
-                disabled={isSubmitting ||
-                    (currentMode !== "add" && !name.trim()) ||
-                    (currentMode === "add" && !hasKeywordChanges)}
-            >
-                <span>{submitButtonText}</span>
-            </Button>
-        </div>
-    </form>
-</div>
+                <div class="form-field colour-field">
+                    <span class="field-label">Colour</span>
+                    <div class="colour-row">
+                        <!-- <input
+                            id="keyword-colour-picker"
+                            type="color"
+                            value={colour}
+                            onchange={(e) => {
+                                colour = e.currentTarget.value;
+                            }}
+                            class="colour-picker"
+                            aria-label="Select keyword colour"
+                        /> -->
+                        <ColourPicker id="keyword-colour-picker" bind:hex={colour} />
+                        <InputText
+                            id="keyword-colour-text"
+                            name="colour"
+                            placeholder="None"
+                            autocomplete="off"
+                            bind:value={colour}
+                            spellcheck="false"
+                            class="colour-text-input"
+                        />
+                        {#if colour}
+                            <Button
+                                variant="ghost"
+                                size="small"
+                                iconName="close"
+                                type="button"
+                                onclick={() => {
+                                    colour = "";
+                                }}
+                                title="Clear colour"
+                                aria-label="Clear colour"
+                            />
+                        {/if}
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <InputCombobox
+                        id="keyword-parent"
+                        label="Parent Keyword"
+                        options={parentOptions}
+                        bind:value={parent}
+                    />
+                </div>
+            {/if}
+
+            <div class="form-actions">
+                <Button variant="danger" type="button" onclick={() => lightboxManager.pop()}>
+                    <span>Cancel</span>
+                </Button>
+                <Button
+                    id="keyword-submit-btn"
+                    bind:element={submitButtonEl}
+                    variant="primary"
+                    type="submit"
+                    disabled={isSubmitting ||
+                        (currentMode !== "add" && !name.trim()) ||
+                        (currentMode === "add" && !hasKeywordChanges)}
+                >
+                    <span>{submitButtonText}</span>
+                </Button>
+            </div>
+        </form>
+    </div>
+</Modal>
 
 <style lang="scss">
     #viz-keyword-modal {

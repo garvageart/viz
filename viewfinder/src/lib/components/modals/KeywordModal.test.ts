@@ -3,13 +3,12 @@ import type { Keyword } from "@viz/api";
 import { describe, expect, it, vi } from "vitest";
 import KeywordModal from "./KeywordModal.svelte";
 
-vi.mock("#lib/components/modals/manager/ModalManager.svelte.ts", () => ({
-    modalsManager: {
+vi.mock("#lib/components/lightbox/lightbox-manager.svelte.js", () => ({
+    lightboxManager: {
         open: vi.fn(),
         close: vi.fn(),
         dismiss: vi.fn(),
-        pop: vi.fn(),
-        getModals: vi.fn(() => [])
+        pop: vi.fn()
     }
 }));
 
@@ -208,7 +207,7 @@ describe("KeywordModal", () => {
         // If focus escapes the modal (for example, clicking the modal background),
         // PhotoAssetGrid could still receive hotkeys registered in the wildcard "all" scope.
         // Evaluate Check 3: guard KeybindAction.OpenImage in PhotoAssetGrid.svelte with:
-        // `if (keyboardManager.currentScope === "modal" || modalsManager.modals.length > 0) return;`
+        // `if (keyboardManager.currentScope === "modal" || lightboxManager.stack.length > 0) return;`
         const onAdd = vi.fn();
         const { container } = render(KeywordModal, {
             mode: "add",

@@ -5,6 +5,7 @@
     import InputText from "../ui/InputText.svelte";
     import SliderToggle from "../ui/SliderToggle.svelte";
     import TextArea from "../ui/TextArea.svelte";
+    import Modal from "./Modal.svelte";
 
     type CollectionFormData = {
         name: string;
@@ -13,13 +14,14 @@
     };
 
     interface Props {
+        id?: string;
         heading: string;
         data?: Pick<Collection, "name" | "description" | "private">;
         buttonText: string;
         modalAction: (data: CollectionFormData) => Promise<void> | void;
     }
 
-    let { data, buttonText, modalAction }: Props = $props();
+    let { id, heading, data, buttonText, modalAction }: Props = $props();
 
     let name = $state(untrack(() => data?.name ?? ""));
     let description = $state(untrack(() => data?.description ?? ""));
@@ -39,33 +41,35 @@
     }
 </script>
 
-<div id="viz-collection-modal">
-    <form id="collection-form" onsubmit={handleSubmit}>
-        <InputText
-            id="collection-name"
-            name="name"
-            label="Name"
-            placeholder="Name"
-            type="text"
-            autofocus
-            bind:value={name}
-            required
-            spellcheck="false"
-        />
-        <TextArea
-            id="collection-description"
-            name="description"
-            label="Description"
-            placeholder="Description (optional)"
-            bind:value={description}
-            spellcheck="false"
-        />
-        <SliderToggle id="collection-private" style="margin-bottom: 1rem;" label="Private" bind:value={isPrivate} />
-        <Button variant="primary" style="margin-top: 1rem; width: 100%;">
-            <input id="collection-submit" type="submit" value={buttonText} />
-        </Button>
-    </form>
-</div>
+<Modal {id} {heading} width="35%" applyPadding={true}>
+    <div id="viz-collection-modal">
+        <form id="collection-form" onsubmit={handleSubmit}>
+            <InputText
+                id="collection-name"
+                name="name"
+                label="Name"
+                placeholder="Name"
+                type="text"
+                autofocus
+                bind:value={name}
+                required
+                spellcheck="false"
+            />
+            <TextArea
+                id="collection-description"
+                name="description"
+                label="Description"
+                placeholder="Description (optional)"
+                bind:value={description}
+                spellcheck="false"
+            />
+            <SliderToggle id="collection-private" style="margin-bottom: 1rem;" label="Private" bind:value={isPrivate} />
+            <Button variant="primary" style="margin-top: 1rem; width: 100%;">
+                <input id="collection-submit" type="submit" value={buttonText} />
+            </Button>
+        </form>
+    </div>
+</Modal>
 
 <style lang="scss">
     #viz-collection-modal {

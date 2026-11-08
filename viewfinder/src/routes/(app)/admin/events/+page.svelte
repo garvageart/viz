@@ -1,7 +1,7 @@
 <script lang="ts">
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import IconBadge from "#lib/components/ui/IconBadge.svelte";
@@ -33,14 +33,11 @@
     }
 
     function requestClearHistory() {
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                confirmText: "Clear History",
-                onConfirm: handleClearConfirm
-            },
-            { heading: "Clear Event History" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Clear Event History",
+            confirmText: "Clear History",
+            onConfirm: handleClearConfirm
+        });
     }
 
     async function handleClearConfirm(): Promise<void> {

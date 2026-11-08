@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import LoadingSpinner from "#lib/components/ui/LoadingSpinner.svelte";
     import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
     import type { MenuItem } from "#lib/context-menu/types.js";
@@ -22,10 +23,10 @@
     import Button from "../ui/Button.svelte";
     import Checkbox from "../ui/Checkbox.svelte";
     import VizToolbar from "../ui/toolbars/VizToolbar.svelte";
-    import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
     interface Props {
-        id: string; // modal ID from modalsManager
+        id?: string;
         collectionUid: string;
         collectionName: string;
     }
@@ -34,12 +35,6 @@
 
     const scopeId = SelectionScopeNames.ADD_PHOTOS_MODAL;
     const selectionScope = selectionManager.getScope(scopeId);
-
-    export const modalOptions: ModalOptions = {
-        width: "95%",
-        height: "90%",
-        applyPadding: false
-    };
 
     let existingUids = $state<Set<string>>(new Set());
     let isLoading = $state(true);
@@ -126,7 +121,7 @@
                     type: "success"
                 });
 
-                modalsManager.close(id);
+                lightboxManager.close(id);
             } else {
                 toasts.add({
                     type: "error",
@@ -146,7 +141,7 @@
 
     function handleCancel() {
         selectionScope.clear();
-        modalsManager.close(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
@@ -168,101 +163,103 @@
     />
 {/snippet}
 
-<div id="add-photos-modal" class="add-photos-modal-container">
-    {#if isLoading && !initialDataLoaded}
-        <div class="loading-state">
-            <LoadingSpinner />
-        </div>
-    {:else}
-        <div class="modal-body">
-            <VizToolbar fixed={false} style="border-top: none; border-bottom: var(--viz-border-thin);">
-                {#snippet leading()}
-                    <div class="toolbar-group">
-                        <Dropdown
-                            title="Sort"
-                            class="toolbar-button"
-                            iconName="sort"
-                            items={sortOptions}
-                            selectedItemId={currentSortId(photosSort)}
-                            onSelect={(item) => {
-                                applySortSelection(photosSort, item.id);
-                                galleryState.images = [];
-                                galleryState.pagination.page = -1;
-                                galleryState.hasMore = true;
-                                galleryState.paginate();
-                            }}
-                        />
-                        <Button
-                            iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
-                            class="toolbar-button"
-                            title={`Toggle Sort Order (${photosSort.value.order})`}
-                            onclick={() => {
-                                toggleSortOrder(photosSort);
-                                galleryState.images = [];
-                                galleryState.pagination.page = -1;
-                                galleryState.hasMore = true;
-                                galleryState.paginate();
-                            }}
-                        />
-                    </div>
-                {/snippet}
-
-                {#snippet trailing()}
-                    <div class="toolbar-group">
-                        <Dropdown
-                            title="Display"
-                            class="toolbar-button"
-                            iconName="list_alt"
-                            items={displayMenuItems}
-                            selectedItemId={getDisplaySelectedId()}
-                            showSelectionIndicator={false}
-                        />
-                    </div>
-                {/snippet}
-            </VizToolbar>
-
-            <div class="grid-wrapper">
-                {#if filteredImages.length === 0}
-                    <div class="no-photos">No photos found in your library.</div>
-                {:else}
-                    <div class="photo-group-container">
-                        <PhotoAssetGrid
-                            groups={consolidatedGroups}
-                            showDateHeaders={true}
-                            {scopeId}
-                            disabledUids={existingUids}
-                            totalItemCount={galleryState.totalCount}
-                            onLoadMore={() => galleryState.paginate()}
-                        />
-                    </div>
-                {/if}
+<Modal {id} heading={`Add Photos to "${collectionName}"`} iconName="photo_library" width="90vw" height="90vh">
+    <div id="add-photos-modal" class="add-photos-modal-container">
+        {#if isLoading && !initialDataLoaded}
+            <div class="loading-state">
+                <LoadingSpinner />
             </div>
+        {:else}
+            <div class="modal-body">
+                <VizToolbar fixed={false} style="border-top: none; border-bottom: var(--viz-border-thin);">
+                    {#snippet leading()}
+                        <div class="toolbar-group">
+                            <Dropdown
+                                title="Sort"
+                                class="toolbar-button"
+                                iconName="sort"
+                                items={sortOptions}
+                                selectedItemId={currentSortId(photosSort)}
+                                onSelect={(item) => {
+                                    applySortSelection(photosSort, item.id);
+                                    galleryState.images = [];
+                                    galleryState.pagination.page = -1;
+                                    galleryState.hasMore = true;
+                                    galleryState.paginate();
+                                }}
+                            />
+                            <Button
+                                iconName={photosSort.value.order === "ASC" ? "arrow_upward" : "arrow_downward"}
+                                class="toolbar-button"
+                                title={`Toggle Sort Order (${photosSort.value.order})`}
+                                onclick={() => {
+                                    toggleSortOrder(photosSort);
+                                    galleryState.images = [];
+                                    galleryState.pagination.page = -1;
+                                    galleryState.hasMore = true;
+                                    galleryState.paginate();
+                                }}
+                            />
+                        </div>
+                    {/snippet}
 
-            <div class="modal-footer">
-                <div class="selection-status">
-                    {#if selectionScope.size > 0}
-                        <span class="selection-count">{selectionScope.size} selected</span>
+                    {#snippet trailing()}
+                        <div class="toolbar-group">
+                            <Dropdown
+                                title="Display"
+                                class="toolbar-button"
+                                iconName="list_alt"
+                                items={displayMenuItems}
+                                selectedItemId={getDisplaySelectedId()}
+                                showSelectionIndicator={false}
+                            />
+                        </div>
+                    {/snippet}
+                </VizToolbar>
+
+                <div class="grid-wrapper">
+                    {#if filteredImages.length === 0}
+                        <div class="no-photos">No photos found in your library.</div>
                     {:else}
-                        <span class="no-selection">Select photos to add</span>
+                        <div class="photo-group-container">
+                            <PhotoAssetGrid
+                                groups={consolidatedGroups}
+                                showDateHeaders={true}
+                                {scopeId}
+                                disabledUids={existingUids}
+                                totalItemCount={galleryState.totalCount}
+                                onLoadMore={() => galleryState.paginate()}
+                            />
+                        </div>
                     {/if}
                 </div>
-                <div class="footer-actions modal-actions">
-                    <Button id="add-photos-cancel" variant="danger" onclick={handleCancel} disabled={isLoading}>
-                        <span>Cancel</span>
-                    </Button>
-                    <Button
-                        id="add-photos-submit"
-                        variant="primary"
-                        disabled={selectionScope.size === 0 || isLoading}
-                        onclick={handleAdd}
-                    >
-                        <span>Add to Collection</span>
-                    </Button>
+
+                <div class="modal-footer">
+                    <div class="selection-status">
+                        {#if selectionScope.size > 0}
+                            <span class="selection-count">{selectionScope.size} selected</span>
+                        {:else}
+                            <span class="no-selection">Select photos to add</span>
+                        {/if}
+                    </div>
+                    <div class="footer-actions modal-actions">
+                        <Button id="add-photos-cancel" variant="danger" onclick={handleCancel} disabled={isLoading}>
+                            <span>Cancel</span>
+                        </Button>
+                        <Button
+                            id="add-photos-submit"
+                            variant="primary"
+                            disabled={selectionScope.size === 0 || isLoading}
+                            onclick={handleAdd}
+                        >
+                            <span>Add to Collection</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
-        </div>
-    {/if}
-</div>
+        {/if}
+    </div>
+</Modal>
 
 <style lang="scss">
     .add-photos-modal-container {

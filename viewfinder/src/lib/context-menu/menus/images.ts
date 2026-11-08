@@ -1,7 +1,7 @@
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import CollectionSelectionModal from "#lib/components/modals/CollectionSelectionModal.svelte";
 import DeleteModal from "#lib/components/modals/DeleteModal.svelte";
-import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
-import ExportPanel, { modalOptions as exportModalOptions } from "#lib/components/ui/panels/ExportPanel.svelte";
+import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
 import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
 import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
 import { config, download } from "#lib/states/index.svelte.js";
@@ -92,14 +92,10 @@ export function openAddToCollectionModal(
         }
     };
 
-    modalsManager.open(
-        CollectionSelectionModal,
-        {
-            imageUidsToAdd: uids,
-            onSelect: onSelect || defaultHandler
-        },
-        { heading: "Select a Collection" }
-    );
+    lightboxManager.open(CollectionSelectionModal, {
+        imageUidsToAdd: uids,
+        onSelect: onSelect || defaultHandler
+    });
 }
 
 /**
@@ -157,7 +153,7 @@ export function exportSelectedImages(selectionScope: SelectionScope<ImageAsset>)
     if (items.length === 0) {
         return;
     }
-    modalsManager.open(ExportPanel, { assets: items }, exportModalOptions);
+    lightboxManager.open(ExportPanel, { assets: items });
 }
 
 /**
@@ -389,14 +385,10 @@ export async function deleteSelectedImages(
         return i.uid;
     });
 
-    const action = await modalsManager.open<
-        { id: string; itemCount: number; itemName?: string },
-        "delete" | "permanent"
-    >(
-        DeleteModal,
-        { itemCount: items.length, itemName: items[0]?.name },
-        { heading: "Delete Images", width: "40%", closeOnOverlayClick: true }
-    );
+    const action = await lightboxManager.open<any, "delete" | "permanent">(DeleteModal, {
+        itemCount: items.length,
+        itemName: items[0]?.name
+    });
 
     if (action === undefined) {
         return;

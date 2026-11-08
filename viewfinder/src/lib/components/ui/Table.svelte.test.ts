@@ -3,13 +3,12 @@ import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
 import Table, { type TableSort } from "./Table.svelte";
 
-vi.mock("#lib/components/modals/manager/ModalManager.svelte.ts", () => ({
-    modalsManager: {
+vi.mock("#lib/components/lightbox/lightbox-manager.svelte.js", () => ({
+    lightboxManager: {
         open: vi.fn(),
         close: vi.fn(),
         dismiss: vi.fn(),
-        pop: vi.fn(),
-        getModals: vi.fn(() => [])
+        pop: vi.fn()
     }
 }));
 

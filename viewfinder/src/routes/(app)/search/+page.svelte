@@ -4,12 +4,12 @@
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import CollectionCard from "#lib/components/ui/CollectionCard.svelte";
     import ImageCard from "#lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
     import LoadingSpinner from "#lib/components/ui/LoadingSpinner.svelte";
-    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
     import VizToolbar from "#lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
     import { contextMenu } from "#lib/context-menu/index.js";
@@ -53,9 +53,6 @@
     const staticSearchValue = search.value;
 
     let timeFound = $state(0);
-
-    // Lightbox
-    const lightbox = new ImageLightboxState();
 
     // Selection Scopes
     const imageScopeId = SelectionScopeNames.SEARCH_IMAGES;
@@ -253,31 +250,35 @@
 
     function openLightbox(asset?: ImageAsset) {
         const target = asset ?? firstSelectedImage;
-        if (target) {
-            lightbox.open(target);
-        }
-    }
-
-    function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.image || allImagesFlat.length === 0) {
+        if (!target) {
             return;
         }
 
-        const idx = allImagesFlat.findIndex((i) => i.uid === lightbox.image!.uid);
-        if (idx === -1) {
+        const openItem = lightboxManager.find(ImageLightbox);
+        if (openItem) {
+            openItem.props.lightboxImage = target;
             return;
         }
 
-        const nextIdx = (idx + delta + allImagesFlat.length) % allImagesFlat.length;
-        lightbox.image = allImagesFlat[nextIdx];
-    }
-
-    function prevLightboxImage() {
-        navigateLightbox(-1);
-    }
-
-    function nextLightboxImage() {
-        navigateLightbox(1);
+        lightboxManager.open(
+            ImageLightbox,
+            {
+                lightboxImage: target,
+                images: allImagesFlat,
+                onImageUpdated: (image) => {
+                    images = images.map((i) => {
+                        if (i.uid === image.uid) {
+                            return image;
+                        }
+                        return i;
+                    });
+                }
+            },
+            {
+                backgroundOpacity: 1,
+                closeOnOverlayClick: false
+            }
+        );
     }
 
     async function handleCollectionSelect(collection: Collection, newImageUids: string[]) {
@@ -338,25 +339,6 @@
 <svelte:head>
     <title>Search{search.value ? ` - ${search.value}` : ""}</title>
 </svelte:head>
-
-{#if lightbox.image}
-    <ImageLightbox
-        lightboxImage={lightbox.image}
-        show={lightbox.show}
-        onClose={() => lightbox.close()}
-        {nextLightboxImage}
-        {prevLightboxImage}
-        onImageUpdated={(image) => {
-            lightbox.image = image;
-            images = images.map((i) => {
-                if (i.uid === image.uid) {
-                    return image;
-                }
-                return i;
-            });
-        }}
-    />
-{/if}
 
 {#snippet collectionCard(collectionData: Collection, cardState: { isSelected: boolean })}
     <CollectionCard collection={collectionData} isSelected={cardState.isSelected} />

@@ -4,8 +4,8 @@
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
-    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
+    import FilterModal from "#lib/components/modals/FilterModal.svelte";
     import ActiveFiltersTooltip from "#lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import Checkbox from "#lib/components/ui/Checkbox.svelte";
@@ -13,7 +13,6 @@
     import ImageCard, { type ImageVariant } from "#lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
-    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
     import VizToolbar from "#lib/components/ui/toolbars/VizToolbar.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
     import { contextMenu } from "#lib/context-menu/index.js";
@@ -138,64 +137,38 @@
         })
     );
 
-    // Lightbox
-    const lightbox = new ImageLightboxState();
-
     function openLightbox(asset?: ImageAsset) {
         const target = asset ?? selectionFirstImage;
-        if (target) {
-            lightbox.open(target);
-        }
-    }
-
-    // When hitting the end of loaded images, paginate and auto-advance
-    let pendingNextUid = $state<string | null>(null);
-
-    function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.image || sortedFilteredImages.length === 0) {
+        if (!target) {
             return;
         }
 
-        const idx = sortedFilteredImages.findIndex((i) => i.uid === lightbox.image!.uid);
-        if (idx === -1) {
+        const openItem = lightboxManager.find(ImageLightbox);
+        if (openItem) {
+            openItem.props.lightboxImage = target;
             return;
         }
 
-        const nextIdx = idx + delta;
-        if (nextIdx < 0) {
-            return;
-        }
-
-        if (nextIdx >= sortedFilteredImages.length) {
-            if (galleryState.hasMore && delta === 1) {
-                pendingNextUid = lightbox.image.uid;
-                galleryState.paginate();
+        lightboxManager.open(
+            ImageLightbox,
+            {
+                lightboxImage: target,
+                images: sortedFilteredImages,
+                onImageUpdated: (image) => {
+                    galleryState.images = galleryState.images.map((i) => {
+                        if (i.uid === image.uid) {
+                            return image;
+                        }
+                        return i;
+                    });
+                }
+            },
+            {
+                backgroundOpacity: 1,
+                closeOnOverlayClick: false
             }
-            return;
-        }
-
-        lightbox.image = sortedFilteredImages[nextIdx];
+        );
     }
-
-    function prevLightboxImage() {
-        navigateLightbox(-1);
-    }
-
-    function nextLightboxImage() {
-        navigateLightbox(1);
-    }
-
-    // Auto-advance after pagination loads more images
-    $effect(() => {
-        if (!pendingNextUid || sortedFilteredImages.length === 0) {
-            return;
-        }
-        const idx = sortedFilteredImages.findIndex((i) => i.uid === pendingNextUid);
-        if (idx !== -1 && idx + 1 < sortedFilteredImages.length) {
-            pendingNextUid = null;
-            lightbox.image = sortedFilteredImages[idx + 1];
-        }
-    });
 
     let pendingNewRaw: ImageUploadSuccess[] = [];
 
@@ -346,25 +319,6 @@
 
 <DragAndDropUpload {scopeId} {selectionScope} showCollectionCreateBox={true} />
 
-{#if lightbox.image}
-    <ImageLightbox
-        lightboxImage={lightbox.image}
-        show={lightbox.show}
-        onClose={() => lightbox.close()}
-        {prevLightboxImage}
-        {nextLightboxImage}
-        onImageUpdated={(image) => {
-            lightbox.image = image;
-            galleryState.images = galleryState.images.map((i) => {
-                if (i.uid === image.uid) {
-                    return image;
-                }
-                return i;
-            });
-        }}
-    />
-{/if}
-
 <!-- TODO: Replace with graphic -->
 {#snippet noAssetsSnippet()}
     <div id="add_to_viz-container">
@@ -512,30 +466,12 @@
                                 }
                             });
 
-                            if (res.status === 200) {
-                                const uidSet = new Set(res.data.uids);
-                                galleryState.images = galleryState.images.map((i) => {
-                                    if (uidSet.has(i.uid)) {
-                                        return {
-                                            ...i,
-                                            image_metadata: {
-                                                ...i.image_metadata,
-                                                label: labelToSend
-                                            }
-                                        };
-                                    }
-                                    return i;
+                            // Do not manually updated asset objects, they have load() function dependencies. Leave this is as is
+                            if (res.status !== 200) {
+                                toasts.add({
+                                    message: "Failed to label images",
+                                    type: "error"
                                 });
-
-                                if (lightbox.image && uidSet.has(lightbox.image.uid)) {
-                                    lightbox.image = {
-                                        ...lightbox.image,
-                                        image_metadata: {
-                                            ...lightbox.image.image_metadata,
-                                            label: labelToSend
-                                        }
-                                    };
-                                }
                             }
                         }}
                     />
@@ -557,29 +493,12 @@
                                 }
                             });
 
-                            if (res.status === 200) {
-                                const uidSet = new Set(res.data.uids);
-                                galleryState.images = galleryState.images.map((i) => {
-                                    if (uidSet.has(i.uid)) {
-                                        return {
-                                            ...i,
-                                            image_metadata: {
-                                                ...i.image_metadata,
-                                                rating
-                                            }
-                                        };
-                                    }
-                                    return i;
+                            // Do not manually updated asset objects, they have load() function dependencies. Leave this is as is
+                            if (res.status !== 200) {
+                                toasts.add({
+                                    message: "Failed to label images",
+                                    type: "error"
                                 });
-                                if (lightbox.image && uidSet.has(lightbox.image.uid)) {
-                                    lightbox.image = {
-                                        ...lightbox.image,
-                                        image_metadata: {
-                                            ...lightbox.image.image_metadata,
-                                            rating
-                                        }
-                                    };
-                                }
                             }
                         }}
                     />
@@ -646,7 +565,7 @@
                         tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
                         aria-label="Filter"
                         onclick={() => {
-                            modalsManager.open(FilterModal, {}, FilterModalOptions);
+                            lightboxManager.open(FilterModal);
                         }}
                     >
                         <span>Filter</span>

@@ -1,11 +1,12 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
+    import Modal from "#lib/components/modals/Modal.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { untrack } from "svelte";
-    import { modalsManager } from "../modals/manager/ModalManager.svelte";
 
     interface Props {
-        id: string;
+        id?: string;
         initialName: string;
         onRename: (newName: string) => Promise<void>;
     }
@@ -19,27 +20,29 @@
         loading = true;
         try {
             await onRename(newName);
-            modalsManager.close(id);
+            lightboxManager.close(id);
         } finally {
             loading = false;
         }
     }
 
     function handleCancel() {
-        modalsManager.dismiss(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
-<div class="rename-modal" id="rename-session-modal">
-    <span>Enter a new name for this session to help you identify it later.</span>
-    <InputText label="Session Name" bind:value={newName} placeholder="e.g. Chrome on MacBook" />
-    <div class="modal-actions">
-        <Button size="small" onclick={handleCancel}><span>Cancel</span></Button>
-        <Button variant="primary" size="small" onclick={handleRename} disabled={loading}>
-            <span>{loading ? "Renaming..." : "Rename Session"}</span>
-        </Button>
+<Modal {id} heading="Rename Session" iconName="edit" applyPadding={true}>
+    <div class="rename-modal" id="rename-session-modal">
+        <span>Enter a new name for this session to help you identify it later.</span>
+        <InputText label="Session Name" bind:value={newName} placeholder="e.g. Chrome on MacBook" />
+        <div class="modal-actions">
+            <Button size="small" onclick={handleCancel}><span>Cancel</span></Button>
+            <Button variant="primary" size="small" onclick={handleRename} disabled={loading}>
+                <span>{loading ? "Renaming..." : "Rename Session"}</span>
+            </Button>
+        </div>
     </div>
-</div>
+</Modal>
 
 <style lang="scss">
     .rename-modal {

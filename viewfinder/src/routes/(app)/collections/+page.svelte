@@ -2,9 +2,9 @@
     import { CollectionsPaginationState } from "#lib/collections/state.svelte.js";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import CollectionModal from "#lib/components/modals/CollectionModal.svelte";
-    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import FilterModal from "#lib/components/modals/FilterModal.svelte";
     import AssetsShell from "#lib/components/ui/AssetsShell.svelte";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
@@ -68,7 +68,7 @@
     let droppedImageUIDs: string[] | null = $state(null);
 
     function openFilterModal() {
-        modalsManager.open(FilterModal, {}, FilterModalOptions);
+        lightboxManager.open(FilterModal);
     }
 
     type CollectionFormData = {
@@ -109,7 +109,7 @@
                 ]
             });
 
-            modalsManager.pop();
+            lightboxManager.pop();
         } else {
             toasts.add({
                 message: `Failed to create collection: ${res.data.error || "Unknown error"}`,
@@ -137,7 +137,7 @@
                 type: "success"
             });
 
-            modalsManager.pop();
+            lightboxManager.pop();
         } else {
             toasts.add({
                 message: `Failed to update collection: ${res.data.error || "Unknown error"}`,
@@ -150,21 +150,17 @@
         modalMode = mode;
         modalData = initialData ? { ...initialData } : undefined;
 
-        modalsManager.open(
-            CollectionModal,
-            {
-                heading: mode === "create" ? "Create Collection" : "Edit Collection",
-                buttonText: mode === "create" ? "Create" : "Save",
-                data: modalData,
-                modalAction: (newData) => {
-                    if (modalMode === "create") {
-                        return createCollectionAction(newData);
-                    }
-                    return editCollectionAction(newData);
+        lightboxManager.open(CollectionModal, {
+            heading: mode === "create" ? "Create Collection" : "Edit Collection",
+            buttonText: mode === "create" ? "Create" : "Save",
+            data: modalData,
+            modalAction: (newData) => {
+                if (modalMode === "create") {
+                    return createCollectionAction(newData);
                 }
-            },
-            { heading: mode === "create" ? "Create Collection" : "Edit Collection" }
-        );
+                return editCollectionAction(newData);
+            }
+        });
     }
 
     let collectionGridArray: EntityGridArray<Collection> | undefined = $state();

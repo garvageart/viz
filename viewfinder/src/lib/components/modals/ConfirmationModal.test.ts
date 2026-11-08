@@ -1,15 +1,14 @@
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
 import ConfirmationModal from "./ConfirmationModal.svelte";
-import { modalsManager } from "./manager/ModalManager.svelte";
 
-vi.mock("#lib/components/modals/manager/ModalManager.svelte.ts", () => ({
-    modalsManager: {
+vi.mock("#lib/components/lightbox/lightbox-manager.svelte.js", () => ({
+    lightboxManager: {
         open: vi.fn(),
         close: vi.fn(),
         dismiss: vi.fn(),
-        pop: vi.fn(),
-        getModals: vi.fn(() => [])
+        pop: vi.fn()
     }
 }));
 
@@ -55,7 +54,7 @@ describe("ConfirmationModal", () => {
         await fireEvent.submit(form as HTMLFormElement);
 
         expect(onConfirm).toHaveBeenCalledTimes(1);
-        expect(modalsManager.close).toHaveBeenCalledWith("delete-collection-modal", true);
+        expect(lightboxManager.close).toHaveBeenCalledWith("delete-collection-modal", true);
     });
 
     it("closes the modal on submit even when onConfirm is not provided", async () => {
@@ -67,7 +66,7 @@ describe("ConfirmationModal", () => {
         const form = container.querySelector<HTMLFormElement>("#confirmation-form");
         await fireEvent.submit(form as HTMLFormElement);
 
-        expect(modalsManager.close).toHaveBeenCalledWith("delete-collection-modal", true);
+        expect(lightboxManager.close).toHaveBeenCalledWith("delete-collection-modal", true);
     });
 
     it("clicking cancel invokes onCancel and dismisses the modal", async () => {
@@ -81,7 +80,7 @@ describe("ConfirmationModal", () => {
         await fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
         expect(onCancel).toHaveBeenCalledTimes(1);
-        expect(modalsManager.dismiss).toHaveBeenCalledWith("delete-collection-modal");
+        expect(lightboxManager.dismiss).toHaveBeenCalledWith("delete-collection-modal");
     });
 
     it("applies the primary variant class by default", () => {

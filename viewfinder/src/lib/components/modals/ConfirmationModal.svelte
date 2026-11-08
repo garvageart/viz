@@ -1,10 +1,12 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button, { type ButtonVariant } from "#lib/components/ui/Button.svelte";
     import type { Snippet } from "svelte";
-    import { type ModalOptions, modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
     interface Props {
-        id: string;
+        id?: string;
+        heading?: string;
         message?: string;
         children?: Snippet<[any]>;
         actions?: Snippet<[any]>;
@@ -20,6 +22,7 @@
 
     let {
         id,
+        heading = "Confirm",
         message,
         children,
         actions,
@@ -30,10 +33,6 @@
         onCancel
     }: Props = $props();
 
-    export const modalOptions: ModalOptions = {
-        width: "25%"
-    };
-
     function handleConfirmSubmit(e: SubmitEvent) {
         e.preventDefault();
         handleConfirm();
@@ -43,7 +42,7 @@
         if (onConfirm) {
             onConfirm();
         }
-        modalsManager.close(id, true);
+        lightboxManager.close(id, true);
     }
 
     function handleCancel() {
@@ -51,32 +50,36 @@
             onCancel();
         }
 
-        modalsManager.dismiss(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
-<div class="confirmation-modal">
-    <form id="confirmation-form" onsubmit={handleConfirmSubmit}>
-        <div class="confirmation-content">
-            {#if children}
-                {@render children({ id })}
-            {:else if message}
-                <span>{message}</span>
-            {/if}
-        </div>
+<Modal {id} {heading} width="25%" applyPadding={true}>
+    <div class="confirmation-modal">
+        <form id="confirmation-form" onsubmit={handleConfirmSubmit}>
+            <div class="confirmation-content">
+                {#if children}
+                    {@render children({ id })}
+                {:else if message}
+                    <span>{message}</span>
+                {/if}
+            </div>
 
-        <div class="confirm-actions">
-            {#if actions}
-                {@render actions({ id })}
-            {:else}
-                <Button id="cancel-btn" type="button" variant="secondary" onclick={handleCancel}>{cancelText}</Button>
-                <Button id="confirm-btn" type="submit" variant={buttonVariant} autofocus>
-                    {confirmText}
-                </Button>
-            {/if}
-        </div>
-    </form>
-</div>
+            <div class="confirm-actions">
+                {#if actions}
+                    {@render actions({ id })}
+                {:else}
+                    <Button id="cancel-btn" type="button" variant="secondary" onclick={handleCancel}
+                        >{cancelText}</Button
+                    >
+                    <Button id="confirm-btn" type="submit" variant={buttonVariant} autofocus>
+                        {confirmText}
+                    </Button>
+                {/if}
+            </div>
+        </form>
+    </div>
+</Modal>
 
 <style lang="scss">
     .confirmation-modal {

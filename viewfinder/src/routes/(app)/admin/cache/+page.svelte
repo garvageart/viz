@@ -1,7 +1,7 @@
 <script lang="ts">
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import Checkbox from "#lib/components/ui/Checkbox.svelte";
     import IconBadge from "#lib/components/ui/IconBadge.svelte";
@@ -22,15 +22,12 @@
     let keepPermanent = $state(true);
 
     function openClearConfirm() {
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                confirmText: "Clear Cache",
-                onConfirm: handleClearCache,
-                children: confirmBody
-            },
-            { heading: "Clear Image Cache" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Clear Image Cache",
+            confirmText: "Clear Cache",
+            onConfirm: handleClearCache,
+            children: confirmBody
+        });
     }
 
     async function handleClearCache() {

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import { dragCoordinator } from "#lib/drag-drop/coordinator.svelte.js";
     import { dropZone } from "#lib/drag-drop/directives.svelte.js";
     import { type ScopeId, SelectionScope } from "#lib/states/selection.svelte.js";
@@ -17,7 +18,6 @@
     import CollectionModal from "../modals/CollectionModal.svelte";
     import CollectionSelectionModal from "../modals/CollectionSelectionModal.svelte";
     import ConfirmationModal from "../modals/ConfirmationModal.svelte";
-    import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import Button from "./Button.svelte";
     import MaterialIcon from "./MaterialIcon.svelte";
 
@@ -75,34 +75,26 @@
             private: options.initialData?.private
         };
 
-        modalsManager.open(
-            CollectionModal,
-            {
-                heading: "Create Collection",
-                data: collectionCreateData,
-                buttonText: options.buttonText || "Create",
-                modalAction: async (newData) => {
-                    await options.onSuccess(newData);
-                }
-            },
-            { heading: "Create Collection" }
-        );
+        lightboxManager.open(CollectionModal, {
+            heading: "Create Collection",
+            data: collectionCreateData,
+            buttonText: options.buttonText || "Create",
+            modalAction: async (newData) => {
+                await options.onSuccess(newData);
+            }
+        });
     }
 
     function openCollectionSelectionModal(options: {
         imageUidsToAdd?: string[];
         onSelect: (collection: Collection, newImageUids: string[]) => Promise<void> | void;
     }) {
-        modalsManager.open(
-            CollectionSelectionModal,
-            {
-                imageUidsToAdd: options.imageUidsToAdd || [],
-                onSelect: async (collection: Collection, newImageUids: string[]) => {
-                    await options.onSelect(collection, newImageUids);
-                }
-            },
-            { heading: "Add to Existing Collection" }
-        );
+        lightboxManager.open(CollectionSelectionModal, {
+            imageUidsToAdd: options.imageUidsToAdd || [],
+            onSelect: async (collection: Collection, newImageUids: string[]) => {
+                await options.onSelect(collection, newImageUids);
+            }
+        });
     }
 
     async function addUidsToCollection(
@@ -166,7 +158,7 @@
                 return;
             }
 
-            modalsManager.pop();
+            lightboxManager.pop();
             await addUidsToCollection(createRes.data.uid, uids, createRes.data.name);
         } catch (err) {
             console.error("Failed to create collection:", err);
@@ -223,7 +215,7 @@
             }
 
             const collectionUid = createRes.data.uid;
-            modalsManager.pop();
+            lightboxManager.pop();
 
             await uploadAndAddToCollection(files, collectionUid, createData.name);
         } catch (err) {
@@ -272,24 +264,21 @@
             return;
         }
 
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                children: uploadConfirmSnippet,
-                actions: uploadConfirmActions
-            },
-            { heading: "Upload Options" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Upload Options",
+            children: uploadConfirmSnippet,
+            actions: uploadConfirmActions
+        });
     }
 
     async function handleConfirmUploadOnly(id: string) {
-        modalsManager.close(id);
+        lightboxManager.close(id);
         await processUploads(uploadCandidates);
         uploadCandidates = [];
     }
 
     function handleConfirmUploadCollection(id: string) {
-        modalsManager.close(id);
+        lightboxManager.close(id);
 
         openCreateCollectionModal({
             initialData: {

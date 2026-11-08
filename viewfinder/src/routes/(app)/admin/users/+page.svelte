@@ -1,9 +1,9 @@
 <script lang="ts">
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
     import UserCreateModal from "#lib/components/modals/UserCreateModal.svelte";
     import UserEditModal from "#lib/components/modals/UserEditModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import AvatarBadge from "#lib/components/ui/AvatarBadge.svelte";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
@@ -24,87 +24,79 @@
     }
 
     function openCreateModal() {
-        modalsManager.open(
-            UserCreateModal,
-            {
-                onSave: async (createForm) => {
-                    if (!createForm.name || !createForm.email || !createForm.password) {
-                        toasts.add({
-                            message: "Please fill in all required fields",
-                            type: "error"
-                        });
-
-                        return;
-                    }
-
-                    const res = await adminCreateUser({
-                        name: createForm.name,
-                        email: createForm.email,
-                        password: createForm.password,
-                        role: createForm.role
+        lightboxManager.open(UserCreateModal, {
+            onSave: async (createForm) => {
+                if (!createForm.name || !createForm.email || !createForm.password) {
+                    toasts.add({
+                        message: "Please fill in all required fields",
+                        type: "error"
                     });
 
-                    if (res.status === 201) {
-                        users.push(res.data);
-                        toasts.add({
-                            message: "User created successfully",
-                            type: "success"
-                        });
-                        invalidateAll();
-                    } else {
-                        toasts.add({
-                            message: res.data.error || "Failed to create user",
-                            type: "error"
-                        });
-                        throw new Error(res.data.error);
-                    }
+                    return;
                 }
-            },
-            { heading: "Create User" }
-        );
+
+                const res = await adminCreateUser({
+                    name: createForm.name,
+                    email: createForm.email,
+                    password: createForm.password,
+                    role: createForm.role
+                });
+
+                if (res.status === 201) {
+                    users.push(res.data);
+                    toasts.add({
+                        message: "User created successfully",
+                        type: "success"
+                    });
+                    invalidateAll();
+                } else {
+                    toasts.add({
+                        message: res.data.error || "Failed to create user",
+                        type: "error"
+                    });
+                    throw new Error(res.data.error);
+                }
+            }
+        });
     }
 
     function openEditModal(user: User) {
-        modalsManager.open(
-            UserEditModal,
-            {
-                user,
-                onSave: async (editForm) => {
-                    if (!editForm.name || !editForm.email) {
-                        toasts.add({
-                            message: "Please fill in all required fields",
-                            type: "error"
-                        });
-
-                        return;
-                    }
-
-                    const res = await adminUpdateUser(user.uid, {
-                        first_name: editForm.first_name,
-                        last_name: editForm.last_name,
-                        name: editForm.name,
-                        email: editForm.email,
-                        role: editForm.role
+        lightboxManager.open(UserEditModal, {
+            user,
+            onSave: async (editForm) => {
+                if (!editForm.name || !editForm.email) {
+                    toasts.add({
+                        message: "Please fill in all required fields",
+                        type: "error"
                     });
 
-                    if (res.status === 200) {
-                        users = users.map((u) => (u.uid === res.data.uid ? res.data : u));
-                        toasts.add({
-                            message: "User updated successfully",
-                            type: "success"
-                        });
-                        invalidateAll();
-                    } else {
-                        toasts.add({
-                            message: res.data.error || "Failed to update user",
-                            type: "error"
-                        });
-                        throw new Error(res.data.error);
-                    }
+                    return;
                 }
-            },
-            { heading: "Edit User" }
-        );
+
+                const res = await adminUpdateUser(user.uid, {
+                    first_name: editForm.first_name,
+                    last_name: editForm.last_name,
+                    name: editForm.name,
+                    email: editForm.email,
+                    role: editForm.role
+                });
+
+                if (res.status === 200) {
+                    users = users.map((u) => (u.uid === res.data.uid ? res.data : u));
+                    toasts.add({
+                        message: "User updated successfully",
+                        type: "success"
+                    });
+                    invalidateAll();
+                } else {
+                    toasts.add({
+                        message: res.data.error || "Failed to update user",
+                        type: "error"
+                    });
+                    throw new Error(res.data.error);
+                }
+            }
+        });
     }
 
     // State for delete modal
@@ -124,38 +116,35 @@
         userToDelete = user;
         forceDeleteToggle = "off";
 
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                get confirmText() {
-                    return forceDelete ? "Force Delete User" : "Delete User";
-                },
-                onConfirm: async () => {
-                    if (!userToDelete) {
-                        return;
-                    }
-                    const res = await adminDeleteUser(userToDelete.uid, {
-                        force: forceDelete
-                    });
-
-                    if (res.status === 200) {
-                        users = users.filter((u) => u.uid !== userToDelete?.uid);
-                        toasts.add({
-                            message: "User deleted successfully",
-                            type: "success"
-                        });
-                        invalidateAll();
-                    } else {
-                        toasts.add({
-                            message: res.data.error || "Failed to delete user",
-                            type: "error"
-                        });
-                    }
-                },
-                children: deleteConfirmSnippet
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Delete User",
+            get confirmText() {
+                return forceDelete ? "Force Delete User" : "Delete User";
             },
-            { heading: "Delete User" }
-        );
+            onConfirm: async () => {
+                if (!userToDelete) {
+                    return;
+                }
+                const res = await adminDeleteUser(userToDelete.uid, {
+                    force: forceDelete
+                });
+
+                if (res.status === 200) {
+                    users = users.filter((u) => u.uid !== userToDelete?.uid);
+                    toasts.add({
+                        message: "User deleted successfully",
+                        type: "success"
+                    });
+                    invalidateAll();
+                } else {
+                    toasts.add({
+                        message: res.data.error || "Failed to delete user",
+                        type: "error"
+                    });
+                }
+            },
+            children: deleteConfirmSnippet
+        });
     }
 
     const userColumns: TableColumn<User>[] = [

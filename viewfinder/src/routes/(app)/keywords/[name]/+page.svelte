@@ -4,9 +4,9 @@
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import FilterModal from "#lib/components/modals/FilterModal.svelte";
     import ActiveFiltersTooltip from "#lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetImage from "#lib/components/ui/AssetImage.svelte";
     import AssetsShell from "#lib/components/ui/AssetsShell.svelte";
@@ -18,7 +18,6 @@
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import type { TableColumn } from "#lib/components/ui/Table.svelte";
-    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
     import { contextMenu } from "#lib/context-menu/index.js";
     import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
     import { createImageMenu } from "#lib/context-menu/menus/images.js";
@@ -84,8 +83,6 @@
     //     scope.updateFacets(images);
     // });
 
-    // Lightbox
-    const lightbox = new ImageLightboxState();
     // Selection
     const scopeId = $derived(SelectionScopeNames.KEYWORDS_ASSETS);
     const selectionScope = $derived(selectionManager.getScope(scopeId));
@@ -217,7 +214,7 @@
         entityDblClick: (_e, asset?: ImageAsset) => {
             const target = asset ?? selectionFirstImage;
             if (target) {
-                lightbox.open(target);
+                openLightbox(target);
             }
         },
         oncontext: (detail) => {
@@ -240,16 +237,13 @@
     });
 
     function handleDeleteKeyword() {
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                children: deleteKeywordSnippet,
-                confirmText: "Delete",
-                buttonVariant: "danger",
-                onConfirm: executeDeleteKeyword
-            },
-            { heading: "Delete Keyword" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Delete Keyword",
+            children: deleteKeywordSnippet,
+            confirmText: "Delete",
+            buttonVariant: "danger",
+            onConfirm: executeDeleteKeyword
+        });
     }
 
     async function updateKeywordDetails(keywordUpdate: KeywordUpdate) {
@@ -313,16 +307,13 @@
         }
 
         const count = selectionScope.size;
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                message: `Remove ${count} selected image(s) from keyword?`,
-                confirmText: "Remove",
-                buttonVariant: "danger",
-                onConfirm: executeDeleteSelected
-            },
-            { heading: "Remove from Keyword" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Remove from Keyword",
+            message: `Remove ${count} selected image(s) from keyword?`,
+            confirmText: "Remove",
+            buttonVariant: "danger",
+            onConfirm: executeDeleteSelected
+        });
     }
 
     async function executeDeleteSelected() {
@@ -362,31 +353,18 @@
         return Array.isArray(displayData) ? displayData : [];
     }
 
-    function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.image) {
-            return;
-        }
-
-        const arr = getDisplayArray();
-        if (!arr.length) {
-            return;
-        }
-
-        const idx = arr.findIndex((i) => i.uid === lightbox.image!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const next = (idx + delta + arr.length) % arr.length;
-        lightbox.image = arr[next];
-    }
-
-    function prevLightboxImage() {
-        navigateLightbox(-1);
-    }
-
-    function nextLightboxImage() {
-        navigateLightbox(1);
+    function openLightbox(asset: ImageAsset) {
+        lightboxManager.open(
+            ImageLightbox,
+            {
+                lightboxImage: asset,
+                images: getDisplayArray()
+            },
+            {
+                backgroundOpacity: 1,
+                closeOnOverlayClick: false
+            }
+        );
     }
 
     $effect(() => {
@@ -417,7 +395,7 @@
     let keywordMenuItems: MenuItem[] = $derived([...keywordActions]);
 
     function openFilterModal() {
-        modalsManager.open(FilterModal, {}, FilterModalOptions);
+        lightboxManager.open(FilterModal);
     }
 </script>
 
@@ -443,19 +421,6 @@
         size="small"
     />
 {/snippet}
-
-{#if lightbox.image}
-    <ImageLightbox
-        lightboxImage={lightbox.image}
-        show={lightbox.show}
-        onClose={() => lightbox.close()}
-        {prevLightboxImage}
-        {nextLightboxImage}
-        onImageUpdated={(image) => {
-            lightbox.image = image;
-        }}
-    />
-{/if}
 
 {#snippet imageCard(asset: ImageAsset, state: { isSelected: boolean })}
     {#if imageThumbnailVariant === "simple"}
@@ -483,7 +448,7 @@
             assetDblClick={(_e, asset) => {
                 const target = asset;
                 if (target) {
-                    lightbox.open(target);
+                    openLightbox(target);
                 }
             }}
             onassetcontext={(detail) => {

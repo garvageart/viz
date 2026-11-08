@@ -1,14 +1,15 @@
 <script lang="ts">
     import { Scope, scopes } from "#lib/auth/scopes.gen.js";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import Checkbox from "#lib/components/ui/Checkbox.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
     import { createApiKey } from "@viz/api";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
-    let { id, onClose, onSuccess }: { id: string; onClose: () => void; onSuccess: () => void } = $props();
+    let { id, onClose, onSuccess }: { id?: string; onClose: () => void; onSuccess: () => void } = $props();
 
     let keyMeta = $state({
         name: "",
@@ -90,65 +91,67 @@
 
     function handleClose() {
         onClose();
-        modalsManager.close(id);
+        lightboxManager.close(id);
     }
 
     function handleCancel() {
         onClose();
-        modalsManager.dismiss(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
-<div class="api-key-modal-inner">
-    {#if createdToken}
-        <span class="warning-text">Please copy your new API Key. You won't be able to see it again!</span>
-        <div class="key-display">
-            <code>{createdToken}</code>
-            <Button iconName="content_copy" onclick={handleCopy} size="small"><span>Copy</span></Button>
-        </div>
-        <div class="modal-actions">
-            <Button iconName="close" onclick={handleClose} size="small"><span>Close</span></Button>
-        </div>
-    {:else}
-        <div class="form-content">
-            <InputText id="input-Name" label="Name" bind:value={keyMeta.name} required class="modal-input" />
-            <InputText
-                id="input-Description"
-                label="Description"
-                bind:value={keyMeta.description}
-                class="modal-input"
-            />
+<Modal {id} heading="Create API Key" iconName="key" width="35%" applyPadding={true}>
+    <div class="api-key-modal-inner">
+        {#if createdToken}
+            <span class="warning-text">Please copy your new API Key. You won't be able to see it again!</span>
+            <div class="key-display">
+                <code>{createdToken}</code>
+                <Button iconName="content_copy" onclick={handleCopy} size="small"><span>Copy</span></Button>
+            </div>
+            <div class="modal-actions">
+                <Button iconName="close" onclick={handleClose} size="small"><span>Close</span></Button>
+            </div>
+        {:else}
+            <div class="form-content">
+                <InputText id="input-Name" label="Name" bind:value={keyMeta.name} required class="modal-input" />
+                <InputText
+                    id="input-Description"
+                    label="Description"
+                    bind:value={keyMeta.description}
+                    class="modal-input"
+                />
 
-            <div class="scopes-section">
-                <h4>Scopes</h4>
-                <div class="scopes-list">
-                    {#each scopes as scope}
-                        <label class="scope-item" class:selected={isScopeSelected(scope.value)}>
-                            <Checkbox
-                                checked={isScopeSelected(scope.value)}
-                                onchange={() => toggleScope(scope.value)}
-                            />
-                            <div class="scope-info">
-                                <span class="scope-label">{scope.label}</span>
-                                <span class="scope-value">{scope.value}</span>
-                            </div>
-                        </label>
-                    {/each}
+                <div class="scopes-section">
+                    <h4>Scopes</h4>
+                    <div class="scopes-list">
+                        {#each scopes as scope}
+                            <label class="scope-item" class:selected={isScopeSelected(scope.value)}>
+                                <Checkbox
+                                    checked={isScopeSelected(scope.value)}
+                                    onchange={() => toggleScope(scope.value)}
+                                />
+                                <div class="scope-info">
+                                    <span class="scope-label">{scope.label}</span>
+                                    <span class="scope-value">{scope.value}</span>
+                                </div>
+                            </label>
+                        {/each}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="modal-actions">
-            <Button variant="danger" onclick={handleCancel}>Cancel</Button>
-            <Button
-                variant="primary"
-                onclick={handleCreate}
-                disabled={creating || !keyMeta.name || selectedScopes.length === 0}
-            >
-                {creating ? "Creating..." : "Create"}
-            </Button>
-        </div>
-    {/if}
-</div>
+            <div class="modal-actions">
+                <Button variant="danger" onclick={handleCancel}>Cancel</Button>
+                <Button
+                    variant="primary"
+                    onclick={handleCreate}
+                    disabled={creating || !keyMeta.name || selectedScopes.length === 0}
+                >
+                    {creating ? "Creating..." : "Create"}
+                </Button>
+            </div>
+        {/if}
+    </div>
+</Modal>
 
 <style lang="scss">
     .api-key-modal-inner {

@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import InputPassword from "#lib/components/ui/InputPassword.svelte";
     import InputSelect from "#lib/components/ui/InputSelect.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { toSentenceCase } from "#lib/utils/strings.js";
     import { Role } from "@viz/api";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
     interface Props {
-        id: string;
+        id?: string;
         onSave: (data: typeof createForm) => Promise<void>;
     }
 
@@ -27,33 +28,35 @@
 
         try {
             await onSave(createForm);
-            modalsManager.close(id);
+            lightboxManager.close(id);
         } finally {
             loading = false;
         }
     }
 
     function handleCancel() {
-        modalsManager.dismiss(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
-<div class="user-modal">
-    <InputText label="Name" autofocus bind:value={createForm.name} />
-    <InputText label="Email" type="email" bind:value={createForm.email} />
-    <InputPassword label="Password" bind:value={createForm.password} />
-    <InputSelect
-        label="Role"
-        bind:value={createForm.role}
-        options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
-    />
-    <div class="modal-actions">
-        <Button variant="danger" onclick={handleCancel}><span>Cancel</span></Button>
-        <Button variant="primary" onclick={handleSave} disabled={loading}>
-            <span>{loading ? "Creating..." : "Create User"}</span>
-        </Button>
+<Modal {id} heading="Create User" iconName="person_add" applyPadding={true}>
+    <div class="user-modal">
+        <InputText label="Name" autofocus bind:value={createForm.name} />
+        <InputText label="Email" type="email" bind:value={createForm.email} />
+        <InputPassword label="Password" bind:value={createForm.password} />
+        <InputSelect
+            label="Role"
+            bind:value={createForm.role}
+            options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
+        />
+        <div class="modal-actions">
+            <Button variant="danger" onclick={handleCancel}><span>Cancel</span></Button>
+            <Button variant="primary" onclick={handleSave} disabled={loading}>
+                <span>{loading ? "Creating..." : "Create User"}</span>
+            </Button>
+        </div>
     </div>
-</div>
+</Modal>
 
 <style lang="scss">
     .user-modal {

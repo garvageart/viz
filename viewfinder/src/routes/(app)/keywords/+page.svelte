@@ -1,8 +1,8 @@
 <script lang="ts">
     import EntityView from "#lib/components/grid/EntityView.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
     import KeywordModal from "#lib/components/modals/KeywordModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
@@ -59,150 +59,139 @@
     }
 
     function openCreateModal() {
-        modalsManager.open(
-            KeywordModal,
-            {
-                heading: "Create Keyword",
-                buttonText: "Create Keyword",
-                keywords,
-                modalAction: async (formData) => {
-                    const exists = keywords.some((k) => k.name.toLowerCase() === formData.name?.toLowerCase());
-                    if (exists) {
-                        toasts.add({
-                            title: "Duplicate keyword",
-                            message: `A keyword named **${formData.name}** already exists`,
-                            type: "warning"
-                        });
-
-                        return;
-                    }
-
-                    if (!formData.name) {
-                        toasts.add({
-                            title: "Failed to create keyword",
-                            message: "Keyword cannot be blank",
-                            type: "error"
-                        });
-
-                        return;
-                    }
-
-                    const res = await createKeyword({
-                        name: formData.name,
-                        colour: formData.colour,
-                        parent: formData.parent
+        lightboxManager.open(KeywordModal, {
+            heading: "Create Keyword",
+            buttonText: "Create Keyword",
+            keywords,
+            modalAction: async (formData) => {
+                const exists = keywords.some((k) => k.name.toLowerCase() === formData.name?.toLowerCase());
+                if (exists) {
+                    toasts.add({
+                        title: "Duplicate keyword",
+                        message: `A keyword named **${formData.name}** already exists`,
+                        type: "warning"
                     });
 
-                    if (res.status === 201) {
-                        toasts.add({
-                            title: res.data.name,
-                            message: "Created keyword successfully",
-                            type: "success"
-                        });
-
-                        modalsManager.pop();
-                        invalidateViz();
-                    } else {
-                        const err = res.data.error ?? "Failed to create keyword";
-                        toasts.add({
-                            title: "Error",
-                            message: err,
-                            type: "error"
-                        });
-                    }
+                    return;
                 }
-            },
-            { heading: "Create Keyword" }
-        );
+
+                if (!formData.name) {
+                    toasts.add({
+                        title: "Failed to create keyword",
+                        message: "Keyword cannot be blank",
+                        type: "error"
+                    });
+
+                    return;
+                }
+
+                const res = await createKeyword({
+                    name: formData.name,
+                    colour: formData.colour,
+                    parent: formData.parent
+                });
+
+                if (res.status === 201) {
+                    toasts.add({
+                        title: res.data.name,
+                        message: "Created keyword successfully",
+                        type: "success"
+                    });
+
+                    lightboxManager.pop();
+                    invalidateViz();
+                } else {
+                    const err = res.data.error ?? "Failed to create keyword";
+                    toasts.add({
+                        title: "Error",
+                        message: err,
+                        type: "error"
+                    });
+                }
+            }
+        });
     }
 
     function openEditModal(keyword: Keyword) {
-        modalsManager.open(
-            KeywordModal,
-            {
-                heading: "Edit Keyword",
-                buttonText: "Save Changes",
-                data: keyword,
-                keywords,
-                modalAction: async (formData) => {
-                    const exists = keywords.some(
-                        (k) => k.uid !== keyword.uid && k.name.toLowerCase() === formData.name?.toLowerCase()
-                    );
+        lightboxManager.open(KeywordModal, {
+            heading: "Edit Keyword",
+            buttonText: "Save Changes",
+            data: keyword,
+            keywords,
+            modalAction: async (formData) => {
+                const exists = keywords.some(
+                    (k) => k.uid !== keyword.uid && k.name.toLowerCase() === formData.name?.toLowerCase()
+                );
 
-                    if (exists) {
-                        toasts.add({
-                            title: "Duplicate keyword",
-                            message: `A keyword named **${formData.name}** already exists`,
-                            type: "warning"
-                        });
-
-                        return;
-                    }
-
-                    const res = await updateKeyword(keyword.uid, {
-                        name: formData.name,
-                        colour: formData.colour,
-                        parent: formData.parent
+                if (exists) {
+                    toasts.add({
+                        title: "Duplicate keyword",
+                        message: `A keyword named **${formData.name}** already exists`,
+                        type: "warning"
                     });
 
-                    if (res.status === 200) {
-                        toasts.add({
-                            title: res.data.name,
-                            message: "Updated keyword successfully",
-                            type: "success"
-                        });
-
-                        modalsManager.pop();
-                        invalidateViz();
-                    } else {
-                        const err = (res.data as { error?: string })?.error ?? "Failed to update keyword";
-                        toasts.add({
-                            title: "Error",
-                            message: err,
-                            type: "error"
-                        });
-                    }
+                    return;
                 }
-            },
-            { heading: "Edit Keyword" }
-        );
+
+                const res = await updateKeyword(keyword.uid, {
+                    name: formData.name,
+                    colour: formData.colour,
+                    parent: formData.parent
+                });
+
+                if (res.status === 200) {
+                    toasts.add({
+                        title: res.data.name,
+                        message: "Updated keyword successfully",
+                        type: "success"
+                    });
+
+                    lightboxManager.pop();
+                    invalidateViz();
+                } else {
+                    const err = (res.data as { error?: string })?.error ?? "Failed to update keyword";
+                    toasts.add({
+                        title: "Error",
+                        message: err,
+                        type: "error"
+                    });
+                }
+            }
+        });
     }
 
     function openDeleteModal(keyword: Keyword) {
         keywordToDelete = keyword;
 
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                confirmText: "Delete",
-                buttonVariant: "danger",
-                onConfirm: async () => {
-                    if (!keywordToDelete) {
-                        return;
-                    }
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Delete Keyword",
+            confirmText: "Delete",
+            buttonVariant: "danger",
+            onConfirm: async () => {
+                if (!keywordToDelete) {
+                    return;
+                }
 
-                    const res = await deleteKeyword(keywordToDelete.uid);
-                    if (res.status === 204) {
-                        toasts.add({
-                            title: keywordToDelete.name,
-                            message: "Deleted keyword successfully",
-                            type: "success"
-                        });
+                const res = await deleteKeyword(keywordToDelete.uid);
+                if (res.status === 204) {
+                    toasts.add({
+                        title: keywordToDelete.name,
+                        message: "Deleted keyword successfully",
+                        type: "success"
+                    });
 
-                        invalidateViz();
-                    } else if (res.status === 404) {
-                        toasts.add({
-                            message: "Keyword not found. It may have already been deleted.",
-                            type: "info"
-                        });
+                    invalidateViz();
+                } else if (res.status === 404) {
+                    toasts.add({
+                        message: "Keyword not found. It may have already been deleted.",
+                        type: "info"
+                    });
 
-                        invalidateViz();
-                    }
-                },
-                children: deleteConfirmSnippet
+                    invalidateViz();
+                }
             },
-            { heading: "Delete Keyword" }
-        );
+            children: deleteConfirmSnippet
+        });
     }
 </script>
 

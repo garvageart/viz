@@ -17,11 +17,11 @@
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import AddPhotosModal from "#lib/components/modals/AddPhotosModal.svelte";
     import CollectionModal from "#lib/components/modals/CollectionModal.svelte";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-    import FilterModal, { FilterModalOptions } from "#lib/components/modals/FilterModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import FilterModal from "#lib/components/modals/FilterModal.svelte";
     import ActiveFiltersTooltip from "#lib/components/tooltips/ActiveFiltersTooltip.svelte";
     import AssetImage from "#lib/components/ui/AssetImage.svelte";
     import AssetsShell from "#lib/components/ui/AssetsShell.svelte";
@@ -34,7 +34,6 @@
     import InputText from "#lib/components/ui/InputText.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import type { TableColumn } from "#lib/components/ui/Table.svelte";
-    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
     import { contextMenu } from "#lib/context-menu/index.js";
     import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
     import { createImageMenu } from "#lib/context-menu/menus/images.js";
@@ -161,9 +160,6 @@
         }
     });
 
-    // Lightbox
-    const lightbox = new ImageLightboxState();
-
     // Search stuff
     let searchValue = $state("");
     let searchData = $derived(searchForData(searchValue, collectionState.images));
@@ -278,7 +274,7 @@
         entityDblClick: (_e, asset?: ImageAsset) => {
             const target = asset ?? selectionFirstImage;
             if (target) {
-                lightbox.open(target);
+                openLightbox(target);
             }
         },
         oncontext: (detail) => {
@@ -435,16 +431,13 @@
     }
 
     function handleDeleteCollection() {
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                children: deleteCollectionSnippet,
-                confirmText: "Delete",
-                buttonVariant: "danger",
-                onConfirm: executeDeleteCollection
-            },
-            { heading: "Delete Collection" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Delete Collection",
+            children: deleteCollectionSnippet,
+            confirmText: "Delete",
+            buttonVariant: "danger",
+            onConfirm: executeDeleteCollection
+        });
     }
 
     async function executeDeleteCollection() {
@@ -482,15 +475,12 @@
         }
 
         const count = selectionScope.size;
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                message: `Remove ${count} selected image(s) from collection?`,
-                confirmText: "Remove",
-                onConfirm: executeDeleteSelected
-            },
-            { heading: "Remove Images" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Remove Images",
+            message: `Remove ${count} selected image(s) from collection?`,
+            confirmText: "Remove",
+            onConfirm: executeDeleteSelected
+        });
     }
 
     async function executeDeleteSelected() {
@@ -603,31 +593,18 @@
         return Array.isArray(displayData) ? displayData : [];
     }
 
-    function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.image) {
-            return;
-        }
-
-        const arr = getDisplayArray();
-        if (!arr.length) {
-            return;
-        }
-
-        const idx = arr.findIndex((i) => i.uid === lightbox.image!.uid);
-        if (idx === -1) {
-            return;
-        }
-
-        const next = (idx + delta + arr.length) % arr.length;
-        lightbox.image = arr[next];
-    }
-
-    function prevLightboxImage() {
-        navigateLightbox(-1);
-    }
-
-    function nextLightboxImage() {
-        navigateLightbox(1);
+    function openLightbox(asset: ImageAsset) {
+        lightboxManager.open(
+            ImageLightbox,
+            {
+                lightboxImage: asset,
+                images: getDisplayArray()
+            },
+            {
+                backgroundOpacity: 1,
+                closeOnOverlayClick: false
+            }
+        );
     }
 
     // NOTE: left/right navigation is handled inside ImageLightbox (goToPrev/goToNext).
@@ -666,39 +643,29 @@
     let collectionMenuItems: MenuItem[] = $derived([...collectionActions]);
 
     function openFilterModal() {
-        modalsManager.open(FilterModal, {}, FilterModalOptions);
+        lightboxManager.open(FilterModal);
     }
 
     function openEditCollectionModal() {
-        modalsManager.open(
-            CollectionModal,
-            {
-                heading: "Edit Collection",
-                buttonText: "Save",
-                data: { name, description, private: isPrivate },
-                modalAction: async (newData) => {
-                    name = newData.name;
-                    description = newData.description;
-                    isPrivate = newData.private;
-                    await updateCollectionDetails();
-                    modalsManager.pop();
-                }
-            },
-            { heading: "Edit Collection" }
-        );
+        lightboxManager.open(CollectionModal, {
+            heading: "Edit Collection",
+            buttonText: "Save",
+            data: { name, description, private: isPrivate },
+            modalAction: async (newData) => {
+                name = newData.name;
+                description = newData.description;
+                isPrivate = newData.private;
+                await updateCollectionDetails();
+                lightboxManager.pop();
+            }
+        });
     }
 
     function openAddPhotosModal() {
-        modalsManager.open(
-            AddPhotosModal,
-            {
-                collectionUid: data.uid,
-                collectionName: data.name
-            },
-            {
-                heading: "Add Photos to Collection"
-            }
-        );
+        lightboxManager.open(AddPhotosModal, {
+            collectionUid: data.uid,
+            collectionName: data.name
+        });
     }
 </script>
 
@@ -726,16 +693,6 @@
 {/snippet}
 
 <svelte:window onclick={handleWindowClick} />
-
-{#if lightbox.image}
-    <ImageLightbox
-        bind:lightboxImage={lightbox.image}
-        show={lightbox.show}
-        onClose={() => lightbox.close()}
-        {prevLightboxImage}
-        {nextLightboxImage}
-    />
-{/if}
 
 <DragAndDropUpload
     {scopeId}
@@ -772,7 +729,7 @@
             assetDblClick={(_e, asset) => {
                 const target = asset;
                 if (target) {
-                    lightbox.open(target);
+                    openLightbox(target);
                 }
             }}
             onassetcontext={(detail) => {

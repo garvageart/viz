@@ -1,8 +1,8 @@
 <script lang="ts">
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import KeywordModal from "#lib/components/modals/KeywordModal.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.ts";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import DatePicker from "#lib/components/ui/DatePicker.svelte";
@@ -320,20 +320,16 @@
             return;
         }
 
-        modalsManager.open(
-            KeywordModal,
-            {
-                mode: "add",
-                heading: "Add Keywords",
-                buttonText: "Save Keywords",
-                selectedKeywords: currentKeywords,
-                onAdd: async (keywords: KeywordUpdate[]) => {
-                    await saveKeywords(keywords);
-                    modalsManager.pop();
-                }
-            },
-            { heading: "Add Keywords" }
-        );
+        lightboxManager.open(KeywordModal, {
+            mode: "add",
+            heading: "Add Keywords",
+            buttonText: "Save Keywords",
+            selectedKeywords: currentKeywords,
+            onAdd: async (keywords: KeywordUpdate[]) => {
+                await saveKeywords(keywords);
+                lightboxManager.pop();
+            }
+        });
     }
 
     function getCurrentKeywords(): KeywordUpdate[] {
@@ -1019,7 +1015,7 @@
                 <!-- Extended EXIF Card (if raw map present) -->
                 {#if rawExifEntries.length > 0}
                     <div class="exif-card extended-exif-card">
-                        <div class="card-row main-row">
+                        <div class="card-row main-row center">
                             <MaterialIcon iconName="list_alt" class="exif-material-icon" />
                             <div class="card-values">
                                 <div class="value-big">EXIF</div>

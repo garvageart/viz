@@ -1,5 +1,5 @@
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
 import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
 import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
 import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
@@ -225,58 +225,55 @@ export function deleteSelectedCollections(
     const message =
         targets.length > 1 ? `Delete ${targets.length} collections?` : `Delete collection "${targets[0].name}"?`;
 
-    modalsManager.open(
-        ConfirmationModal,
-        {
-            confirmText: title,
-            message,
-            buttonVariant: "danger",
-            onConfirm: async () => {
-                try {
-                    const deleted: Collection[] = [];
+    lightboxManager.open(ConfirmationModal, {
+        heading: title,
+        confirmText: title,
+        message,
+        buttonVariant: "danger",
+        onConfirm: async () => {
+            try {
+                const deleted: Collection[] = [];
 
-                    for (const c of targets) {
-                        const res = await deleteCollection(c.uid);
-                        if (res.status === 204) {
-                            deleted.push(c);
-                            if (onDeleted) {
-                                onDeleted(c);
-                            }
+                for (const c of targets) {
+                    const res = await deleteCollection(c.uid);
+                    if (res.status === 204) {
+                        deleted.push(c);
+                        if (onDeleted) {
+                            onDeleted(c);
                         }
                     }
-
-                    if (deleted.length === targets.length) {
-                        if (onMultipleDeleted) {
-                            onMultipleDeleted(deleted);
-                        }
-                        return;
-                    }
-
-                    if (deleted.length > 0) {
-                        if (onMultipleDeleted) {
-                            onMultipleDeleted(deleted);
-                        }
-                        toasts.add({
-                            message: "Some collections could not be deleted",
-                            type: "warning"
-                        });
-                        return;
-                    }
-
-                    toasts.add({
-                        message: "Failed to delete collections",
-                        type: "error"
-                    });
-                } catch (err) {
-                    toasts.add({
-                        message: `Failed to delete: ${err}`,
-                        type: "error"
-                    });
                 }
+
+                if (deleted.length === targets.length) {
+                    if (onMultipleDeleted) {
+                        onMultipleDeleted(deleted);
+                    }
+                    return;
+                }
+
+                if (deleted.length > 0) {
+                    if (onMultipleDeleted) {
+                        onMultipleDeleted(deleted);
+                    }
+                    toasts.add({
+                        message: "Some collections could not be deleted",
+                        type: "warning"
+                    });
+                    return;
+                }
+
+                toasts.add({
+                    message: "Failed to delete collections",
+                    type: "error"
+                });
+            } catch (err) {
+                toasts.add({
+                    message: `Failed to delete: ${err}`,
+                    type: "error"
+                });
             }
-        },
-        { heading: title }
-    );
+        }
+    });
 }
 
 /**
@@ -312,7 +309,7 @@ export async function exportCollection(collection: Collection) {
             return;
         }
 
-        modalsManager.open(ExportPanel, { assets: items });
+        lightboxManager.open(ExportPanel, { assets: items });
     } catch (err) {
         toasts.add({
             message: `Failed to export collection: ${(err as Error).message}`,

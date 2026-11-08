@@ -1,6 +1,6 @@
 <script lang="ts">
-    import ModalRenderer from "#lib/components/modals/ModalContainer.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import LightboxContainer from "#lib/components/lightbox/LightboxContainer.svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import "#lib/components/tooltips/tooltip.scss";
     import NavigationProgressBar from "#lib/components/ui/NavigationProgressBar.svelte";
     import ContextMenu from "#lib/context-menu/ContextMenu.svelte";
@@ -121,13 +121,13 @@
 
 {@render children()}
 <Notifications />
-<ModalRenderer />
+<LightboxContainer />
 <ContextMenu />
 
 {#if loadingState.isNavigating}
     <div
         class="nav-progress-container"
-        class:app={!page.url.pathname.startsWith("/auth") && modalsManager.modals.length === 0}
+        class:app={!page.url.pathname.startsWith("/auth") && lightboxManager.stack.length === 0}
     >
         <NavigationProgressBar />
     </div>

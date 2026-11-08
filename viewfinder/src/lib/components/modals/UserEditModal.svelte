@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import InputSelect from "#lib/components/ui/InputSelect.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { toSentenceCase } from "#lib/utils/strings.js";
     import { Role, type User } from "@viz/api";
     import { untrack } from "svelte";
-    import { modalsManager } from "./manager/ModalManager.svelte";
+    import Modal from "./Modal.svelte";
 
     interface Props {
-        id: string;
+        id?: string;
         user: User;
         onSave: (updatedData: typeof editForm) => Promise<void>;
     }
@@ -27,31 +28,33 @@
 
     async function handleSave() {
         await onSave(editForm);
-        modalsManager.close(id);
+        lightboxManager.close(id);
     }
 
     function handleCancel() {
-        modalsManager.dismiss(id);
+        lightboxManager.dismiss(id);
     }
 </script>
 
-<div class="user-modal">
-    <InputText label="Name" autofocus bind:value={editForm.name} />
-    <InputText label="Email" type="email" bind:value={editForm.email} />
-    <div class="form-row">
-        <InputText label="First Name" bind:value={editForm.first_name} />
-        <InputText label="Last Name" bind:value={editForm.last_name} />
+<Modal {id} heading="Edit User" iconName="manage_accounts" applyPadding={true}>
+    <div class="user-modal">
+        <InputText label="Name" autofocus bind:value={editForm.name} />
+        <InputText label="Email" type="email" bind:value={editForm.email} />
+        <div class="form-row">
+            <InputText label="First Name" bind:value={editForm.first_name} />
+            <InputText label="Last Name" bind:value={editForm.last_name} />
+        </div>
+        <InputSelect
+            label="Role"
+            bind:value={editForm.role}
+            options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
+        />
+        <div class="modal-actions">
+            <Button variant="danger" onclick={handleCancel}><span>Cancel</span></Button>
+            <Button variant="primary" onclick={handleSave}><span>Save Changes</span></Button>
+        </div>
     </div>
-    <InputSelect
-        label="Role"
-        bind:value={editForm.role}
-        options={Object.values(Role).map((r) => ({ value: r, label: toSentenceCase(r) }))}
-    />
-    <div class="modal-actions">
-        <Button onclick={handleCancel}>Cancel</Button>
-        <Button onclick={handleSave}>Save Changes</Button>
-    </div>
-</div>
+</Modal>
 
 <style lang="scss">
     .user-modal {

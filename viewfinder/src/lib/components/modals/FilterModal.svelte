@@ -1,19 +1,19 @@
-<script module>
-    import type { ModalOptions } from "#lib/components/modals/manager/ModalManager.svelte.js";
-
-    export const FilterModalOptions: ModalOptions = {
-        heading: "Filter Images",
-        applyPadding: false
-    };
-</script>
-
 <script lang="ts">
     import FilterPanel from "../panels/workspace/FilterPanel.svelte";
+    import Modal from "./Modal.svelte";
+
+    interface Props {
+        id?: string;
+    }
+
+    let { id }: Props = $props();
 </script>
 
-<div class="filter-modal-content">
-    <FilterPanel />
-</div>
+<Modal {id} heading="Filter Images" iconName="filter_list" applyPadding={false}>
+    <div class="filter-modal-content">
+        <FilterPanel />
+    </div>
+</Modal>
 
 <style lang="scss">
     .filter-modal-content {

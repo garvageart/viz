@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
     import CreatedApiKeyModal from "#lib/components/modals/CreatedApiKeyModal.svelte";
     import Badge from "#lib/components/ui/Badge.svelte";
@@ -17,7 +18,6 @@
         updateSession
     } from "@viz/api";
     import { DateTime } from "luxon";
-    import { modalsManager } from "../modals/manager/ModalManager.svelte";
     import RenameSessionModal from "./RenameSessionModal.svelte";
 
     interface ExtendedSession extends Session {
@@ -124,27 +124,20 @@
     }
 
     function openApiKeyModal() {
-        modalsManager.open(
-            CreatedApiKeyModal,
-            {
-                onClose: () => {},
-                onSuccess: loadData
-            },
-            { heading: "Create API Key" }
-        );
+        lightboxManager.open(CreatedApiKeyModal, {
+            onClose: () => {},
+            onSuccess: loadData
+        });
     }
 
     function openDeleteKeyConfirm(key: ApiKey) {
         deletingKey = key;
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                confirmText: "Delete Key",
-                onConfirm: handleDeleteKey,
-                children: deleteKeySnippet
-            },
-            { heading: "Delete API Key" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Delete API Key",
+            confirmText: "Delete Key",
+            onConfirm: handleDeleteKey,
+            children: deleteKeySnippet
+        });
     }
 
     async function handleDeleteKey() {
@@ -174,57 +167,50 @@
     }
 
     function openRenameSessionModal(session: ExtendedSession) {
-        modalsManager.open(
-            RenameSessionModal,
-            {
-                initialName: session.client_name || "",
-                onRename: async (newName) => {
-                    const res = await updateSession(session.uid, {
-                        clientName: newName
+        lightboxManager.open(RenameSessionModal, {
+            initialName: session.client_name || "",
+            onRename: async (newName) => {
+                const res = await updateSession(session.uid, {
+                    clientName: newName
+                });
+
+                if (res.status === 200) {
+                    sessions = sessions.map((s) =>
+                        s.uid === session.uid
+                            ? {
+                                  ...res.data,
+                                  is_current: s.is_current,
+                                  browser: s.browser,
+                                  os: s.os,
+                                  ip_address: res.data.client_ip,
+                                  last_active_at: res.data.last_active
+                              }
+                            : s
+                    );
+
+                    toasts.add({
+                        message: "Session renamed successfully",
+                        type: "success"
                     });
-
-                    if (res.status === 200) {
-                        sessions = sessions.map((s) =>
-                            s.uid === session.uid
-                                ? {
-                                      ...res.data,
-                                      is_current: s.is_current,
-                                      browser: s.browser,
-                                      os: s.os,
-                                      ip_address: res.data.client_ip,
-                                      last_active_at: res.data.last_active
-                                  }
-                                : s
-                        );
-
-                        toasts.add({
-                            message: "Session renamed successfully",
-                            type: "success"
-                        });
-                    } else {
-                        toasts.add({
-                            message: "Failed to rename session",
-                            type: "error"
-                        });
-                        throw new Error("Failed to rename");
-                    }
+                } else {
+                    toasts.add({
+                        message: "Failed to rename session",
+                        type: "error"
+                    });
+                    throw new Error("Failed to rename");
                 }
-            },
-            { heading: "Rename Session" }
-        );
+            }
+        });
     }
 
     function openRevokeConfirm(session: ExtendedSession) {
         revokingSession = session;
-        modalsManager.open(
-            ConfirmationModal,
-            {
-                confirmText: "Revoke Session",
-                onConfirm: handleRevokeSession,
-                children: revokeSessionSnippet
-            },
-            { heading: "Revoke Session" }
-        );
+        lightboxManager.open(ConfirmationModal, {
+            heading: "Revoke Session",
+            confirmText: "Revoke Session",
+            onConfirm: handleRevokeSession,
+            children: revokeSessionSnippet
+        });
     }
 
     async function handleRevokeSession() {
