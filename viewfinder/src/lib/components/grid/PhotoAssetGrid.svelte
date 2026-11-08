@@ -20,7 +20,7 @@
     import { VizMimeTypes } from "#lib/mime.ts";
     import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
-    import { isLayoutPage, isMobile } from "#lib/states/index.svelte.js";
+    import { isMobile } from "#lib/states/index.svelte.js";
     import { type ImageScopeId, SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.ts";
     import type { CardVisualState } from "#lib/types/snippet.js";
@@ -957,7 +957,7 @@
         selection.clear();
     }
 
-    function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
+    function unselectImagesOnClickOutsideAssetContainer(_element: HTMLElement) {
         const clickHandler = (e: MouseEvent) => {
             if (disableOutsideUnselect) {
                 return;
@@ -968,18 +968,6 @@
             if (shouldKeepSelection(target)) {
                 return;
             }
-
-            if (isLayoutPage()) {
-                // On layout page, only clear if clicked inside the parent panel
-                const parentPanel = element.closest(".tab-group-panel");
-                if (parentPanel && parentPanel.contains(target)) {
-                    selection.clear();
-                }
-                return;
-            }
-
-            // Otherwise clear selection
-            selection.clear();
         };
 
         $effect(() => {

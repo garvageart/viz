@@ -26,13 +26,15 @@
     db.then(async (db) => {
         try {
             const settings = await db.get("settings", "favourites_panel");
-            if (settings) {
-                if (settings.showCollections !== undefined) {
-                    showCollections = settings.showCollections;
-                }
-                if (settings.showImages !== undefined) {
-                    showImages = settings.showImages;
-                }
+            if (!settings) {
+                return;
+            }
+
+            if (settings.showCollections !== undefined) {
+                showCollections = settings.showCollections;
+            }
+            if (settings.showImages !== undefined) {
+                showImages = settings.showImages;
             }
         } catch (e) {
             console.error("Failed to load favourites panel settings", e);

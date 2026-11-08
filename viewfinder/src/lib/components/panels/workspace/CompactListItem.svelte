@@ -152,7 +152,7 @@
         flex-shrink: 0;
         border-radius: 0.25rem;
         overflow: hidden;
-        background-color: var(--viz-surface-hover);
+        background-color: var(--viz-surface-panel);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -176,7 +176,6 @@
     }
 
     .name {
-        font-size: 0.85rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -201,7 +200,6 @@
         padding: 0.5rem;
         border-top: 1px solid var(--viz-surface-panel);
         background-color: var(--viz-surface-card);
-        font-size: 0.75rem;
     }
 
     .detail-grid {
