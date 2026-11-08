@@ -1,11 +1,11 @@
 <script lang="ts">
     import CropOverlay from "#lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "#lib/components/image-tools/CropTools.svelte";
-    import { modalsManager } from "#lib/components/modals/manager/ModalManager.svelte.js";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Filmstrip from "#lib/components/panels/workspace/Filmstrip.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import StatusIndicator from "#lib/components/ui/StatusIndicator.svelte";
-    import ExportPanel, { modalOptions as exportModalOptions } from "#lib/components/ui/panels/ExportPanel.svelte";
+    import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
     import { DbSettings } from "#lib/db/settings.js";
     import { ImageLoader } from "#lib/images/loader/image-loader.svelte.js";
@@ -13,10 +13,12 @@
     import { ImageZoomState } from "#lib/images/zoom/zoom-utils.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import { isMobile } from "#lib/states/index.svelte.js";
+    import { selectionManager } from "#lib/states/selection.svelte.js";
     import Pane from "#lib/third-party/svelte-splitpanes/Pane.svelte";
     import Splitpanes from "#lib/third-party/svelte-splitpanes/Splitpanes.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { downloadOriginalImageFile } from "#lib/utils/http.js";
+    import { isAssetImage } from "#lib/utils/images.js";
     import { dev } from "$app/env";
     import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
     import { untrack } from "svelte";
@@ -25,7 +27,6 @@
     import { hideAll } from "tippy.js";
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
-    import Lightbox from "./Lightbox.svelte";
 
     interface ImageLightboxSettings {
         filmstrip?: {
@@ -48,7 +49,9 @@
     }
 
     interface Props {
+        id?: string;
         lightboxImage: ImageAsset;
+        images?: ImageAsset[];
         show?: boolean;
         onClose?: () => void;
         prevLightboxImage?: () => void;
@@ -57,8 +60,10 @@
     }
 
     let {
+        id,
         lightboxImage = $bindable(),
-        show = $bindable(false),
+        images = [],
+        show = $bindable(true),
         onClose,
         prevLightboxImage,
         nextLightboxImage,
@@ -68,11 +73,35 @@
     function closeLightbox() {
         show = false;
         onClose?.();
+        if (id) {
+            lightboxManager.dismiss(id);
+        } else {
+            lightboxManager.pop();
+        }
     }
 
     $effect(() => {
         if (show) {
             hideAll();
+        }
+    });
+
+    let focusedAsset = $derived(isAssetImage(selectionManager.focusedItem) ? selectionManager.focusedItem : undefined);
+
+    $effect(() => {
+        if (focusedAsset && focusedAsset.uid !== lightboxImage.uid) {
+            lightboxImage = focusedAsset;
+        }
+    });
+
+    $effect(() => {
+        if (!lightboxImage) {
+            return;
+        }
+
+        const activeScope = selectionManager.getActiveScope();
+        if (activeScope && activeScope.active?.uid !== lightboxImage.uid) {
+            activeScope.select(lightboxImage);
         }
     });
 
@@ -427,7 +456,21 @@
             return;
         }
 
-        prevLightboxImage?.();
+        if (prevLightboxImage) {
+            prevLightboxImage();
+            return;
+        }
+
+        if (images.length > 0) {
+            const idx = images.findIndex((i) => i.uid === lightboxImage.uid);
+            if (idx !== -1) {
+                const nextIdx = (idx - 1 + images.length) % images.length;
+                const nextImage = images[nextIdx];
+                lightboxImage = nextImage;
+                const activeScope = selectionManager.getActiveScope();
+                activeScope?.select(nextImage);
+            }
+        }
     }
 
     function goToNext() {
@@ -435,7 +478,21 @@
             return;
         }
 
-        nextLightboxImage?.();
+        if (nextLightboxImage) {
+            nextLightboxImage();
+            return;
+        }
+
+        if (images.length > 0) {
+            const idx = images.findIndex((i) => i.uid === lightboxImage.uid);
+            if (idx !== -1) {
+                const nextIdx = (idx + 1) % images.length;
+                const nextImage = images[nextIdx];
+                lightboxImage = nextImage;
+                const activeScope = selectionManager.getActiveScope();
+                activeScope?.select(nextImage);
+            }
+        }
     }
 
     function restoreCrop() {
@@ -534,6 +591,21 @@
             statusIndicator?.showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
         }
     }
+
+    $effect(() => {
+        if (!isCropping) {
+            return;
+        }
+
+        const unregisterEscape = keyboardManager.registerEscape({
+            tier: KbdShortcutTier.Transient,
+            handler: () => {
+                toggleCropMode();
+            }
+        });
+
+        return unregisterEscape;
+    });
 
     $effect(() => {
         if (!show) {
@@ -744,15 +816,6 @@
                     {/if}
                 </div>
                 <div class="image-icon-buttons">
-                    <Button
-                        id="act-expand-lightbox"
-                        class="lightbox-button-icon"
-                        title={lightboxState.filmstrip.visible ? "Hide Filmstrip" : "Show Filmstrip"}
-                        iconName={lightboxState.filmstrip.visible ? "collapse_content" : "expand_content"}
-                        onclick={() => {
-                            lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
-                        }}
-                    />
                     {#if lightboxState.filmstrip.visible}
                         <Button
                             id="act-move-filmstrip"
@@ -767,6 +830,15 @@
                             }}
                         />
                     {/if}
+                    <Button
+                        id="act-expand-lightbox"
+                        class="lightbox-button-icon"
+                        title={lightboxState.filmstrip.visible ? "Hide Filmstrip" : "Show Filmstrip"}
+                        iconName={lightboxState.filmstrip.visible ? "collapse_content" : "expand_content"}
+                        onclick={() => {
+                            lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
+                        }}
+                    />
                     <div class="image-icon-button-separator"></div>
                     {#if !isCropping}
                         {#if dev}
@@ -822,14 +894,10 @@
                             onclick={(e) => {
                                 e.stopPropagation();
 
-                                modalsManager
-                                    .open(
-                                        ExportPanel,
-                                        {
-                                            assets: [lightboxImage]
-                                        },
-                                        exportModalOptions
-                                    )
+                                lightboxManager
+                                    .open(ExportPanel, {
+                                        assets: [lightboxImage]
+                                    })
                                     .then(() => {
                                         closeLightbox();
                                     });
@@ -900,8 +968,14 @@
                 <StatusIndicator bind:this={statusIndicator} />
             </div>
 
-            {#if prevLightboxImage && nextLightboxImage && !isCropping}
-                <div class="lightbox-nav">
+            {#if (images.length > 1 || (prevLightboxImage && nextLightboxImage)) && !isCropping}
+                <div
+                    class="lightbox-nav"
+                    role="toolbar"
+                    aria-label="Lightbox navigation"
+                    tabindex={0}
+                    onpointerdown={(e) => e.stopPropagation()}
+                >
                     <Button
                         iconName="arrow_back"
                         class="lightbox-nav-btn prev lightbox-button-icon"
@@ -949,11 +1023,9 @@
     </Pane>
 {/snippet}
 
-<Lightbox
-    bind:show
-    onclose={closeLightbox}
-    backgroundOpacity={1}
-    closeOnEsc={false}
+<div
+    class="lightbox-layout"
+    role="presentation"
     onclick={() => {
         if (zoomState.wasDragging) {
             return;
@@ -961,60 +1033,58 @@
         handleContainerClick();
     }}
 >
-    <div class="lightbox-layout">
-        <Splitpanes id="image-lightbox-splitpanes" class="image-lightbox-splitpanes">
-            <Pane>
-                <div
-                    class="lightbox-main"
-                    class:filmstrip-side={lightboxState.filmstrip.position === "side"}
-                    onclick={(e) => {
-                        if (zoomState.wasDragging) {
-                            // e.stopPropagation();
-                            return;
-                        }
+    <Splitpanes id="image-lightbox-splitpanes" class="image-lightbox-splitpanes">
+        <Pane>
+            <div
+                class="lightbox-main"
+                class:filmstrip-side={lightboxState.filmstrip.position === "side"}
+                onclick={(e) => {
+                    if (zoomState.wasDragging) {
+                        // e.stopPropagation();
+                        return;
+                    }
 
-                        // Only handle clicks on the container background (not on buttons or image)
-                        if (e.currentTarget === viewportEl) {
-                            handleContainerClick();
-                        }
-                    }}
-                    role="presentation"
+                    // Only handle clicks on the container background (not on buttons or image)
+                    if (e.currentTarget === viewportEl) {
+                        handleContainerClick();
+                    }
+                }}
+                role="presentation"
+            >
+                <Splitpanes
+                    id="image-lightbox-main-splitpanes"
+                    class="image-lightbox-main-splitpanes"
+                    horizontal={lightboxState.filmstrip.position === "bottom"}
+                    rtl={lightboxState.filmstrip.position === "bottom"}
+                    swapPaneOrder={true}
                 >
-                    <Splitpanes
-                        id="image-lightbox-main-splitpanes"
-                        class="image-lightbox-main-splitpanes"
-                        horizontal={lightboxState.filmstrip.position === "bottom"}
-                        rtl={lightboxState.filmstrip.position === "bottom"}
-                        swapPaneOrder={true}
-                    >
-                        {#each lightboxMainSnippets as ls (ls)}
-                            {@render ls()}
-                        {/each}
-                    </Splitpanes>
+                    {#each lightboxMainSnippets as ls (ls)}
+                        {@render ls()}
+                    {/each}
+                </Splitpanes>
+            </div>
+        </Pane>
+
+        {#if lightboxState.sidePanel.visible}
+            <Pane size={20}>
+                <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
+                    {#if isCropping}
+                        <CropTools
+                            onApply={handleCropApply}
+                            onReset={handleCropReset}
+                            onCancel={() => {
+                                toggleCropMode();
+                            }}
+                            onAspectRatioChange={handleAspectRatioChange}
+                        />
+                    {:else}
+                        <MetadataPanel asset={lightboxImage} showCloseIcon={isMobile} {onImageUpdated} />
+                    {/if}
                 </div>
             </Pane>
-
-            {#if lightboxState.sidePanel.visible}
-                <Pane size={20}>
-                    <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
-                        {#if isCropping}
-                            <CropTools
-                                onApply={handleCropApply}
-                                onReset={handleCropReset}
-                                onCancel={() => {
-                                    toggleCropMode();
-                                }}
-                                onAspectRatioChange={handleAspectRatioChange}
-                            />
-                        {:else}
-                            <MetadataPanel asset={lightboxImage} showCloseIcon={isMobile} {onImageUpdated} />
-                        {/if}
-                    </div>
-                </Pane>
-            {/if}
-        </Splitpanes>
-    </div>
-</Lightbox>
+        {/if}
+    </Splitpanes>
+</div>
 
 <style lang="scss">
     .lightbox-layout {

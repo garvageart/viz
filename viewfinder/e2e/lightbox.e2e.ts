@@ -347,4 +347,37 @@ test.describe("ImageLightbox Interactions", () => {
         expect(Number(await stage.getAttribute("data-pos-x"))).toBe(posXBefore);
         expect(Number(await stage.getAttribute("data-pos-y"))).toBe(posYBefore);
     });
+
+    test("selecting an image in the embedded filmstrip updates the displayed lightbox image", async ({ page }) => {
+        const lightbox = await openLightbox(page);
+        test.skip(!lightbox, "No photos available to test lightbox");
+
+        const filmstripContainer = lightbox!.locator(".lightbox-filmstrip-container");
+        const expandBtn = lightbox!.locator("#act-expand-lightbox");
+        if (!(await filmstripContainer.isVisible())) {
+            await expandBtn.click();
+            await expect(filmstripContainer).toBeVisible({ timeout: 5000 });
+        }
+
+        const filmstripItems = filmstripContainer.locator(".filmstrip-item");
+        const count = await filmstripItems.count();
+        test.skip(count < 2, "Need at least 2 photos in filmstrip to test selection switching");
+
+        // Verify initial displayed image
+        const mainImage = lightbox!.locator(".lightbox-image.main");
+        const initialUid = await mainImage.getAttribute("data-image-id");
+
+        // Click the second item in the filmstrip
+        const secondItem = filmstripItems.nth(1);
+        await secondItem.click();
+
+        // Main image in lightbox must update to the new image
+        await expect(mainImage).not.toHaveAttribute("data-image-id", initialUid || "");
+        await expect(secondItem).toHaveClass(/\bactive\b/);
+
+        // Advance using keyboard ArrowRight and verify filmstrip selection moves with it
+        const currentUid = await mainImage.getAttribute("data-image-id");
+        await page.keyboard.press("ArrowRight");
+        await expect(mainImage).not.toHaveAttribute("data-image-id", currentUid || "");
+    });
 });

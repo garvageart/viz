@@ -102,4 +102,21 @@ describe("filmstrip selection -> metadata panel", () => {
         expect(items[1].classList.contains("active")).toBe(false);
         expect(items[2].classList.contains("active")).toBe(true);
     });
+
+    it("updates selectionManager.focusedItem when a filmstrip item is clicked", async () => {
+        const scopeId = `${SelectionScopeNames.COLLECTION_PREFIX}colSync`;
+        selectionManager.setActive(scopeId);
+        const scope = selectionManager.registerScope(scopeId);
+        const imgA = makeImage("a", "Image A");
+        const imgB = makeImage("b", "Image B");
+        scope.setSource([imgA, imgB]);
+        scope.select(imgA);
+
+        expect(selectionManager.focusedItem?.uid).toBe("a");
+
+        render(Filmstrip, {});
+        await fireEvent.click(screen.getByLabelText("Select image Image B"));
+
+        expect(selectionManager.focusedItem?.uid).toBe("b");
+    });
 });

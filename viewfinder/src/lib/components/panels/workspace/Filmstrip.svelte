@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ImageCard from "#lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
-    import { ImageLightboxState } from "#lib/components/ui/state/image-lightbox.svelte.js";
     import { VizMimeTypes } from "#lib/constants.js";
     import { contextMenu } from "#lib/context-menu/index.js";
     import { createImageMenu } from "#lib/context-menu/menus/images.js";
@@ -240,36 +240,39 @@
         }
     });
 
-    const lightbox = new ImageLightboxState();
     let firstSelectedImage = $derived(targetScope?.active ?? targetScope?.selectedItems[0]);
 
     function openLightbox(asset?: ImageAsset) {
         const target = asset ?? firstSelectedImage;
-        if (target) {
-            lightbox.open(target);
-        }
-    }
-
-    function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.image || filmstripImages.length === 0) {
+        if (!target) {
             return;
         }
 
-        const idx = filmstripImages.findIndex((i) => i.uid === lightbox.image!.uid);
-        if (idx === -1) {
+        const openItem = lightboxManager.find(ImageLightbox);
+        if (openItem) {
+            openItem.props.lightboxImage = target;
             return;
         }
 
-        const nextIdx = (idx + delta + filmstripImages.length) % filmstripImages.length;
-        lightbox.image = filmstripImages[nextIdx];
-    }
-
-    function prevLightboxImage() {
-        navigateLightbox(-1);
-    }
-
-    function nextLightboxImage() {
-        navigateLightbox(1);
+        lightboxManager.open(
+            ImageLightbox,
+            {
+                lightboxImage: target,
+                images: filmstripImages,
+                onImageUpdated: (image) => {
+                    filmstripImages = filmstripImages.map((i) => {
+                        if (i.uid === image.uid) {
+                            return image;
+                        }
+                        return i;
+                    });
+                }
+            },
+            {
+                backgroundOpacity: 1,
+                closeOnOverlayClick: false
+            }
+        );
     }
 </script>
 
@@ -328,25 +331,6 @@
         {/each}
     {/if}
 </nav>
-
-{#if lightbox.image}
-    <ImageLightbox
-        lightboxImage={lightbox.image}
-        show={lightbox.show}
-        onClose={() => lightbox.close()}
-        {nextLightboxImage}
-        {prevLightboxImage}
-        onImageUpdated={(image) => {
-            lightbox.image = image;
-            filmstripImages = filmstripImages.map((i) => {
-                if (i.uid === image.uid) {
-                    return image;
-                }
-                return i;
-            });
-        }}
-    />
-{/if}
 
 <style lang="scss">
     .filmstrip-container {
