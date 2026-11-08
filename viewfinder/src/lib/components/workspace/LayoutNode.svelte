@@ -1,6 +1,7 @@
 <script lang="ts">
     import { SplitNode, TabGroup } from "#lib/layouts/model.svelte.js";
     import { workspaceState } from "#lib/states/workspace.svelte.js";
+    import { DEFAULT_THEME } from "#lib/third-party/svelte-splitpanes/Splitpanes.svelte";
     import { Pane, Splitpanes } from "#lib/third-party/svelte-splitpanes/index.js";
     import LayoutNode from "./LayoutNode.svelte";
     import TabGroupPanel from "./TabGroupPanel.svelte";
@@ -10,7 +11,6 @@
     }
 
     let { node }: Props = $props();
-    const DEFAULT_THEME = "viz-theme";
 
     // We use a derived here for the template logic
     let maximizedId = $derived(workspaceState.workspace?.maximizedGroupId);
