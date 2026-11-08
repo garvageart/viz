@@ -42,7 +42,7 @@
         "dotenv": "^18.0.4",
         "fake-indexeddb": "^6.2.5",
         "happy-dom": "^21.0.4",
-        "material-symbols": "^0.48.1",
+        "material-symbols": "^0.48.3",
         "oazapfts": "^7.5.0",
         "openapi-typescript": "^7.13.0",
         "sass": "^1.105.0",
