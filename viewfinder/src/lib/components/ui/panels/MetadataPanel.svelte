@@ -847,7 +847,7 @@
                     </div>
                 {/if}
 
-                <!-- Keywords / Tags -->
+                <!-- Keywords -->
                 <div class="exif-card keywords-card">
                     <div class="card-row main-row center">
                         <MaterialIcon iconName="sell" class="exif-material-icon" />

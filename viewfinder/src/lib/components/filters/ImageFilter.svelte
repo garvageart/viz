@@ -129,20 +129,20 @@
 {/snippet}
 {@render filterSection("labels", "Labels", labelsContent)}
 
-<!-- Tags -->
-{#snippet tagsContent()}
+<!-- Keywords -->
+{#snippet keywordsContent()}
     <ChecklistFacet
         title=""
-        items={facets.tags}
-        selected={criteria.tags}
+        items={facets.keywords}
+        selected={criteria.keywords}
         ontoggle={(_, el) => scrollSectionIntoView(el?.closest(".filter-section"))}
         onChange={(sel) => {
-            criteria.tags = sel;
+            criteria.keywords = sel;
             save();
         }}
     />
 {/snippet}
-{@render filterSection("tags", "Keywords", tagsContent)}
+{@render filterSection("keywords", "Keywords", keywordsContent)}
 
 <!-- Camera -->
 {#snippet cameraContent()}

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { LabelColours } from "#lib/images/constants.js";
-    import { filterManager } from "#lib/states/filter.svelte.js";
     import type { ImageFilters } from "#lib/states/filter.svelte.js";
+    import { filterManager } from "#lib/states/filter.svelte.js";
 
     const scope = $derived(filterManager.activeScope);
     const criteria = $derived(scope && scope.type === "images" ? (scope.criteria as ImageFilters) : null);
@@ -47,8 +47,8 @@
             });
         }
 
-        if (criteria.tags?.length > 0) {
-            items.push({ label: "Keywords", value: criteria.tags.join(", ") });
+        if (criteria.keywords?.length > 0) {
+            items.push({ label: "Keywords", value: criteria.keywords.join(", ") });
         }
 
         if (criteria.camera?.length > 0) {

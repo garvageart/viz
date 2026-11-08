@@ -1,11 +1,11 @@
 import { initDB } from "#lib/db/client.js";
 import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
 import { getImageLabel } from "#lib/utils/images.js";
-import { type Collection, type ImageAsset, type Keyword } from "@viz/api";
+import { type Collection, type ImageAsset } from "@viz/api";
 import { type IDBPDatabase } from "idb";
 import { DateTime } from "luxon";
 
-export type FilterEntity = ImageAsset | Collection | Keyword;
+export type FilterEntity = ImageAsset | Collection;
 
 export interface DateRange {
     after?: string;
@@ -24,7 +24,7 @@ export interface ImageFilters {
     fStop: NumberRange;
     shutterSpeed: NumberRange;
     focalLength: NumberRange;
-    tags: string[];
+    keywords: string[];
     camera: string[];
     lens: string[];
     label: string | null;
@@ -33,7 +33,7 @@ export interface ImageFilters {
 export interface ImageFacets {
     cameras: Map<string, number>;
     lenses: Map<string, number>;
-    tags: Map<string, number>;
+    keywords: Map<string, number>;
     labels: Map<string, number>;
     iso: { min: number; max: number };
     fStop: { min: number; max: number };
@@ -89,7 +89,7 @@ function parseShutterSpeed(val: string | undefined): number | undefined {
 
 interface SavedScopeState {
     criteria: any;
-    uiState: { expanded: Record<string, boolean> };
+    uiState?: { expanded?: Record<string, unknown> };
 }
 
 interface SavedFilterState {
@@ -104,7 +104,7 @@ const DEFAULT_IMAGE_FILTERS: ImageFilters = {
     fStop: {},
     shutterSpeed: {},
     focalLength: {},
-    tags: [],
+    keywords: [],
     camera: [],
     lens: [],
     label: null
@@ -115,7 +115,7 @@ const DEFAULT_IMAGE_UI_STATE = {
         rating: true,
         camera: false,
         lens: false,
-        tags: true,
+        keywords: true,
         tech: false,
         date: false,
         labels: true
@@ -164,11 +164,27 @@ export class FilterScope<F> {
         return this.type === "collections";
     }
 
+    restoreUiState(savedState?: SavedScopeState["uiState"]) {
+        const savedExpanded = savedState?.expanded;
+        if (!savedExpanded) {
+            return;
+        }
+
+        for (const key of Object.keys(this.uiState.expanded)) {
+            const expanded = savedExpanded[key];
+            if (typeof expanded !== "boolean") {
+                return;
+            }
+
+            this.uiState.expanded[key] = expanded;
+        }
+    }
+
     updateFacets<T extends FilterEntity>(items: T[]) {
         if (this.isImageScope()) {
             const cameras = new Map<string, number>();
             const lenses = new Map<string, number>();
-            const tags = new Map<string, number>();
+            const keywords = new Map<string, number>();
             const labels = new Map<string, number>();
 
             let minIso = Infinity,
@@ -181,10 +197,6 @@ export class FilterScope<F> {
                 maxFL = -Infinity;
 
             for (const item of items) {
-                if ("image_metadata" in item === false) {
-                    continue;
-                }
-
                 const img = item as ImageAsset;
                 const exif = img.exif || {};
 
@@ -200,7 +212,7 @@ export class FilterScope<F> {
 
                 if (img.keywords) {
                     for (const kw of img.keywords) {
-                        tags.set(kw.name, (tags.get(kw.name) || 0) + 1);
+                        keywords.set(kw.name, (keywords.get(kw.name) || 0) + 1);
                     }
                 }
 
@@ -253,7 +265,7 @@ export class FilterScope<F> {
             this.facets = {
                 cameras,
                 lenses,
-                tags,
+                keywords,
                 labels,
                 iso: {
                     min: minIso === Infinity ? 0 : minIso,
@@ -292,7 +304,7 @@ export class FilterScope<F> {
                 criteria.shutterSpeed.max !== undefined ||
                 criteria.focalLength.min !== undefined ||
                 criteria.focalLength.max !== undefined ||
-                criteria.tags.length > 0 ||
+                criteria.keywords.length > 0 ||
                 criteria.camera.length > 0 ||
                 criteria.lens.length > 0 ||
                 criteria.label !== null;
@@ -367,9 +379,11 @@ export class FilterScope<F> {
                     if (val === undefined) {
                         return false;
                     }
+
                     if (criteria.shutterSpeed.min !== undefined && val < criteria.shutterSpeed.min) {
                         return false;
                     }
+
                     if (criteria.shutterSpeed.max !== undefined && val > criteria.shutterSpeed.max) {
                         return false;
                     }
@@ -380,17 +394,19 @@ export class FilterScope<F> {
                     if (val === undefined) {
                         return false;
                     }
+
                     if (criteria.focalLength.min !== undefined && val < criteria.focalLength.min) {
                         return false;
                     }
+
                     if (criteria.focalLength.max !== undefined && val > criteria.focalLength.max) {
                         return false;
                     }
                 }
 
-                if (criteria.tags.length > 0) {
-                    const imgTags = (img.keywords || []).map((k) => k.name);
-                    const hasAll = criteria.tags.every((t) => imgTags.includes(t));
+                if (criteria.keywords.length > 0) {
+                    const imgKeywords = (img.keywords || []).map((k) => k.name);
+                    const hasAll = criteria.keywords.every((t) => imgKeywords.includes(t));
                     if (!hasAll) {
                         return false;
                     }
@@ -484,7 +500,7 @@ class FilterManager {
                 }
 
                 Object.assign(scope.criteria, scopeState.criteria);
-                Object.assign(scope.uiState, scopeState.uiState);
+                scope.restoreUiState(scopeState.uiState);
             }
         })();
 
