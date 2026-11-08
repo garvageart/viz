@@ -7,9 +7,14 @@
     import { contextMenu } from "#lib/context-menu/index.js";
     import { createImageMenu } from "#lib/context-menu/menus/images.js";
     import { draggable } from "#lib/drag-drop/directives.svelte.js";
-    import { type CollectionUIDSelectionScope, selectionManager } from "#lib/states/selection.svelte.js";
+    import {
+        type CollectionUIDSelectionScope,
+        SelectionScopeNames,
+        selectionManager
+    } from "#lib/states/selection.svelte.js";
     import { isCollectionData } from "#lib/utils/collections.js";
     import { isAssetImage } from "#lib/utils/images.js";
+    import { isKeywordData } from "#lib/utils/keywords.js";
     import { type ImageAsset, getAssetImagePath, listCollectionImages } from "@viz/api";
 
     let activeScope = $derived(selectionManager.getActiveScope());
@@ -19,6 +24,8 @@
         if (isCollectionData(activeEntity)) {
             const scopeId: CollectionUIDSelectionScope = `collection-${activeEntity.uid}`;
             return selectionManager.getScope(scopeId);
+        } else if (isKeywordData(activeEntity)) {
+            return selectionManager.getScope(SelectionScopeNames.KEYWORDS_ASSETS);
         }
 
         return activeScope;
@@ -244,11 +251,11 @@
     }
 
     function navigateLightbox(delta: -1 | 1) {
-        if (!lightbox.activeImage || filmstripImages.length === 0) {
+        if (!lightbox.image || filmstripImages.length === 0) {
             return;
         }
 
-        const idx = filmstripImages.findIndex((i) => i.uid === lightbox.activeImage!.uid);
+        const idx = filmstripImages.findIndex((i) => i.uid === lightbox.image!.uid);
         if (idx === -1) {
             return;
         }
@@ -322,9 +329,9 @@
     {/if}
 </nav>
 
-{#if lightbox.activeImage}
+{#if lightbox.image}
     <ImageLightbox
-        lightboxImage={lightbox.activeImage}
+        lightboxImage={lightbox.image}
         show={lightbox.show}
         onClose={() => lightbox.close()}
         {nextLightboxImage}
@@ -388,6 +395,7 @@
             overflow-y: auto;
 
             .filmstrip-item {
+                width: 100%;
                 min-height: 12rem;
                 max-height: 12rem;
             }
