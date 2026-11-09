@@ -206,12 +206,37 @@ jobs:
                     -t ${{ env.IMAGE_PREFIX }}/viz-db:$COMMIT_HASH \
                     -t ${{ env.IMAGE_PREFIX }}/viz-db:$SHORT_SHA --load .
 
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — Build & Package'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Commit | `${{ steps.set-sha.outputs.sha }}` (`${{ steps.set-sha.outputs.short_sha }}`) |'
+                    echo '| Ref | `${{ github.ref_name }}` |'
+                    echo '| Event | `${{ github.event_name }}` |'
+                    echo '| Release | `${{ steps.set-sha.outputs.is_release }}` |'
+                    echo '| Tag | `${{ steps.set-sha.outputs.tag_name }}` |'
+                    echo '| Base image SHA | `${{ steps.detect-base.outputs.base_sha }}` |'
+                    echo '| Frontend deps SHA | `${{ steps.detect-frontend-deps.outputs.frontend_deps_sha }}` |'
+                    echo ''
+                    echo '### Images'
+                    echo ''
+                    echo '- `${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.sha }}`'
+                    echo '- `${{ env.IMAGE_PREFIX }}/viz-server:${{ steps.set-sha.outputs.short_sha }}`'
+                    echo '- `${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.sha }}`'
+                    echo '- `${{ env.IMAGE_PREFIX }}/viz-db:${{ steps.set-sha.outputs.short_sha }}`'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
     test-frontend:
         name: "Test Frontend (Unit, Types & Format)"
         needs: [build-images]
         runs-on: ubuntu-latest
         steps:
             - name: Test Frontend (Dockerized)
+              id: test
               run: |
                   TARGET_IMAGE="${{ env.IMAGE_PREFIX }}/viz-frontend-builder:${{ needs.build-images.outputs.sha }}"
                   echo "Running frontend unit tests on $TARGET_IMAGE..."
@@ -221,12 +246,26 @@ jobs:
                   echo "Checking frontend code formatting and import order..."
                   docker run --rm "$TARGET_IMAGE" pnpm --filter @viz/viewfinder format:check
 
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — Frontend Tests'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Result | `${{ steps.test.outcome }}` |'
+                    echo '| Image | `${{ env.IMAGE_PREFIX }}/viz-frontend-builder:${{ needs.build-images.outputs.sha }}` |'
+                    echo '| Checks | unit tests, Svelte/TS check, format & import order |'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
     test-backend:
         name: "Test Backend (Go Unit & Integration)"
         needs: [build-images]
         runs-on: ubuntu-latest
         steps:
             - name: Test Backend (Dockerized)
+              id: test
               run: |
                   TARGET_IMAGE="${{ env.IMAGE_PREFIX }}/viz-backend-builder:${{ needs.build-images.outputs.sha }}"
                   echo "Checking backend code formatting on $TARGET_IMAGE..."
@@ -236,6 +275,19 @@ jobs:
                     -e BASE_DIRECTORY=/tmp/viz_base \
                     -e UPLOAD_LOCATION=uploads \
                     "$TARGET_IMAGE" make test-go
+
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — Backend Tests'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Result | `${{ steps.test.outcome }}` |'
+                    echo '| Image | `${{ env.IMAGE_PREFIX }}/viz-backend-builder:${{ needs.build-images.outputs.sha }}` |'
+                    echo '| Checks | gofmt (fmt-check-go), Go unit + integration tests |'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
     test-e2e:
         name: "Frontend E2E Tests (Playwright)"
@@ -275,6 +327,7 @@ jobs:
               run: ./viewfinder/node_modules/.bin/playwright install --with-deps chromium
 
             - name: Run E2E Test Suite (Containerised)
+              id: e2e
               env:
                   E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL || vars.E2E_TEST_EMAIL }}
                   E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD || vars.E2E_TEST_PASSWORD }}
@@ -382,6 +435,20 @@ jobs:
                   docker network disconnect -f "$NETWORK_NAME" "$CURRENT_CONTAINER" 2>/dev/null || true
                   docker network rm "$NETWORK_NAME" 2>/dev/null || true
 
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — E2E Tests'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Result | `${{ steps.e2e.outcome }}` |'
+                    echo '| Playwright | `${{ steps.pw-version.outputs.version }}` |'
+                    echo '| Server image | `${{ env.IMAGE_PREFIX }}/viz-server:${{ needs.build-images.outputs.sha }}` |'
+                    echo '| Database image | `${{ env.IMAGE_PREFIX }}/viz-db:${{ needs.build-images.outputs.sha }}` |'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
     publish-images:
         name: "Publish Images"
         needs: [build-images, test-frontend, test-backend, test-e2e]
@@ -397,6 +464,7 @@ jobs:
                   password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
 
             - name: Tag & Publish Verified Images
+              id: publish
               run: |
                   COMMIT_HASH="${{ needs.build-images.outputs.sha }}"
                   SHORT_SHA=$(echo "$COMMIT_HASH" | cut -c1-8)
@@ -420,6 +488,21 @@ jobs:
                     done
                   done
 
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — Publish'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Result | `${{ steps.publish.outcome }}` |'
+                    echo '| Commit | `${{ needs.build-images.outputs.sha }}` |'
+                    echo '| Release tag | `${{ needs.build-images.outputs.tag_name }}` |'
+                    echo ''
+                    echo 'Images: `${{ env.IMAGE_PREFIX }}/viz-server`, `${{ env.IMAGE_PREFIX }}/viz-db`'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
     # NOTE: Future consideration — replace shell/curl release step with GoReleaser (.goreleaser.yaml)
     release:
         name: "Create Release"
@@ -436,6 +519,7 @@ jobs:
                   sparse-checkout-cone-mode: false
 
             - name: Create Release
+              id: release
               uses: https://github.com/softprops/action-gh-release@v2
               with:
                   tag_name: ${{ needs.build-images.outputs.tag_name }}
@@ -447,3 +531,16 @@ jobs:
                   files: |
                       .env.example
                       docker/docker-compose.prod.yml
+
+            - name: Write job summary
+              if: always()
+              run: |
+                  {
+                    echo '## Viz CI — Release'
+                    echo ''
+                    echo '| Field | Value |'
+                    echo '|---|---|'
+                    echo '| Result | `${{ steps.release.outcome }}` |'
+                    echo '| Tag | `${{ needs.build-images.outputs.tag_name }}` |'
+                    echo '| Prerelease | `${{ needs.build-images.outputs.is_prerelease }}` |'
+                  } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
