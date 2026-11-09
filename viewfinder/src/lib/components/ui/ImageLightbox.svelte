@@ -7,11 +7,11 @@
     import StatusIndicator from "#lib/components/ui/StatusIndicator.svelte";
     import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
-    import { DbSettings } from "#lib/db/settings.js";
     import { ImageLoader } from "#lib/images/loader/image-loader.svelte.js";
     import type { ActiveCropLayout, CropRect } from "#lib/images/zoom/crop-utils.js";
     import { ImageZoomState } from "#lib/images/zoom/zoom-utils.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
+    import { settings } from "#lib/settings/client/settings.svelte.ts";
     import { isMobile } from "#lib/states/index.svelte.js";
     import { selectionManager } from "#lib/states/selection.svelte.js";
     import Pane from "#lib/third-party/svelte-splitpanes/Pane.svelte";
@@ -27,26 +27,6 @@
     import { hideAll } from "tippy.js";
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
-
-    interface ImageLightboxSettings {
-        filmstrip?: {
-            visible?: boolean;
-            position?: "bottom" | "side";
-        };
-        sidePanel?: {
-            visible?: boolean;
-        };
-    }
-
-    interface ImageLightboxState {
-        filmstrip: {
-            visible: boolean;
-            position: "bottom" | "side";
-        };
-        sidePanel: {
-            visible: boolean;
-        };
-    }
 
     interface Props {
         id?: string;
@@ -417,30 +397,7 @@
     });
 
     // Lightbox view state
-    const lightboxSettings = new DbSettings<ImageLightboxSettings>("image_lightbox");
-    const savedLightboxSettings = await lightboxSettings.load();
-
-    let lightboxState = $state<ImageLightboxState>({
-        filmstrip: {
-            visible: savedLightboxSettings?.filmstrip?.visible ?? true,
-            position: savedLightboxSettings?.filmstrip?.position ?? "bottom"
-        },
-        sidePanel: {
-            visible: savedLightboxSettings?.sidePanel?.visible ?? !isMobile
-        }
-    });
-
-    $effect(() => {
-        void lightboxSettings.save({
-            filmstrip: {
-                visible: lightboxState.filmstrip.visible,
-                position: lightboxState.filmstrip.position
-            },
-            sidePanel: {
-                visible: lightboxState.sidePanel.visible
-            }
-        });
-    });
+    const lightboxState = settings.get("imageLightbox");
 
     // 🫨🫨🫨🫨🫨
     let lightboxMainSnippets = $derived(

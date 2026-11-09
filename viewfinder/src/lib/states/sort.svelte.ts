@@ -1,9 +1,9 @@
-import { DbSettings } from "#lib/db/settings.js";
+import { settings } from "#lib/settings/client/settings.svelte.js";
 import type { EntitySort } from "#lib/types/asset.js";
 
-export type SortSection = "photos" | "collections" | "collection-detail";
+export type SortSection = "photos" | "collections" | "collectionDetail";
 
-const DEFAULTS: EntitySort = {
+export const SORT_DEFAULTS: EntitySort = {
     display: "cover",
     group: {
         by: "year",
@@ -13,40 +13,32 @@ const DEFAULTS: EntitySort = {
     order: "DESC"
 } as const;
 
-function createDefaults(): EntitySort {
-    return structuredClone(DEFAULTS);
+export function createSortDefaults(): EntitySort {
+    return structuredClone(SORT_DEFAULTS);
 }
 
 export class SortState {
-    private storage: DbSettings<EntitySort>;
-    private readyPromise: Promise<void>;
+    constructor(readonly section: string) {}
 
-    value: EntitySort = $state(createDefaults());
-
-    constructor(readonly section: string) {
-        this.storage = new DbSettings<EntitySort>(`sort.${section}`);
-        this.readyPromise = this.load();
-
-        $effect.root(() => {
-            $effect(() => {
-                this.storage.save($state.snapshot(this.value));
-            });
-        });
-    }
-
-    /** Resolves once persisted sort settings have been applied (or none were stored). */
-    ready(): Promise<void> {
-        return this.readyPromise;
-    }
-
-    private async load() {
-        const stored = await this.storage.load();
-        if (stored) {
-            this.value = stored;
+    get value(): EntitySort {
+        const sortSettings = settings.get("sort");
+        if (!sortSettings[this.section]) {
+            sortSettings[this.section] = createSortDefaults();
         }
+        return sortSettings[this.section];
+    }
+
+    set value(v: EntitySort) {
+        const sortSettings = settings.get("sort");
+        sortSettings[this.section] = v;
+    }
+
+    /** Resolves once persisted sort settings have been applied. */
+    async ready(): Promise<void> {
+        return Promise.resolve();
     }
 }
 
 export const photosSort = new SortState("photos");
 export const collectionsSort = new SortState("collections");
-export const collectionDetailSort = new SortState("collection-detail");
+export const collectionDetailSort = new SortState("collectionDetail");

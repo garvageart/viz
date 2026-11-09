@@ -15,12 +15,9 @@ async function seedSortPreference(page: Page, value: object) {
     await page.evaluate(async (sortValue) => {
         const openDb = (): Promise<IDBDatabase> =>
             new Promise((resolve, reject) => {
-                const req = indexedDB.open("viz", 2);
+                const req = indexedDB.open("viewfinder", 1);
                 req.onupgradeneeded = () => {
                     const db = req.result;
-                    if (!db.objectStoreNames.contains("preferences")) {
-                        db.createObjectStore("preferences", { keyPath: "id", autoIncrement: true });
-                    }
                     if (!db.objectStoreNames.contains("settings")) {
                         db.createObjectStore("settings");
                     }
@@ -32,7 +29,7 @@ async function seedSortPreference(page: Page, value: object) {
         const db = await openDb();
         await new Promise<void>((resolve, reject) => {
             const tx = db.transaction("settings", "readwrite");
-            tx.objectStore("settings").put(sortValue, "sort.photos");
+            tx.objectStore("settings").put({ photos: sortValue }, "sort");
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         });

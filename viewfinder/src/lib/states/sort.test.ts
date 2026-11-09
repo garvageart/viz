@@ -1,10 +1,9 @@
+import { initDB } from "#lib/db/client.js";
+import { settings } from "#lib/settings/client/settings.svelte.js";
 import type { EntitySort } from "#lib/types/asset.js";
-import { openDB } from "idb";
-import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it } from "vitest";
 import { SortState } from "./sort.svelte";
 
-const DB_NAME = "viz";
 const DEFAULTS: EntitySort = {
     display: "cover",
     group: { by: "year", order: "ASC" },
@@ -13,29 +12,21 @@ const DEFAULTS: EntitySort = {
 } as const;
 
 async function clearSettingsStore() {
-    const db = await openDB(DB_NAME, 2);
+    const db = await initDB();
     await db.clear("settings");
     db.close();
 }
 
-async function readStored(key: string) {
-    const db = await openDB(DB_NAME, 2);
-    const stored = await db.get("settings", key);
+async function readStoredSort(section: string) {
+    const db = await initDB();
+    const stored = (await db.get("settings", "sort")) as Record<string, EntitySort> | undefined;
     db.close();
-    return stored;
+    return stored?.[section];
 }
 
-// Flush the Svelte effect scheduler and let async IndexedDB ops settle.
-async function settle() {
-    flushSync();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-// Poll until the auto-save effect has written a value for the key.
-async function waitForStored(key: string) {
+async function waitForStored(section: string) {
     for (let i = 0; i < 50; i++) {
-        const stored = await readStored(key);
+        const stored = await readStoredSort(section);
         if (stored !== undefined) {
             return stored;
         }
@@ -44,37 +35,24 @@ async function waitForStored(key: string) {
     return undefined;
 }
 
-// Poll until the async load has hydrated the instance with the expected value.
-async function waitForValue(state: SortState, expected: EntitySort) {
-    for (let i = 0; i < 50; i++) {
-        if (JSON.stringify(state.value) === JSON.stringify(expected)) {
-            return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-}
-
 describe("SortState", () => {
     beforeEach(async () => {
         await clearSettingsStore();
+        await settings.init();
     });
 
-    it("starts with defaults when nothing is stored", async () => {
+    it("starts with defaults when nothing is stored", () => {
         const state = new SortState("test-defaults");
-        await waitForValue(state, DEFAULTS);
-
         expect(state.value).toEqual(DEFAULTS);
     });
 
-    it("saves mutations to the settings store as a plain object", async () => {
+    it("saves mutations to the settings store under the sort scope", async () => {
         const state = new SortState("test-save");
-        await waitForValue(state, DEFAULTS);
-
         state.value.by = "name";
         state.value.order = "ASC";
         state.value.group.by = "month";
 
-        const stored = await waitForStored("sort.test-save");
+        const stored = await waitForStored("test-save");
         expect(stored).toEqual({
             display: "cover",
             group: { by: "month", order: "ASC" },
@@ -83,23 +61,26 @@ describe("SortState", () => {
         });
     });
 
-    it("loads previously stored values into a new instance", async () => {
-        const first = new SortState("test-load");
-        await waitForValue(first, DEFAULTS);
+    it("loads previously stored values when initialized", async () => {
+        const db = await initDB();
+        await db.put(
+            "settings",
+            {
+                "test-load": {
+                    display: "cover",
+                    group: { by: "year", order: "DESC" },
+                    by: "recently_added",
+                    order: "DESC"
+                }
+            },
+            "sort"
+        );
+        db.close();
 
-        first.value.by = "recently_added";
-        first.value.group.order = "DESC";
-        await waitForStored("sort.test-load");
+        await settings.init();
+        const state = new SortState("test-load");
 
-        const second = new SortState("test-load");
-        await waitForValue(second, {
-            display: "cover",
-            group: { by: "year", order: "DESC" },
-            by: "recently_added",
-            order: "DESC"
-        });
-
-        expect(second.value).toEqual({
+        expect(state.value).toEqual({
             display: "cover",
             group: { by: "year", order: "DESC" },
             by: "recently_added",
@@ -107,32 +88,17 @@ describe("SortState", () => {
         });
     });
 
-    it("keeps its own storage key per section", async () => {
+    it("keeps its own storage section per section name", async () => {
         const sectionA = new SortState("test-section-a");
         const sectionB = new SortState("test-section-b");
-        await settle();
 
         sectionA.value.by = "updated_at";
         sectionB.value.by = "name";
 
-        const storedA = await waitForStored("sort.test-section-a");
-        const storedB = await waitForStored("sort.test-section-b");
+        const storedA = await waitForStored("test-section-a");
+        const storedB = await waitForStored("test-section-b");
         expect(storedA).toMatchObject({ by: "updated_at" });
         expect(storedB).toMatchObject({ by: "name" });
         expect(storedA).not.toEqual(storedB);
-    });
-
-    it("hydrates from stored values when they differ from defaults", async () => {
-        const seed = new SortState("test-hydrate");
-        await waitForValue(seed, DEFAULTS);
-
-        seed.value.by = "name";
-        await waitForStored("sort.test-hydrate");
-
-        const hydrated = new SortState("test-hydrate");
-        await waitForValue(hydrated, { ...DEFAULTS, by: "name" });
-
-        expect(hydrated.value.by).toBe("name");
-        expect(hydrated.value.order).toBe("DESC");
     });
 });

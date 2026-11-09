@@ -1,15 +1,14 @@
 <script lang="ts">
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Modal from "#lib/components/modals/Modal.svelte";
-    import { DbSettings } from "#lib/db/settings.js";
     import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
     import { createZipExportName } from "#lib/download/utils.js";
     import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
+    import { settings } from "#lib/settings/client/settings.svelte.js";
     import { config, download } from "#lib/states/index.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
     import { downloadToFilesystem } from "#lib/utils/files.js";
-    import { generateRandomString } from "#lib/utils/misc.js";
     import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
     import ImageExportWorker from "#lib/workers/image_export?worker";
     import {
@@ -27,7 +26,7 @@
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
     import Accordion from "../Accordion.svelte";
-    import BatchRenameBuilder, { type SavedRenameSettings, defaultTemplate } from "../BatchRenameBuilder.svelte";
+    import BatchRenameBuilder from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";
     import Checkbox from "../Checkbox.svelte";
     import InputSelect from "../InputSelect.svelte";
@@ -56,6 +55,8 @@
         };
     }
 
+    type SectionName = "destination" | "naming" | "settings" | "sizing" | "metadata" | "watermarking";
+
     interface Props {
         id?: string;
         assets: ImageAsset[];
@@ -64,40 +65,11 @@
 
     let { id, assets, onExport }: Props = $props();
 
-    const settingsDb = new DbSettings<SavedExportSettings>("export_panel_settings");
-    const renameDb = new DbSettings<SavedRenameSettings>("batch_rename_settings");
-
-    const savedExport = await settingsDb.load();
-    const savedRename = await renameDb.load();
-
-    type SectionName = "destination" | "naming" | "settings" | "sizing" | "metadata" | "watermarking";
-
-    // Section Toggle State
-    let sections = $state<Record<SectionName, boolean>>({
-        destination: true,
-        naming: true,
-        settings: true,
-        sizing: true,
-        metadata: false,
-        watermarking: false,
-        ...savedExport?.sections
-    });
-
-    // Export Settings State
-    let settings = $state<SavedExportSettings>({
-        format: "jpg",
-        quality: 80,
-        resizeMode: "none",
-        resizeWidth: 2048,
-        resizeHeight: 2048,
-        colorSpace: "sRGB",
-        includeLocation: true,
-        includeMetadata: true,
-        metadata: "all",
-        destinationMode: "zip",
-        bitDepth: 8,
-        ...savedExport
-    });
+    const exportScope = $state(settings.get("export"));
+    let sections = $derived(exportScope.sections);
+    let panelSettings = $derived(exportScope.panel);
+    let renameSettings = $derived(exportScope.rename);
+    let activeTemplate = $state("{{basename}}");
 
     const formatBitDepths: Record<string, BitDepths[]> = {
         avif: [8, 10, 12],
@@ -107,49 +79,21 @@
         webp: [8]
     };
 
-    const bitDepthOptions = $derived.by(() => {
-        const depths = formatBitDepths[settings.format] || [];
-        if (depths.length <= 1) {
-            return [];
+    const bitDepthOptions = $derived(
+        (formatBitDepths[panelSettings.format] || []).map((d) => ({
+            value: `${d}`,
+            label: `${d}-bit`
+        }))
+    );
+
+    function onFormatChange(format: string) {
+        panelSettings.format = format as ExportFormats;
+        const allowed = formatBitDepths[panelSettings.format] || [8];
+
+        if (!allowed.includes(panelSettings.bitDepth)) {
+            panelSettings.bitDepth = allowed[0];
         }
-        return depths.map((d) => ({ value: `${d}`, label: `${d}-bit` }));
-    });
-
-    $effect(() => {
-        const allowed = formatBitDepths[settings.format] || [8];
-        if (!allowed.includes(settings.bitDepth)) {
-            settings.bitDepth = allowed[0];
-        }
-    });
-
-    let renameSettings = $state<SavedRenameSettings>({
-        namingMode: "original",
-        customName: "",
-        namingTemplate: defaultTemplate,
-        sequenceStart: 1,
-        sequencePadding: 4,
-        builderRows: [
-            {
-                id: generateRandomString(16),
-                type: "original",
-                textValue: "",
-                dateFormat: "YYYY-MM-DD",
-                metadataField: "model",
-                sequencePadding: 4
-            }
-        ],
-        ...savedRename
-    });
-    let activeTemplate = $state("{{basename}}");
-
-    $effect(() => {
-        settingsDb.save({
-            ...$state.snapshot(settings),
-            sections: $state.snapshot(sections)
-        });
-
-        renameDb.save($state.snapshot(renameSettings));
-    });
+    }
 
     const formatOptions = [
         { value: "jpg", label: "JPEG" },
@@ -193,7 +137,7 @@
         }
 
         if (renameSettings.namingMode === "builder") {
-            const hasBlankText = renameSettings.builderRows.some((r) => r.type === "text" && !r.textValue.trim());
+            const hasBlankText = renameSettings.builderRows.some((r) => r.type === "text" && !r.textValue?.trim());
             if (hasBlankText) {
                 toasts.add({
                     type: "warning",
@@ -228,7 +172,7 @@
         }
 
         // Capture all needed state before closing the modal
-        const exportSettings = $state.snapshot(settings);
+        const exportSettings = $state.snapshot(panelSettings);
         const exportRenameSettings = $state.snapshot(renameSettings);
         const exportTemplate = $state.snapshot(activeTemplate);
         const exportAssets = $state.snapshot(assets);
@@ -474,6 +418,7 @@
                 });
             } catch (err) {
                 zipTask.state = DownloadState.ERROR;
+
                 console.error("ZIP generation failed:", err);
                 toasts.add({
                     title: zipName,
@@ -521,7 +466,7 @@
                 <InputSelect
                     label="Export to"
                     options={[{ value: "zip", label: assets.length > 1 ? "Download as ZIP" : "Local" }]}
-                    bind:value={settings.destinationMode}
+                    bind:value={panelSettings.destinationMode}
                 />
             {/snippet}
             {@render panelSection("destination", "Destination", destinationSnippet)}
@@ -533,7 +478,7 @@
                     bind:settings={renameSettings}
                     bind:activeTemplate
                     {assets}
-                    format={settings.format}
+                    format={panelSettings.format}
                 />
             {/snippet}
 
@@ -541,15 +486,20 @@
             {@render panelSection("settings", "File Settings", settingsSnippet)}
             {#snippet settingsSnippet()}
                 <div class="control-row">
-                    <InputSelect label="Format" options={Array.from(formatOptions)} bind:value={settings.format} />
-                    {#if ["jpg", "webp", "avif"].includes(settings.format)}
+                    <InputSelect
+                        label="Format"
+                        options={Array.from(formatOptions)}
+                        bind:value={panelSettings.format}
+                        onchange={onFormatChange}
+                    />
+                    {#if ["jpg", "webp", "avif"].includes(panelSettings.format)}
                         <div class="quality-slider">
                             <Slider
                                 id="quality-range"
                                 label="Quality"
                                 min={1}
                                 max={100}
-                                bind:value={settings.quality}
+                                bind:value={panelSettings.quality}
                                 showValue={true}
                             />
                         </div>
@@ -559,10 +509,10 @@
                     <InputSelect
                         label="Color Space"
                         options={Array.from(colorSpaceOptions)}
-                        bind:value={settings.colorSpace}
+                        bind:value={panelSettings.colorSpace}
                     />
-                    {#if ["png", "tiff", "avif"].includes(settings.format)}
-                        <InputSelect label="Bit Depth" options={bitDepthOptions} bind:value={settings.bitDepth} />
+                    {#if ["png", "tiff", "avif"].includes(panelSettings.format)}
+                        <InputSelect label="Bit Depth" options={bitDepthOptions} bind:value={panelSettings.bitDepth} />
                     {/if}
                 </div>
             {/snippet}
@@ -571,10 +521,10 @@
             {@render panelSection("metadata", "Metadata", metadataSnippet)}
             {#snippet metadataSnippet()}
                 <div class="metadata-settings">
-                    <Checkbox label="Include Location Information" bind:checked={settings.includeLocation} />
-                    <Checkbox label="Include Original Metadata" bind:checked={settings.includeMetadata} />
+                    <Checkbox label="Include Location Information" bind:checked={panelSettings.includeLocation} />
+                    <Checkbox label="Include Original Metadata" bind:checked={panelSettings.includeMetadata} />
 
-                    {#if settings.includeMetadata}
+                    {#if panelSettings.includeMetadata}
                         <div class="metadata-policy-select">
                             <InputSelect
                                 options={[
@@ -583,7 +533,7 @@
                                     { value: "copyright", label: "Copyright Only" },
                                     { value: "contact", label: "Copyright And Contact Info Only" }
                                 ]}
-                                bind:value={settings.metadata}
+                                bind:value={panelSettings.metadata}
                             />
                         </div>
                     {/if}
@@ -596,28 +546,28 @@
                 <InputSelect
                     label="Resize to Fit"
                     options={Array.from(resizeOptions)}
-                    bind:value={settings.resizeMode}
+                    bind:value={panelSettings.resizeMode}
                 />
-                {#if settings.resizeMode !== "none"}
+                {#if panelSettings.resizeMode !== "none"}
                     <div class="control-row dimensions">
-                        {#if ["width", "long-edge", "short-edge", "dimensions"].includes(settings.resizeMode)}
+                        {#if ["width", "long-edge", "short-edge", "dimensions"].includes(panelSettings.resizeMode)}
                             <InputText
                                 id="resize-w"
                                 type="number"
-                                label={settings.resizeMode === "width"
+                                label={panelSettings.resizeMode === "width"
                                     ? "Width"
-                                    : settings.resizeMode === "dimensions"
+                                    : panelSettings.resizeMode === "dimensions"
                                       ? "W"
                                       : "Edge"}
-                                bind:value={settings.resizeWidth}
+                                bind:value={panelSettings.resizeWidth}
                             />
                         {/if}
-                        {#if ["height", "dimensions"].includes(settings.resizeMode)}
+                        {#if ["height", "dimensions"].includes(panelSettings.resizeMode)}
                             <InputText
                                 id="resize-h"
                                 type="number"
-                                label={settings.resizeMode === "height" ? "Height" : "H"}
-                                bind:value={settings.resizeHeight}
+                                label={panelSettings.resizeMode === "height" ? "Height" : "H"}
+                                bind:value={panelSettings.resizeHeight}
                             />
                         {/if}
                         <span class="unit">px</span>

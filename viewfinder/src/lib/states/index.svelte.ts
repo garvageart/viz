@@ -1,6 +1,6 @@
 import type { MenuItem } from "#lib/context-menu/types.js";
-import { DbSettings } from "#lib/db/settings.js";
 import type { DownloadFile } from "#lib/download/asset.svelte.js";
+import { settings } from "#lib/settings/client/settings.svelte.js";
 import type { EntityViewType } from "#lib/types/asset.js";
 import type { UploadImage } from "#lib/upload/asset.svelte.js";
 import { VizCookieStorage, VizLocalStorage } from "#lib/utils/misc.js";
@@ -204,11 +204,7 @@ class ViewSettingsState {
 export const viewSettings = new ViewSettingsState();
 
 class UploadState {
-    private storage = new DbSettings<number>("upload.concurrency");
-    private readyPromise: Promise<void>;
-
     files: UploadImage[] = $state([]);
-    concurrency: number = $state(2);
     activeCount: number = $state(0);
     stats = $state({
         errors: 0,
@@ -219,26 +215,17 @@ class UploadState {
         return Object.values(this.stats).reduce((p, c) => p + c, 0);
     });
 
-    constructor() {
-        this.readyPromise = this.ready();
-        this.storage.load().then((stored) => {
-            if (stored !== undefined) {
-                this.concurrency = stored;
-            }
-        });
+    get concurrency(): number {
+        return settings.get("upload").concurrency;
+    }
 
-        $effect.root(() => {
-            $effect(() => {
-                // Only persist once the stored value has been applied, so we never
-                // overwrite it with the default on first paint.
-                this.storage.save(this.concurrency);
-            });
-        });
+    set concurrency(val: number) {
+        settings.get("upload").concurrency = val;
     }
 
     /** Resolves once persisted settings have been applied (or none were stored). */
-    ready(): Promise<void> {
-        return this.readyPromise;
+    async ready(): Promise<void> {
+        return Promise.resolve();
     }
 }
 
@@ -246,12 +233,7 @@ export const uploadState = new UploadState();
 export let upload = uploadState;
 
 class DownloadState {
-    private storage = new DbSettings<number>("download.concurrency");
-    private readyPromise: Promise<void>;
-    private loaded = $state(false);
-
     files: DownloadFile[] = $state([]);
-    concurrency: number = $state(2);
     activeCount: number = $state(0);
     stats = $state({
         errors: 0,
@@ -260,28 +242,16 @@ class DownloadState {
         total: 0
     });
 
-    constructor() {
-        this.readyPromise = this.init();
-
-        $effect.root(() => {
-            $effect(() => {
-                if (this.loaded) {
-                    this.storage.save(this.concurrency);
-                }
-            });
-        });
+    get concurrency(): number {
+        return settings.get("download").concurrency;
     }
 
-    ready(): Promise<void> {
-        return this.readyPromise;
+    set concurrency(val: number) {
+        settings.get("download").concurrency = val;
     }
 
-    private async init() {
-        const stored = await this.storage.load();
-        if (stored !== undefined) {
-            this.concurrency = stored;
-        }
-        this.loaded = true;
+    async ready(): Promise<void> {
+        return Promise.resolve();
     }
 }
 

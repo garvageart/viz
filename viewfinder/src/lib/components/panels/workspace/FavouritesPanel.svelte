@@ -2,8 +2,8 @@
     import Accordion from "#lib/components/ui/Accordion.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
-    import { initDB } from "#lib/db/client.js";
     import { DragData } from "#lib/drag-drop/data.js";
+    import { settings } from "#lib/settings/client/settings.svelte.ts";
     import { type Collection, type ImageAsset, api, executeSearch } from "@viz/api";
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
@@ -11,37 +11,11 @@
 
     let favouriteImages = $state<ImageAsset[]>([]);
     let favouriteCollections = $state<Collection[]>([]);
-    let db = $state(initDB());
+    let favouritesSettings = settings.get("favourites");
     let loading = $state(true);
     let isDraggingOver = $state(false);
     let isInternalDrag = false;
     let dragCounter = 0;
-
-    // Collapse state
-    let showCollections = $state(false);
-    let showImages = $state(false);
-    let settingsLoaded = false;
-
-    // Load settings directly into state
-    db.then(async (db) => {
-        try {
-            const settings = await db.get("settings", "favourites_panel");
-            if (!settings) {
-                return;
-            }
-
-            if (settings.showCollections !== undefined) {
-                showCollections = settings.showCollections;
-            }
-            if (settings.showImages !== undefined) {
-                showImages = settings.showImages;
-            }
-        } catch (e) {
-            console.error("Failed to load favourites panel settings", e);
-        } finally {
-            settingsLoaded = true;
-        }
-    });
 
     async function loadFavourites() {
         loading = true;
@@ -55,25 +29,6 @@
             console.error("Failed to load favourites", e);
         } finally {
             loading = false;
-        }
-    }
-
-    async function saveSettings() {
-        if (!settingsLoaded) {
-            return;
-        }
-        try {
-            const fetchedDb = await db;
-            await fetchedDb.put(
-                "settings",
-                {
-                    showCollections,
-                    showImages
-                },
-                "favourites_panel"
-            );
-        } catch (e) {
-            console.error("Failed to save favourites panel settings", e);
         }
     }
 
@@ -173,10 +128,6 @@
     onMount(() => {
         loadFavourites();
     });
-
-    $effect(() => {
-        void saveSettings();
-    });
 </script>
 
 <div
@@ -198,7 +149,7 @@
             size="compact"
             iconPosition="left"
             iconType="chevron"
-            bind:open={showCollections}
+            bind:open={favouritesSettings.showCollections}
         >
             {#if favouriteCollections.length === 0 && !loading}
                 <div class="empty-state">No favourite collections</div>
@@ -218,7 +169,7 @@
             size="compact"
             iconPosition="left"
             iconType="chevron"
-            bind:open={showImages}
+            bind:open={favouritesSettings.showImages}
         >
             {#if favouriteImages.length === 0 && !loading}
                 <div class="empty-state">No favourite images</div>
