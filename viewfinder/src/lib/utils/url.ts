@@ -1,5 +1,5 @@
-import { historyState } from "#lib/states/history.svelte.js";
 import { goto } from "$app/navigation";
+import { historyState } from "#lib/states/history.svelte.js";
 
 export async function updateURLParameter(name: string, value: string, keepFocus = true) {
     const url = new URL(window.location.href);

@@ -1,5 +1,5 @@
-import { sendVizAPIRequest } from "#lib/utils/http.js";
 import { listKeywords } from "@viz/api";
+import { sendVizAPIRequest } from "#lib/utils/http.js";
 import type { LayoutLoad } from "./$types";
 
 export const load: LayoutLoad = async () => {

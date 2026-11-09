@@ -41,9 +41,9 @@
 </script>
 
 <script lang="ts">
-    import { generateKeyId } from "#lib/utils/layout.js";
     import { browser } from "$app/env";
     import { type Snippet, createEventDispatcher, onDestroy, onMount, setContext, tick } from "svelte";
+    import { generateKeyId } from "#lib/utils/layout.js";
     import type { ClientCallbacks, IPane, IPaneSizingEvent, PaneInitFunction, SplitContext } from "./index.js";
     import GatheringRound from "./internal/GatheringRound.svelte";
     import { forEachPartial, sumPartial } from "./internal/utils/array.js";

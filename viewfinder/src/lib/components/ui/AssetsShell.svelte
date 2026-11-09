@@ -1,4 +1,8 @@
 <script lang="ts" generics="T extends ScopeItem">
+    import { dev } from "$app/env";
+    import { DateTime } from "luxon";
+    import { type ComponentProps, type Snippet } from "svelte";
+    import type { HTMLButtonAttributes } from "svelte/elements";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import Button from "#lib/components/ui/Button.svelte";
@@ -6,10 +10,6 @@
     import { type ScopeItem, selectionManager } from "#lib/states/selection.svelte.js";
     import { type SortState, photosSort } from "#lib/states/sort.svelte.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
-    import { dev } from "$app/env";
-    import { DateTime } from "luxon";
-    import { type ComponentProps, type Snippet } from "svelte";
-    import type { HTMLButtonAttributes } from "svelte/elements";
     import VizToolbar from "./toolbars/VizToolbar.svelte";
 
     type Props = {

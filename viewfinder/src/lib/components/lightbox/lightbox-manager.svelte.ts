@@ -1,6 +1,6 @@
+import type { Component } from "svelte";
 import { ZIndex } from "#lib/constants/z-index.js";
 import { generateRandomString } from "#lib/utils/misc.js";
-import type { Component } from "svelte";
 
 export interface LightboxOptions {
     backgroundOpacity?: number;

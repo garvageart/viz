@@ -1,12 +1,12 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
+    import { onMount } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { generateRandomString } from "#lib/utils/misc.js";
-    import { goto } from "$app/navigation";
-    import { type Collection, addCollectionImages, createCollection, listCollections } from "@viz/api";
-    import { onMount } from "svelte";
     import EntityView from "../grid/EntityView.svelte";
     import Button from "../ui/Button.svelte";
     import CollectionCard from "../ui/CollectionCard.svelte";

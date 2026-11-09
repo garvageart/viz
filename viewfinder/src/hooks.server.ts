@@ -1,5 +1,5 @@
-import { VizCookieStorage } from "#lib/utils/misc.js";
 import type { Handle } from "@sveltejs/kit/hooks";
+import { VizCookieStorage } from "#lib/utils/misc.js";
 
 const criticalCssCache = new Map<string, string>();
 

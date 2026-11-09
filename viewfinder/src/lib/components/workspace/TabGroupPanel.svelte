@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { setContext, untrack } from "svelte";
     import TabGroupDebugOverlay from "#lib/components/workspace/debug/TabGroupDebugOverlay.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
     import { contextMenu } from "#lib/context-menu/index.js";
@@ -10,8 +12,6 @@
     import { openCollectionTab } from "#lib/layouts/tabs/collection.js";
     import { workspaceState } from "#lib/states/workspace.svelte.js";
     import VizView, { invalidationState } from "#lib/views/views.svelte.js";
-    import { dev } from "$app/env";
-    import { setContext, untrack } from "svelte";
     import LoadingContainer from "../overlays/LoadingContainer.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import {

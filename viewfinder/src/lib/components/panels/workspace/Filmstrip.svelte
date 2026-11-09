@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { type ImageAsset, getAssetImagePath, listCollectionImages } from "@viz/api";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ImageCard from "#lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
@@ -15,7 +16,6 @@
     import { isCollectionData } from "#lib/utils/collections.js";
     import { isAssetImage } from "#lib/utils/images.js";
     import { isKeywordData } from "#lib/utils/keywords.js";
-    import { type ImageAsset, getAssetImagePath, listCollectionImages } from "@viz/api";
 
     let activeScope = $derived(selectionManager.getActiveScope());
     let activeEntity = $derived(activeScope?.selectedItems[0] ?? activeScope?.active);

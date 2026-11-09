@@ -1,3 +1,4 @@
+import type { CollectionDetailResponse } from "@viz/api";
 import DevWelcomeText from "#lib/components/misc/DevWelcomeText.svelte";
 import ClockPanel from "#lib/components/panels/workspace/ClockPanel.svelte";
 import FavouritesPanel from "#lib/components/panels/workspace/FavouritesPanel.svelte";
@@ -14,7 +15,6 @@ import {
     collectionTabMenuItems
 } from "#lib/layouts/tabs/collection.js";
 import VizView from "#lib/views/views.svelte.js";
-import type { CollectionDetailResponse } from "@viz/api";
 import Collections from "../../routes/(app)/collections/+page.svelte";
 import CollectionPage from "../../routes/(app)/collections/[uid]/+page.svelte";
 import KeywordsPage from "../../routes/(app)/keywords/+page.svelte";

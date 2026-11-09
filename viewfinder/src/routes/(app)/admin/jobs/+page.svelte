@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { type WorkerInfo } from "@viz/api";
+    import { onMount } from "svelte";
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Banner from "#lib/components/ui/Banner.svelte";
@@ -9,8 +11,6 @@
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
     import { jobsState } from "#lib/states/jobs.svelte.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
-    import { type WorkerInfo } from "@viz/api";
-    import { onMount } from "svelte";
 
     let activeTab = $state<"all" | "success" | "failed">("all");
     let searchQuery = $state("");

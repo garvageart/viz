@@ -1,4 +1,8 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/state";
+    import { onMount, untrack } from "svelte";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import { contextMenu } from "#lib/context-menu/index.js";
     import { themeContextMenu } from "#lib/context-menu/menus/theme.js";
@@ -22,10 +26,6 @@
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { uploadManager } from "#lib/upload/manager.svelte.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
-    import { dev } from "$app/env";
-    import { goto } from "$app/navigation";
-    import { page } from "$app/state";
-    import { onMount, untrack } from "svelte";
     import OpenAccountPanel from "../context-menus/AccountPanel.svelte";
     import AppMenu from "../context-menus/AppMenu.svelte";
     import AvatarBadge from "./AvatarBadge.svelte";

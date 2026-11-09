@@ -1,12 +1,12 @@
 <script lang="ts">
+    import { type Keyword, type KeywordCreate, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
+    import { onMount } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import ColourPicker from "#lib/components/ui/ColourPicker.svelte";
     import InputCombobox, { type InputOption } from "#lib/components/ui/InputCombobox.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
-    import { type Keyword, type KeywordCreate, type KeywordUpdate, createKeyword, listKeywords } from "@viz/api";
-    import { onMount } from "svelte";
     import Modal from "./Modal.svelte";
 
     interface Props {

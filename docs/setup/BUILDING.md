@@ -12,29 +12,36 @@ This guide covers how to build, run, and develop **Viz**.
 This is the recommended way to run the application. It handles the database, redis, and all dependencies automatically.
 
 ### Prerequisites
+
 - **Docker Engine** & **Docker Compose**
 - **Git**
 
 ### Usage
 
 1.  **Clone the repository**:
+
 ```bash
 git clone https://github.com/garvageart/viz.git
 cd viz
 ```
 
 2.  **Environment Setup**:
-Copy the example configuration:
+    Copy the example configuration:
+
 ```bash
 cp .env.example .env
 ```
-*Modify `.env` to change ports or database credentials.*
+
+_Modify `.env` to change ports or database credentials._
 
 3.  **Start Services**:
+
 ```bash
 docker compose -f docker/docker-compose.yml up --build -d
 ```
+
 This brings up:
+
 - **`postgres`**: Database (Internal port 5432, not exposed to host by default)
 - **`redis`**: Job Queue Broker (Internal port 6379, not exposed to host by default)
 - **`api`**: Go Backend & Frontend (Exposed on Port 7770)
@@ -43,6 +50,7 @@ This brings up:
     - Frontend & API: `http://localhost:7770`
 
 ### Database Note
+
 The Docker setup uses `docker/initdb/01-create-superuser.sh` to automatically create the Postgres user and database defined in your `.env` file on the first run.
 
 ---
@@ -52,14 +60,15 @@ The Docker setup uses `docker/initdb/01-create-superuser.sh` to automatically cr
 **⚠️ Windows Users**: The project `Makefile` is written for Bash. Use **WSL2** (Windows Subsystem for Linux) or **Git Bash**
 
 ### Prerequisites
+
 - **Go**: v1.25+ (Required for workspace support)
 - **Node.js**: v24+
 - **pnpm**: Latest
 - **PostgreSQL**: v14+
 - **Redis**: v7+
 - **libvips**: v8.18+
-  - **All Platforms**: Run `bun scripts/js/setup-libvips.ts` (Recommended)
-  - **Manual**: See `docs/INSTALL_LIBVIPS.md`
+    - **All Platforms**: Run `bun scripts/js/setup-libvips.ts` (Recommended)
+    - **Manual**: See `docs/INSTALL_LIBVIPS.md`
 
 ### Step 1: Infrastructure Setup
 
@@ -68,13 +77,14 @@ Since you are not using Docker, you must set up the database and redis manually.
 1.  **Start Redis**: Ensure Redis is running on port `6379`.
 2.  **Start PostgreSQL**: Ensure Postgres is running.
 3.  **Create Database & User**:
-You need to manually create the role and database that the app expects. Connect to your local Postgres (`psql postgres`) and run:
+    You need to manually create the role and database that the app expects. Connect to your local Postgres (`psql postgres`) and run:
 
 ```sql
 -- Replace 'myuser' and 'mypassword' with values from your .env
 CREATE ROLE myuser WITH LOGIN SUPERUSER PASSWORD '<mypassword>';
 CREATE DATABASE viz OWNER myuser; -- Use the default 'viz' or your chosen database name
 ```
+
 > Note: If you choose a database name other than the default 'viz', you must update the `Database.Name` field in your `viz.json` configuration file accordingly.
 
 > Note: The application will handle table creation (AutoMigrate) on startup.
@@ -83,14 +93,18 @@ CREATE DATABASE viz OWNER myuser; -- Use the default 'viz' or your chosen databa
 
 1.  Ensure `.env` exists and points to your local DB/Redis.
 2.  Install dependencies:
+
 ```bash
 go mod download
 ```
+
 3.  Run the API:
+
 ```bash
 # Run from the project root using the newly added Make target
 make dev-api
 ```
+
 The server should start on port `7770` (or as defined in `viz.json` / `.env`).
 
 > **Note**: If you run `go run ./cmd/api` directly without `-ldflags`, build-specific variables (like `Version` or `SourceCommit`) in the `/system/about` payload will be completely blank. Using `make dev-api` automatically evaluates and injects your local git data into the backend.
@@ -98,13 +112,17 @@ The server should start on port `7770` (or as defined in `viz.json` / `.env`).
 ### Step 3: Frontend (Viz)
 
 1.  **Install dependencies** (from the project root):
+
 ```bash
 pnpm install
 ```
+
 2.  **Start the development server**:
+
 ```bash
 pnpm dev
 ```
+
 Access at `http://localhost:7777`.
 
 ---
@@ -114,13 +132,16 @@ Access at `http://localhost:7777`.
 In production, the Go backend can serve the compiled frontend assets, deploying as a single binary.
 
 1.  **Build Frontend** (from the project root):
+
 ```bash
 pnpm build
 ```
+
 This generates the single-page application JS file in `./build/viz`.
 
 2.  **Build Backend**:
-From the project root:
+    From the project root:
+
 ```bash
 # Example build command with versioning and repository info injected
 go build -ldflags="\
@@ -134,16 +155,17 @@ go build -ldflags="\
   -X 'viz/internal/config.RepositoryUrl=https://github.com/garvageart/viz'" \
   -o bin/api ./cmd/api
 ```
+
 > **Note**: Passing `-ldflags` injects version and repository information into the API's `/system/about` endpoint. These variables are intentionally left blank in the source code so they can be securely managed by CI/CD pipelines or custom user and developer builds.
 
 3.  **Run**:
     Set the `VIZ_FRONTEND_BUILD_PATH` environment variable to point to the built assets. **Viz** will serve these static files when you access the API port directly (useful for single-container deployments).
-    
+
 ```bash
 export VIZ_FRONTEND_BUILD_PATH="./build/viz"
 ./bin/api
 ```
-    
+
 Accessing `http://localhost:7770` (API port) will serve the frontend app for any non-API routes.
 
 ---
@@ -153,6 +175,7 @@ Accessing `http://localhost:7770` (API port) will serve the frontend app for any
 You can run the application with a custom domain (e.g., `https://viz.localhost`) and valid HTTPS certificates locally using [Caddy](https://caddyserver.com/). This mimics a production environment and avoids browser security warnings.
 
 ### Automated Setup (Recommended)
+
 You can use the built-in setup script to configure your `hosts` file and `Caddyfile` automatically.
 
 **Note:** You must run this command with administrative privileges (Administrator Command Prompt on Windows, or `sudo` on macOS/Linux).
@@ -162,32 +185,40 @@ pnpm run setup:https
 ```
 
 ### Manual Setup
+
 If you prefer to configure this yourself, follow these steps:
 
 ### 1. Install Caddy
+
 - **Windows**: `choco install caddy`
 - **macOS**: `brew install caddy`
 - **Linux**: [Install instructions](https://caddyserver.com/docs/install) (e.g., `sudo apt install caddy`)
 
 ### 2. Configure Hosts File
+
 Map your custom domain to your local machine.
+
 - **Windows**: Edit `C:\Windows\System32\drivers\etc\hosts` (as Administrator)
 - **macOS/Linux**: Edit `/etc/hosts` (use `sudo`)
 
 Add the following line:
+
 ```text
 127.0.0.1 viz.localhost
 ```
 
 ### 3. Run Caddy
+
 From the project root (where the `Caddyfile` is located), run:
 
 ```bash
 caddy run
 ```
-*Note: You may need to run as Administrator/sudo the first time to allow Caddy to install its root certificate into your system's trust store.*
+
+_Note: You may need to run as Administrator/sudo the first time to allow Caddy to install its root certificate into your system's trust store._
 
 ### 4. Access
+
 Open **https://viz.localhost** in your browser.
 Caddy will automatically reverse-proxy requests to your running frontend (`localhost:7777`), which in turn proxies API requests to the backend.
 

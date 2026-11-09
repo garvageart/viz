@@ -1,4 +1,10 @@
 <script lang="ts">
+    import { invalidateAll } from "$app/navigation";
+    import type { VizConfig } from "@viz/api";
+    import { api } from "@viz/api";
+    import Handlebars from "handlebars";
+    import { DateTime } from "luxon";
+    import { type Snippet } from "svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import Checkbox from "#lib/components/ui/Checkbox.svelte";
     import InputSelect from "#lib/components/ui/InputSelect.svelte";
@@ -9,12 +15,6 @@
     import { DEFAULT_TEMPLATE_EXAMPLE, buildDateTokens, cleanPathSegment } from "#lib/ui-tools/template.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
     import { toSentenceCase } from "#lib/utils/strings.js";
-    import { invalidateAll } from "$app/navigation";
-    import type { VizConfig } from "@viz/api";
-    import { api } from "@viz/api";
-    import Handlebars from "handlebars";
-    import { DateTime } from "luxon";
-    import { type Snippet } from "svelte";
 
     interface Props {
         config: VizConfig;

@@ -1,4 +1,10 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
+    import { untrack } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
+    import { slide } from "svelte/transition";
+    import { hideAll } from "tippy.js";
     import CropOverlay from "#lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "#lib/components/image-tools/CropTools.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
@@ -19,12 +25,6 @@
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { downloadOriginalImageFile } from "#lib/utils/http.js";
     import { isAssetImage } from "#lib/utils/images.js";
-    import { dev } from "$app/env";
-    import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
-    import { untrack } from "svelte";
-    import type { MouseEventHandler } from "svelte/elements";
-    import { slide } from "svelte/transition";
-    import { hideAll } from "tippy.js";
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
 

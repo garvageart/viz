@@ -1,62 +1,61 @@
 services:
-  server:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "7770:7770"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    env_file:
-      - ../.env
-    environment:
-      - DB_HOST=db
-      - REDIS_HOST=redis
-      - ENV=production
-    volumes:
-      - viz-data:/app/data
-      - ../viz.json:/app/viz.json
-    networks:
-      - viz-net
+    server:
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile
+        restart: unless-stopped
+        ports:
+            - "7770:7770"
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_started
+        env_file:
+            - ../.env
+        environment:
+            - DB_HOST=db
+            - REDIS_HOST=redis
+            - ENV=production
+        volumes:
+            - viz-data:/app/data
+            - ../viz.json:/app/viz.json
+        networks:
+            - viz-net
 
-  db:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      target: db
-    restart: unless-stopped
-    env_file:
-      - ../.env
-    environment:
-      - POSTGRES_USER=${DB_USER:?DB_USER must be set in .env}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
-      - POSTGRES_DB=${DB_NAME:-viz}
-    volumes:
-      # TODO: This will change to /app/data/postgresql (or /app/data/db)
-      - viz-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - viz-net
+    db:
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile
+            target: db
+        restart: unless-stopped
+        env_file:
+            - ../.env
+        environment:
+            - POSTGRES_USER=${DB_USER:?DB_USER must be set in .env}
+            - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+            - POSTGRES_DB=${DB_NAME:-viz}
+        volumes:
+            # TODO: This will change to /app/data/postgresql (or /app/data/db)
+            - viz-db-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - viz-net
 
-  redis:
-    image: redis:8-alpine
-    restart: unless-stopped
-    networks:
-      - viz-net
+    redis:
+        image: redis:8-alpine
+        restart: unless-stopped
+        networks:
+            - viz-net
 
 networks:
-  viz-net:
-    driver: bridge
+    viz-net:
+        driver: bridge
 
 volumes:
-  viz-db-data:
-  viz-data:
+    viz-db-data:
+    viz-data:

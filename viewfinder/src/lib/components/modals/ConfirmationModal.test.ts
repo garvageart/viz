@@ -1,6 +1,6 @@
-import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
 import ConfirmationModal from "./ConfirmationModal.svelte";
 
 vi.mock("#lib/components/lightbox/lightbox-manager.svelte.js", () => ({

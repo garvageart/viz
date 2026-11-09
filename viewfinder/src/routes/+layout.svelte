@@ -1,4 +1,10 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { afterNavigate, beforeNavigate } from "$app/navigation";
+    import { page, updated } from "$app/state";
+    import "@fontsource-variable/radio-canada-big/index.css";
+    import "@fontsource-variable/roboto-mono/index.css";
+    import { onMount } from "svelte";
     import LightboxContainer from "#lib/components/lightbox/LightboxContainer.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import "#lib/components/tooltips/tooltip.scss";
@@ -13,12 +19,6 @@
     import Notifications from "#lib/toast-notifcations/Notifications.svelte";
     import { UploadState } from "#lib/upload/asset.svelte.js";
     import { toggleFullscreen } from "#lib/utils/misc.js";
-    import { dev } from "$app/env";
-    import { afterNavigate, beforeNavigate } from "$app/navigation";
-    import { page, updated } from "$app/state";
-    import "@fontsource-variable/radio-canada-big/index.css";
-    import "@fontsource-variable/roboto-mono/index.css";
-    import { onMount } from "svelte";
 
     bootState.init();
     historyState.init();

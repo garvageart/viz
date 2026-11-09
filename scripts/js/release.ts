@@ -202,7 +202,7 @@ async function main() {
         let logCommits = "";
         try {
             const range = lastTag ? `${lastTag}..HEAD` : "HEAD";
-            logCommits = execSync(`git log ${range} --oneline --pretty=format:"* %s (%h)"`, {
+            logCommits = execSync(`git log ${range} --oneline --pretty=format:"- %s (%h)"`, {
                 stdio: ["ignore", "pipe", "ignore"]
             })
                 .toString()
@@ -215,7 +215,7 @@ async function main() {
         if (logCommits) {
             changelogHeader += logCommits + "\n\n";
         } else {
-            changelogHeader += "* Maintenance release.\n\n";
+            changelogHeader += "- Maintenance release.\n\n";
         }
 
         let existingChangelog = "";

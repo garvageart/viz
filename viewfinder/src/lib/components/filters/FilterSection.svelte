@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Accordion from "#lib/components/ui/Accordion.svelte";
     import type { Snippet } from "svelte";
+    import Accordion from "#lib/components/ui/Accordion.svelte";
 
     interface Props {
         heading: string;

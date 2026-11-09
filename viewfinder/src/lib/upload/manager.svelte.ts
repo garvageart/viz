@@ -1,3 +1,4 @@
+import { ImageUploadStatus, checkDuplicates } from "@viz/api";
 import { upload } from "#lib/states/index.svelte.js";
 import type { DirectoryInputElement } from "#lib/types/dom.js";
 import {
@@ -7,7 +8,6 @@ import {
     type SupportedRAWFiles
 } from "#lib/types/images.js";
 import { calculateSHA1 } from "#lib/utils/crypto.js";
-import { ImageUploadStatus, checkDuplicates } from "@viz/api";
 import { UploadImage, UploadState, isUploadCompleted, isUploadPending, isUploadSuccessful } from "./asset.svelte";
 
 export interface ImageUploadFileMetadata {

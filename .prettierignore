@@ -19,9 +19,10 @@ archive/
 **/target
 **/coverage
 **/playwright-report
-**/test-results
 **/e2e/screenshots/
 **/blob-report/
+**/pnpm-lock.yaml
+**/pnpm-workspace.yaml
 
 # Non-user generated outputs (except API files)
 **/static/themes/
@@ -39,4 +40,7 @@ archive/
 *.webp
 *.ico
 *.wasm
+
+# Submodules
+internal/images/ops/dng/libdng/
 

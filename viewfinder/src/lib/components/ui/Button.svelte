@@ -11,9 +11,9 @@
 </script>
 
 <script lang="ts">
+    import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
     import { type TooltipParams, tooltip } from "#lib/components/tooltips/tooltip.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
-    import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props {

@@ -1,9 +1,9 @@
 <script lang="ts">
+    import { untrack } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Modal from "#lib/components/modals/Modal.svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
-    import { untrack } from "svelte";
 
     interface Props {
         id?: string;

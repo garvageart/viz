@@ -1,6 +1,6 @@
-import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
 import { JustifiedLayout } from "@immich/justified-layout-wasm";
 import type { ImageAsset } from "@viz/api";
+import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
 
 export type GridItem<T = any> = {
     asset: T;

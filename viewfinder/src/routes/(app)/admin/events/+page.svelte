@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
@@ -10,7 +11,6 @@
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import type { EventRecord, WsMetricsResponse, WsStatsResponse } from "@viz/api";
     import type { PageData } from "./$types";
 
     type EventHistoryItem = EventRecord;

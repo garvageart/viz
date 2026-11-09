@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { ContextKeys } from "#lib/context-keys.js";
     import { Popover } from "bits-ui";
     import { getContext } from "svelte";
     import ColorPicker from "svelte-awesome-color-picker";
+    import { ContextKeys } from "#lib/context-keys.js";
 
     interface Props {
         id?: string;

@@ -1,12 +1,12 @@
 <script lang="ts">
+    import { type Collection, type ImageAsset, api, executeSearch } from "@viz/api";
+    import { onMount } from "svelte";
+    import { fade } from "svelte/transition";
     import Accordion from "#lib/components/ui/Accordion.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
     import { DragData } from "#lib/drag-drop/data.js";
     import { settings } from "#lib/settings/client/settings.svelte.ts";
-    import { type Collection, type ImageAsset, api, executeSearch } from "@viz/api";
-    import { onMount } from "svelte";
-    import { fade } from "svelte/transition";
     import CompactListItem from "./CompactListItem.svelte";
 
     let favouriteImages = $state<ImageAsset[]>([]);

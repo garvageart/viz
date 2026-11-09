@@ -1,6 +1,6 @@
-import { isKeywordData } from "#lib/utils/keywords.js";
 import type { Keyword } from "@viz/api";
 import { describe, expect, it } from "vitest";
+import { isKeywordData } from "#lib/utils/keywords.js";
 
 const keyword: Keyword = {
     uid: "keyword-uid",

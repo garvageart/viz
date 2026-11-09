@@ -1,6 +1,6 @@
+import { type ImageAsset, type ImagesListResponse, listCollectionImages, listImages } from "@viz/api";
 import { PaginationState } from "#lib/states/index.svelte.js";
 import { collectionDetailSort, photosSort } from "#lib/states/sort.svelte.js";
-import { type ImageAsset, type ImagesListResponse, listCollectionImages, listImages } from "@viz/api";
 
 // Helper class for managing gallery state
 // This ensures we can mutate state (append images) while still initializing from data

@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it } from "vitest";
 import { initDB } from "#lib/db/client.js";
 import { DEFAULT_SETTINGS, SettingsDatabase, settings } from "#lib/settings/client/settings.svelte.js";
-import { beforeEach, describe, expect, it } from "vitest";
 
 async function clearSettingsStore() {
     const db = await initDB();

@@ -1,4 +1,8 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import type { Collection, ImageAsset } from "@viz/api";
+    import { Label as ImageLabel, addCollectionImages, batchUpdateImages } from "@viz/api";
+    import { type ComponentProps, onMount, untrack } from "svelte";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
@@ -41,10 +45,6 @@
     import type { EntityViewType } from "#lib/types/asset.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getImageLabel } from "#lib/utils/images.js";
-    import { goto } from "$app/navigation";
-    import type { Collection, ImageAsset } from "@viz/api";
-    import { Label as ImageLabel, addCollectionImages, batchUpdateImages } from "@viz/api";
-    import { type ComponentProps, onMount, untrack } from "svelte";
 
     let collections = $derived(search.data.collections.data);
     let images = $derived(search.data.images.data);

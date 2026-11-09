@@ -1,12 +1,3 @@
-import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
-import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
-import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
-import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
-import { download } from "#lib/states/index.svelte.js";
-import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-import { downloadToFilesystem } from "#lib/utils/files.js";
-import { copyToClipboard } from "#lib/utils/misc.js";
 import { goto } from "$app/navigation";
 import {
     type Collection,
@@ -18,6 +9,15 @@ import {
     signDownload,
     updateCollection
 } from "@viz/api";
+import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
+import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
+import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
+import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
+import { download } from "#lib/states/index.svelte.js";
+import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+import { downloadToFilesystem } from "#lib/utils/files.js";
+import { copyToClipboard } from "#lib/utils/misc.js";
 import type { MenuItem } from "../types";
 
 export interface CollectionMenuOptions {

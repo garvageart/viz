@@ -5,13 +5,13 @@
  font ligatures (as a fallback).
 -->
 <script lang="ts">
-    import { tooltip } from "#lib/components/tooltips/tooltip.js";
-    import { bootState } from "#lib/states/index.svelte.js";
-    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import { dev } from "$app/env";
     import type { Component } from "svelte";
     import type { SvelteHTMLElements } from "svelte/elements";
     import { SvelteSet } from "svelte/reactivity";
+    import { tooltip } from "#lib/components/tooltips/tooltip.js";
+    import { bootState } from "#lib/states/index.svelte.js";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
 
     // Global Font Loading State
     // We keep this global so we don't try to load the same font multiple times.

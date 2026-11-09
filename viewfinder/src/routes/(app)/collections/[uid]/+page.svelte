@@ -12,6 +12,23 @@
 </script>
 
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { goto } from "$app/navigation";
+    import {
+        type CollectionUpdate,
+        type ImageAsset,
+        Label as ImageLabel,
+        addCollectionImages,
+        batchUpdateImages,
+        createCollection,
+        deleteCollection,
+        deleteCollectionImages,
+        getImage,
+        listCollectionImageUiDs,
+        updateCollection
+    } from "@viz/api";
+    import { DateTime } from "luxon";
+    import { type ComponentProps, onDestroy, untrack } from "svelte";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
@@ -57,23 +74,6 @@
     import { type ImageUploadSuccess, uploadManager } from "#lib/upload/manager.svelte.js";
     import { getImageLabel } from "#lib/utils/images.js";
     import type VizView from "#lib/views/views.svelte.js";
-    import { dev } from "$app/env";
-    import { goto } from "$app/navigation";
-    import {
-        type CollectionUpdate,
-        type ImageAsset,
-        Label as ImageLabel,
-        addCollectionImages,
-        batchUpdateImages,
-        createCollection,
-        deleteCollection,
-        deleteCollectionImages,
-        getImage,
-        listCollectionImageUiDs,
-        updateCollection
-    } from "@viz/api";
-    import { DateTime } from "luxon";
-    import { type ComponentProps, onDestroy, untrack } from "svelte";
     import type { PageProps } from "./$types";
 
     let { data, view }: PageProps & { view?: VizView } = $props();

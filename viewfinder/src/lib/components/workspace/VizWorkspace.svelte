@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { DateTime } from "luxon";
+    import { onMount } from "svelte";
     import RootDebugOverlay from "#lib/components/workspace/debug/RootDebugOverlay.svelte";
     import { KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import { type SerializedWorkspace, Workspace } from "#lib/layouts/model.svelte.js";
@@ -7,9 +10,6 @@
     import { debugMode, isMobile } from "#lib/states/index.svelte.js";
     import { workspaceState } from "#lib/states/workspace.svelte.js";
     import { VizLocalStorage } from "#lib/utils/misc.js";
-    import { dev } from "$app/env";
-    import { DateTime } from "luxon";
-    import { onMount } from "svelte";
     import LayoutNode from "./LayoutNode.svelte";
     import { createDefaultLayout, createMobileDefaultLayout } from "./layouts/registry";
 

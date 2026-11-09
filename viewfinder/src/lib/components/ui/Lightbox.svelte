@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { type Snippet } from "svelte";
     import { ZIndex } from "#lib/constants/z-index.js";
     import { debugMode } from "#lib/states/index.svelte.js";
-    import { type Snippet } from "svelte";
 
     interface Props {
         children: Snippet;

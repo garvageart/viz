@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { type ImageAsset, type KeywordUpdate, type Label, batchUpdateImages, updateImage } from "@viz/api";
+    import { isEmpty } from "lodash-es";
+    import { DateTime } from "luxon";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
@@ -39,9 +42,6 @@
         isAssetImage
     } from "#lib/utils/images.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
-    import { type ImageAsset, type KeywordUpdate, type Label, batchUpdateImages, updateImage } from "@viz/api";
-    import { isEmpty } from "lodash-es";
-    import { DateTime } from "luxon";
 
     const MIXED_VALUES = "Mixed Values";
 

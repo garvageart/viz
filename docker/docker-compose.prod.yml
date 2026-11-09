@@ -11,57 +11,56 @@
 
 name: viz
 networks:
-  default:
-    name: viz_default
+    default:
+        name: viz_default
 
 volumes:
-  data:
+    data:
 
 services:
-  server:
-    image: ${REPO_HOST:?}/${REPOSITORY:?}/viz-server:${IMAGE_TAG:-latest}
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      - DB_HOST=db
-      - REDIS_HOST=redis
-      - ENV=production
-      - API_HOST=0.0.0.0
-    volumes:
-      - data:/app/data
-      - viz.json:/app/viz.json
-    ports:
-      - 7780:7770
-    networks:
-      - default
+    server:
+        image: ${REPO_HOST:?}/${REPOSITORY:?}/viz-server:${IMAGE_TAG:-latest}
+        restart: unless-stopped
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_started
+        env_file:
+            - .env
+        environment:
+            - DB_HOST=db
+            - REDIS_HOST=redis
+            - ENV=production
+            - API_HOST=0.0.0.0
+        volumes:
+            - data:/app/data
+            - viz.json:/app/viz.json
+        ports:
+            - 7780:7770
+        networks:
+            - default
 
-  db:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-      target: db
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-      - POSTGRES_DB=${DB_NAME:-viz}
-    volumes:
-      - ${DATABASE_LOCATION:?}:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    db:
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile
+            target: db
+        restart: unless-stopped
+        env_file:
+            - .env
+        environment:
+            - POSTGRES_USER=${DB_USER:-postgres}
+            - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+            - POSTGRES_DB=${DB_NAME:-viz}
+        volumes:
+            - ${DATABASE_LOCATION:?}:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-viz}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
-  redis:
-    image: redis:8-alpine
-    restart: unless-stopped
+    redis:
+        image: redis:8-alpine
+        restart: unless-stopped

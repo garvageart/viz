@@ -1,6 +1,6 @@
-import { StandardMimeTypes, VizMimeTypes } from "#lib/mime.js";
 import type { ImageAsset } from "@viz/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { StandardMimeTypes, VizMimeTypes } from "#lib/mime.js";
 import { dragCoordinator } from "./coordinator.svelte";
 import { DragData } from "./data";
 import { createImageDragItems, draggable, dropZone } from "./directives.svelte";

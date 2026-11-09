@@ -1,7 +1,7 @@
+import { beforeEach, describe, expect, it } from "vitest";
 import { initDB } from "#lib/db/client.js";
 import { settings } from "#lib/settings/client/settings.svelte.js";
 import type { EntitySort } from "#lib/types/asset.js";
-import { beforeEach, describe, expect, it } from "vitest";
 import { SortState } from "./sort.svelte";
 
 const DEFAULTS: EntitySort = {

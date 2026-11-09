@@ -40,4 +40,4 @@ On my mind constantly, research is being done here and there and I have some ide
 
 ### Search
 
-Search needs to be entirely redone. I think support search tokens visually (e.g. `make:fujifilm`). The search bar also needs to become more of a pallete, in the same way VS Code's command pallete works. Supporting things like `Recently Added` for example, Quick Actions 
+Search needs to be entirely redone. I think support search tokens visually (e.g. `make:fujifilm`). The search bar also needs to become more of a pallete, in the same way VS Code's command pallete works. Supporting things like `Recently Added` for example, Quick Actions

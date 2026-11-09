@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { ImageAsset } from "@viz/api";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import AssetImage from "#lib/components/ui/AssetImage.svelte";
     import Favourite from "#lib/components/ui/Favourite.svelte";
@@ -8,7 +9,6 @@
     import { createImageMenu } from "#lib/context-menu/menus/images.js";
     import { selectionManager } from "#lib/states/selection.svelte.js";
     import { getImageLabel, isAssetImage } from "#lib/utils/images.js";
-    import type { ImageAsset } from "@viz/api";
 
     let activeScope = $derived(selectionManager.getActiveScope());
     let activeItem = $derived(isAssetImage(activeScope?.active) ? activeScope.active : undefined);

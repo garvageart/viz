@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { Snippet } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button, { type ButtonVariant } from "#lib/components/ui/Button.svelte";
-    import type { Snippet } from "svelte";
     import Modal from "./Modal.svelte";
 
     interface Props {

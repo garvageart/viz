@@ -1,7 +1,7 @@
 <script lang="ts">
+    import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { generateRandomString } from "#lib/utils/misc.js";
-    import type { SvelteHTMLElements } from "svelte/elements";
 
     interface Props {
         value?: number;

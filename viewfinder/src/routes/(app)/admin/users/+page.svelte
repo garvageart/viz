@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { invalidateAll } from "$app/navigation";
+    import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "@viz/api";
+    import { DateTime } from "luxon";
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
@@ -12,9 +15,6 @@
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
     import { user as currentUserState } from "#lib/states/index.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import { invalidateAll } from "$app/navigation";
-    import { type User, adminCreateUser, adminDeleteUser, adminUpdateUser } from "@viz/api";
-    import { DateTime } from "luxon";
 
     let { data } = $props();
     let users = $derived(data.users);

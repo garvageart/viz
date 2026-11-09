@@ -1,4 +1,8 @@
 <script lang="ts" generics="T extends ScopeItem">
+    import { type Snippet, untrack } from "svelte";
+    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
+    import { hideAll } from "tippy.js";
+    import "tippy.js/dist/tippy.css";
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
     import { PhotoGridVirtualizer } from "#lib/components/virtualizer/PhotoGridVirtualizer.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
@@ -14,10 +18,6 @@
     import type { EntityGridArray, EntitySortBy, EntityViewType } from "#lib/types/asset.js";
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getScrollParent } from "#lib/utils/dom.js";
-    import { type Snippet, untrack } from "svelte";
-    import type { MouseEventHandler, SvelteHTMLElements } from "svelte/elements";
-    import { hideAll } from "tippy.js";
-    import "tippy.js/dist/tippy.css";
     import { touchSelectionAction } from "./actions";
 
     export interface EntityViewProps<T extends ScopeItem> {

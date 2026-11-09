@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { CalendarDateTime, type DateValue } from "@internationalized/date";
+    import { DatePicker } from "bits-ui";
+    import { type Snippet, getContext } from "svelte";
     import Button from "#lib/components/ui/Button.svelte";
     import InputSelect from "#lib/components/ui/InputSelect.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
@@ -7,9 +10,6 @@
     import { KbdShortcutTier, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import { localeState } from "#lib/states/locale.svelte.js";
     import { calendarDateTimeToDate, toCalendarDateTime } from "#lib/utils/dates.js";
-    import { CalendarDateTime, type DateValue } from "@internationalized/date";
-    import { DatePicker } from "bits-ui";
-    import { type Snippet, getContext } from "svelte";
 
     interface Props {
         value: Date;

@@ -4,11 +4,7 @@
     "trailingComma": "none",
     "printWidth": 120,
     "plugins": ["prettier-plugin-svelte", "@trivago/prettier-plugin-sort-imports"],
-    "importOrder": [
-        "<THIRD_PARTY_MODULES>",
-        "^\\$lib/(.*)$",
-        "^[./]"
-    ],
+    "importOrder": ["<THIRD_PARTY_MODULES>", "^(#lib|\\$lib)/(.*)$", "^[./]"],
     "importOrderSeparation": false,
     "importOrderSortSpecifiers": true
 }

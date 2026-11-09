@@ -1,16 +1,4 @@
 <script lang="ts">
-    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
-    import Modal from "#lib/components/modals/Modal.svelte";
-    import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
-    import { createZipExportName } from "#lib/download/utils.js";
-    import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
-    import { settings } from "#lib/settings/client/settings.svelte.js";
-    import { config, download } from "#lib/states/index.svelte.js";
-    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
-    import { downloadToFilesystem } from "#lib/utils/files.js";
-    import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
-    import ImageExportWorker from "#lib/workers/image_export?worker";
     import {
         type BitDepths,
         type ColorSpace,
@@ -25,6 +13,18 @@
     import * as Comlink from "comlink";
     import JSZip from "jszip";
     import { type Snippet } from "svelte";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
+    import Modal from "#lib/components/modals/Modal.svelte";
+    import { DownloadFile, DownloadState } from "#lib/download/asset.svelte.js";
+    import { createZipExportName } from "#lib/download/utils.js";
+    import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
+    import { settings } from "#lib/settings/client/settings.svelte.js";
+    import { config, download } from "#lib/states/index.svelte.js";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
+    import { safeRenderRenameTemplate } from "#lib/ui-tools/renamer.js";
+    import { downloadToFilesystem } from "#lib/utils/files.js";
+    import type { ImageExportWorkerApi, exportImagesParallel } from "#lib/workers/image_export.js";
+    import ImageExportWorker from "#lib/workers/image_export?worker";
     import Accordion from "../Accordion.svelte";
     import BatchRenameBuilder from "../BatchRenameBuilder.svelte";
     import Button from "../Button.svelte";

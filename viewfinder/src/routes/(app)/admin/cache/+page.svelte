@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { goto, invalidate } from "$app/navigation";
+    import { page } from "$app/state";
+    import { clearImageCache } from "@viz/api";
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
@@ -10,9 +13,6 @@
     import { type Toast, toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import { formatBytes } from "#lib/utils/images.js";
-    import { goto, invalidate } from "$app/navigation";
-    import { page } from "$app/state";
-    import { clearImageCache } from "@viz/api";
 
     let { data } = $props();
 

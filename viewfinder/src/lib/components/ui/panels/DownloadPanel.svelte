@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { untrack } from "svelte";
+    import { scale } from "svelte/transition";
     import {
         DownloadState,
         isDownloadActive,
@@ -7,8 +9,6 @@
     } from "#lib/download/asset.svelte.js";
     import { processDownloadQueue, waitForDownloadCompletion } from "#lib/download/manager.svelte.js";
     import { download } from "#lib/states/index.svelte.js";
-    import { untrack } from "svelte";
-    import { scale } from "svelte/transition";
     import Button from "../Button.svelte";
     import InputNumber from "../InputNumber.svelte";
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
+    import { type ComponentProps, untrack } from "svelte";
     import { CollectionsPaginationState } from "#lib/collections/state.svelte.js";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
@@ -29,9 +32,6 @@
     import { collectionsSort } from "#lib/states/sort.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { EntityGridArray } from "#lib/types/asset.js";
-    import { goto } from "$app/navigation";
-    import { type Collection, addCollectionImages, createCollection, updateCollection } from "@viz/api";
-    import { type ComponentProps, untrack } from "svelte";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();

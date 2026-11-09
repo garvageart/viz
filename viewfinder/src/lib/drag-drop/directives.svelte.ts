@@ -1,5 +1,5 @@
-import { StandardMimeTypes, VizMimeTypes } from "#lib/constants.js";
 import { type ImageAsset, type ImagePaths, getAssetImagePath } from "@viz/api";
+import { StandardMimeTypes, VizMimeTypes } from "#lib/constants.js";
 import { dragCoordinator } from "./coordinator.svelte";
 import { DragData } from "./data";
 import type { DragSourceItem, DragSourceOptions, DropZoneOptions } from "./types";

@@ -1,12 +1,4 @@
 <script lang="ts">
-    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
-    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
-    import CreatedApiKeyModal from "#lib/components/modals/CreatedApiKeyModal.svelte";
-    import Badge from "#lib/components/ui/Badge.svelte";
-    import Button from "#lib/components/ui/Button.svelte";
-    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
-    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
-    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import {
         type ApiKey,
         type Session,
@@ -18,6 +10,14 @@
         updateSession
     } from "@viz/api";
     import { DateTime } from "luxon";
+    import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
+    import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
+    import CreatedApiKeyModal from "#lib/components/modals/CreatedApiKeyModal.svelte";
+    import Badge from "#lib/components/ui/Badge.svelte";
+    import Button from "#lib/components/ui/Button.svelte";
+    import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
+    import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
+    import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import RenameSessionModal from "./RenameSessionModal.svelte";
 
     interface ExtendedSession extends Session {

@@ -12,36 +12,38 @@ The primary goal of DS 2.0 is to evolve from a monochrome, single-accent preproc
 
 ## 1. Motivation & Limitations of DS 1.0
 
-| Feature | DS 1.0 (Legacy) | DS 2.0 (Current) |
-| :--- | :--- | :--- |
-| **Colour Space** | Legacy HSL (`color.change($color, $lightness)`) | **OKLCH** via `viz-engine.scss` ✓ |
-| **Light Mode Strategy** | Mathematical inversion (`100% - lightness`) | **Purpose-crafted light & dark schemas** via `register-theme-core` ✓ |
-| **Surface Tokens** | Generic numeric steps (`--viz-100` to `--viz-5`) | **Semantic elevations** (`surface-base`, `surface-panel`, `surface-card`, `surface-hover`, `surface-popover`, `surface-input`) ✓ |
-| **Brand Accents** | Single primary accent (`--viz-primary`) | **Multi-role accents** (`primary`, `secondary`, `accent`) ✓ |
-| **Accessibility Audit** | Manual developer inspection | **Automated build-time WCAG 2.1 audit** in `build-themes.js` ✓ |
-| **Theme Transitions** | Instant visual snap | **Smooth CSS `@property` cross-fade transitions** ✓ |
-| **APCA Contrast Audit** | Not implemented | **Planned** — extend `build-themes.js` with APCA $L^c$ scoring |
-| **TypeScript Token Definitions** | Not implemented | **Planned** — generate `tokens.d.ts` for autocompletion |
+| Feature                          | DS 1.0 (Legacy)                                  | DS 2.0 (Current)                                                                                                                 |
+| :------------------------------- | :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| **Colour Space**                 | Legacy HSL (`color.change($color, $lightness)`)  | **OKLCH** via `viz-engine.scss` ✓                                                                                                |
+| **Light Mode Strategy**          | Mathematical inversion (`100% - lightness`)      | **Purpose-crafted light & dark schemas** via `register-theme-core` ✓                                                             |
+| **Surface Tokens**               | Generic numeric steps (`--viz-100` to `--viz-5`) | **Semantic elevations** (`surface-base`, `surface-panel`, `surface-card`, `surface-hover`, `surface-popover`, `surface-input`) ✓ |
+| **Brand Accents**                | Single primary accent (`--viz-primary`)          | **Multi-role accents** (`primary`, `secondary`, `accent`) ✓                                                                      |
+| **Accessibility Audit**          | Manual developer inspection                      | **Automated build-time WCAG 2.1 audit** in `build-themes.js` ✓                                                                   |
+| **Theme Transitions**            | Instant visual snap                              | **Smooth CSS `@property` cross-fade transitions** ✓                                                                              |
+| **APCA Contrast Audit**          | Not implemented                                  | **Planned** — extend `build-themes.js` with APCA $L^c$ scoring                                                                   |
+| **TypeScript Token Definitions** | Not implemented                                  | **Planned** — generate `tokens.d.ts` for autocompletion                                                                          |
 
 ---
 
 ## 2. Architecture & Colour Space
 
 ### Why OKLCH?
+
 In traditional HSL, hue changes dramatically affect perceived brightness (e.g. 50% yellow appears blindingly bright, while 50% blue appears dark).
 
-OKLCH fixes this by separating **Lightness ($L$)**, **Chroma ($C$)**, and **Hue ($H$)** such that equal lightness values *look* equally bright to the human eye. This allows DS 2.0 to:
+OKLCH fixes this by separating **Lightness ($L$)**, **Chroma ($C$)**, and **Hue ($H$)** such that equal lightness values _look_ equally bright to the human eye. This allows DS 2.0 to:
+
 1. Guarantee consistent text contrast across all colour hues.
 2. Derive hover/active state variations programmatically without hue pollution.
 3. Generate subtle container fills and focus rings safely.
 
 ### OKLCH Engine — `viz-engine.scss` ✓ Implemented
 
-| Function | Purpose |
-| :--- | :--- |
-| `oklch-lighten($color, $delta)` | Increase lightness by `$delta` (capped at 95%) |
-| `oklch-darken($color, $delta)` | Decrease lightness by `$delta` (floored at 5%) |
-| `oklch-mix($color1, $color2, $weight)` | Mix two colours in OKLCH space |
+| Function                                | Purpose                                            |
+| :-------------------------------------- | :------------------------------------------------- |
+| `oklch-lighten($color, $delta)`         | Increase lightness by `$delta` (capped at 95%)     |
+| `oklch-darken($color, $delta)`          | Decrease lightness by `$delta` (floored at 5%)     |
+| `oklch-mix($color1, $color2, $weight)`  | Mix two colours in OKLCH space                     |
 | `oklch-step($color, $steps, $is-light)` | Generate palette steps (100–30) from a base colour |
 
 ---
@@ -49,6 +51,7 @@ OKLCH fixes this by separating **Lightness ($L$)**, **Chroma ($C$)**, and **Hue 
 ## 3. Semantic Token Hierarchy
 
 ### A. Surface Elevation Tokens ✓ Implemented
+
 - `--viz-surface-base`: Main page canvas background.
 - `--viz-surface-panel`: Navigation headers and sidebars.
 - `--viz-surface-card`: Asset cards, table rows, and modal containers.
@@ -57,6 +60,7 @@ OKLCH fixes this by separating **Lightness ($L$)**, **Chroma ($C$)**, and **Hue 
 - `--viz-surface-input`: Text inputs, select elements, and search bars.
 
 ### B. Multi-Role Accent Tokens ✓ Implemented
+
 - `--viz-primary`: Primary action colour.
 - `--viz-secondary`: Supporting brand colour (defaults to primary hue + 30°).
 - `--viz-accent`: Feature pop colour (defaults to primary hue − 30°).
@@ -77,6 +81,7 @@ For each accent role, the engine generates hover/active states. Additional deriv
 ```
 
 ### D. Text & Border Tokens ✓ Implemented
+
 - `--viz-text-primary`: Primary headings and body copy (100% contrast).
 - `--viz-text-secondary`: Subtitles, field labels, and metadata (mapped to `--viz-40`).
 - `--viz-text-muted`: Placeholder text, timestamps, and subtle hints (mapped to `--viz-30`).
@@ -88,6 +93,7 @@ For each accent role, the engine generates hover/active states. Additional deriv
 ## 4. Declarative Theme Definition Schema
 
 ### Current Approach ✓ Implemented
+
 Themes are defined using the `register-theme-core` SCSS mixin in `viz-mixins.scss`, which accepts explicit colour parameters for both dark and light modes:
 
 ```scss
@@ -95,27 +101,27 @@ Themes are defined using the `register-theme-core` SCSS mixin in `viz-mixins.scs
     $bg-color: #0d0d0d,
     $text-color: #e5e5e5,
     $base-color: #262626,
-    $primary-color: #3b82f6,
-    // ... light mode overrides optional
+    $primary-color: #3b82f6 // ... light mode overrides optional
 );
 ```
 
 ### Planned: Declarative Map Schema
+
 Future themes will use a declarative map format for cleaner definitions:
 
 ```scss
 $gitlab-theme: (
     name: "gitlab",
     dark: (
-        bg-base:       oklch(18% 0.01 270),
+        bg-base: oklch(18% 0.01 270),
         surface-panel: oklch(21% 0.02 285),
-        primary:       oklch(66% 0.22 35),
-        secondary:     oklch(52% 0.18 290),
-        accent:        oklch(58% 0.16 150)
+        primary: oklch(66% 0.22 35),
+        secondary: oklch(52% 0.18 290),
+        accent: oklch(58% 0.16 150)
     ),
     light: (
-        bg-base:       oklch(98% 0.005 270),
-        primary:       oklch(60% 0.24 35),
+        bg-base: oklch(98% 0.005 270),
+        primary: oklch(60% 0.24 35),
         // ...
     )
 );
@@ -127,15 +133,18 @@ $gitlab-theme: (
 ## 5. Automated Build-Time Contrast Audit
 
 ### Current: WCAG 2.1 Audit ✓ Implemented
+
 `viewfinder/tools/build-themes.js` compiles all `viz-*.scss` theme files and runs a WCAG 2.1 contrast audit on the compiled CSS output.
 
 **Checks enforced:**
+
 1. Body text on card: `--viz-text-primary` vs `--viz-surface-card` — minimum 4.5:1.
 2. Status text on status background: all status text/bg pairs — minimum 3.0:1.
 
 **Colour parsing:** Supports hex, RGB, and OKLCH (grayscale approximation) formats.
 
 ### Planned: APCA Audit
+
 Extend the audit engine with APCA (Accessible Perceptual Contrast Algorithm) scoring:
 
 ```mermaid
@@ -151,6 +160,7 @@ flowchart TD
 ```
 
 **Target APCA thresholds:**
+
 1. Body text on background/card: $L^c \ge 60$ (or WCAG 4.5:1).
 2. Large headings: $L^c \ge 45$ (or WCAG 3:1).
 3. Primary button text on primary accent: $L^c \ge 60$.
@@ -161,6 +171,7 @@ flowchart TD
 ## 6. Migration Status
 
 ### Completed ✓
+
 - [x] OKLCH engine (`viz-engine.scss`) with lighten/darken/mix/step functions
 - [x] Semantic surface elevation tokens (base, panel, card, hover, popover, input)
 - [x] Multi-role brand accents (primary, secondary, accent)
@@ -173,6 +184,7 @@ flowchart TD
 - [x] Light/dark mode with automatic palette generation
 
 ### In Progress / Planned
+
 - [ ] APCA contrast scoring in `build-themes.js`
 - [ ] `tokens.d.ts` generation for TypeScript autocompletion in Svelte
 - [ ] Declarative theme map schema (`.theme.json` or SCSS maps)

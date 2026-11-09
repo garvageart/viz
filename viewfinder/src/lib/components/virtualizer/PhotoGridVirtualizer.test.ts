@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it } from "vitest";
 import { createTestImageObject } from "#lib/data/test.js";
 import type { GridImage } from "#lib/photo-layout/index.js";
-import { beforeEach, describe, expect, it } from "vitest";
 import { PhotoGridVirtualizer } from "./PhotoGridVirtualizer.svelte";
 
 function makeItems(count: number) {

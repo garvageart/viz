@@ -1,5 +1,5 @@
-import { FilterScope } from "#lib/states/filter.svelte.js";
 import { describe, expect, it } from "vitest";
+import { FilterScope } from "#lib/states/filter.svelte.js";
 
 describe("FilterScope.restoreUiState", () => {
     it("preserves defaults for missing and invalid saved accordion states", () => {

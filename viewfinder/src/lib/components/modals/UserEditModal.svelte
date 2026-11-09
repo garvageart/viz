@@ -1,11 +1,11 @@
 <script lang="ts">
+    import { Role, type User } from "@viz/api";
+    import { untrack } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import InputSelect from "#lib/components/ui/InputSelect.svelte";
     import InputText from "#lib/components/ui/InputText.svelte";
     import { toSentenceCase } from "#lib/utils/strings.js";
-    import { Role, type User } from "@viz/api";
-    import { untrack } from "svelte";
     import Modal from "./Modal.svelte";
 
     interface Props {

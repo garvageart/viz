@@ -9,7 +9,6 @@
 > [!WARNING]
 > This project is in active development. Features and APIs may change frequently. Feedback and contributions are welcome!
 
-
 ## Capabilities & Highlights
 
 - **High-Performance Image Engine**: Fast image transformations, smart resizing, RAW/DNG preview extraction, and instant multi-resolution thumbnail generation.
@@ -20,12 +19,12 @@
 - **viewfinder Interface**: A clean, responsive workspace featuring fluid image grids, dynamic zoom scaling, batch operations, and drag-and-drop uploads.
 - **Self-Hosted & Private**: Total ownership of your data, however and wherever you want.
 
-
 ## Quick Start
 
 Get started quickly using [Docker Compose](https://docs.docker.com/compose/).
 
 ### 1. Clone & Configure:
+
 ```bash
 git clone https://github.com/garvageart/viz.git
 cd viz
@@ -35,22 +34,22 @@ cp .env.example .env
 ```
 
 ### 2. Run:
+
 ```bash
 docker compose -f docker/docker-compose.yml up --build -d
 ```
 
 ### 3. Open:
+
 Visit **`http://localhost:7770`** in your browser.
 
 For complete setup guides and manual development instructions, see [**BUILDING.md**](./docs/setup/BUILDING.md).
-
 
 ## Documentation
 
 - [**Building & Setup Guide**](./docs/setup/BUILDING.md): Detailed local development setup and prerequisites.
 - [**UI Design System**](./docs/development/UI_DESIGN_SYSTEM.md): Visual design tokens, spacing, and styling rules.
 - [**API Specification**](./api/openapi/openapi.yaml): Full OpenAPI documentation.
-
 
 ## License
 

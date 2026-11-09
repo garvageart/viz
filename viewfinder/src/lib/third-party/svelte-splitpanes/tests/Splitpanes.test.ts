@@ -1,6 +1,6 @@
-import SplitpanesTestFixture from "#lib/third-party/svelte-splitpanes/tests/SplitpanesTestFixture.svelte";
 import { render } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
+import SplitpanesTestFixture from "#lib/third-party/svelte-splitpanes/tests/SplitpanesTestFixture.svelte";
 
 describe("Splitpanes", () => {
     it("does not render a splitter before the first pane", () => {

@@ -1,4 +1,3 @@
-import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
 import {
     Command,
     type WorkerInfo,
@@ -11,6 +10,7 @@ import {
     listJobs
 } from "@viz/api";
 import { type WSClient, createWSConnection } from "@viz/api";
+import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
 
 export type UiJob = WorkerJob & {
     filename?: string;

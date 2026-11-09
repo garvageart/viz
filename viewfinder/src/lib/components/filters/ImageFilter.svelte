@@ -1,9 +1,9 @@
 <script lang="ts">
+    import { type Snippet } from "svelte";
     import Accordion from "#lib/components/ui/Accordion.svelte";
     import Calendar from "#lib/components/ui/DatePicker.svelte";
     import type { ImageFacets, ImageFilters } from "#lib/states/filter.svelte.js";
     import { formatShutterSpeed } from "#lib/utils/images.js";
-    import { type Snippet } from "svelte";
     import StarRating from "../image-tools/StarRating.svelte";
     import MaterialIcon from "../ui/MaterialIcon.svelte";
     import ChecklistFacet from "./ChecklistFacet.svelte";

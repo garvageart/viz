@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import "#lib/components/panels/viz-panel.scss";
     import Header from "#lib/components/ui/Header.svelte";
     import DownloadPanel from "#lib/components/ui/panels/DownloadPanel.svelte";
@@ -6,7 +7,6 @@
     import DragTooltipOverlay from "#lib/drag-drop/DragTooltipOverlay.svelte";
     import { dragCoordinator } from "#lib/drag-drop/coordinator.svelte.js";
     import { download, upload } from "#lib/states/index.svelte.js";
-    import { page } from "$app/state";
 
     let { children } = $props();
 

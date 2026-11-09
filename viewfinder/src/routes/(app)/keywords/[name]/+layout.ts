@@ -1,6 +1,6 @@
-import { sendVizAPIRequest } from "#lib/utils/http.ts";
 import { error } from "@sveltejs/kit";
 import { listAssetsForKeyword } from "@viz/api";
+import { sendVizAPIRequest } from "#lib/utils/http.ts";
 
 export async function load({ parent, params }) {
     const allKeywords = await parent();

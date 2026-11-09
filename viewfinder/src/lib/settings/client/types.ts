@@ -1,6 +1,6 @@
+import type { BitDepths, ColorSpace, DestinationMode, ExportFormats, MetadataPolicy, ResizeMode } from "@viz/api";
 import type { SavedRenameSettings } from "#lib/components/ui/BatchRenameBuilder.svelte";
 import type { EntitySort } from "#lib/types/asset.js";
-import type { BitDepths, ColorSpace, DestinationMode, ExportFormats, MetadataPolicy, ResizeMode } from "@viz/api";
 
 export interface ImageLightboxScopeSettings {
     filmstrip: {

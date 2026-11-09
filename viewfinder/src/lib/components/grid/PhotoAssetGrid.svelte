@@ -1,4 +1,11 @@
 <script lang="ts">
+    import { type ImageAsset, type Keyword, updateImage } from "@viz/api";
+    import { DateTime } from "luxon";
+    import { type Snippet, onMount, untrack } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
+    import { fade } from "svelte/transition";
+    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
+    import "tippy.js/dist/tippy.css";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import StarRating from "#lib/components/image-tools/StarRating.svelte";
     import PhotoTooltip from "#lib/components/tooltips/PhotoTooltip.svelte";
@@ -26,13 +33,6 @@
     import type { CardVisualState } from "#lib/types/snippet.js";
     import { getScrollParent } from "#lib/utils/dom.js";
     import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
-    import { type ImageAsset, type Keyword, updateImage } from "@viz/api";
-    import { DateTime } from "luxon";
-    import { type Snippet, onMount, untrack } from "svelte";
-    import type { MouseEventHandler } from "svelte/elements";
-    import { fade } from "svelte/transition";
-    import { type Instance, type Props as TippyProps, delegate, followCursor, hideAll } from "tippy.js";
-    import "tippy.js/dist/tippy.css";
     import { touchSelectionAction } from "./actions";
 
     interface ExtendedTippyInstance extends Instance<TippyProps> {

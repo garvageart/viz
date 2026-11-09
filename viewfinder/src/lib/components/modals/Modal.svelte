@@ -1,13 +1,13 @@
 <script lang="ts">
+    import type { Snippet } from "svelte";
+    import { onMount, setContext } from "svelte";
+    import type { SvelteHTMLElements } from "svelte/elements";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { ZIndex } from "#lib/constants/z-index.js";
     import { ContextKeys } from "#lib/context-keys.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
-    import type { Snippet } from "svelte";
-    import { onMount, setContext } from "svelte";
-    import type { SvelteHTMLElements } from "svelte/elements";
 
     type Props = {
         id?: string;

@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import { type Keyword, createKeyword, deleteKeyword, updateKeyword } from "@viz/api";
+    import { DateTime } from "luxon";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import ConfirmationModal from "#lib/components/modals/ConfirmationModal.svelte";
@@ -13,9 +16,6 @@
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { tryParseDate } from "#lib/utils/dates.js";
     import { invalidateViz } from "#lib/views/views.svelte.ts";
-    import { goto } from "$app/navigation";
-    import { type Keyword, createKeyword, deleteKeyword, updateKeyword } from "@viz/api";
-    import { DateTime } from "luxon";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();

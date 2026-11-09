@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { generateRandomString } from "#lib/utils/misc.js";
     import { browser } from "$app/env";
     import { type Snippet, getContext, hasContext, onDestroy, onMount } from "svelte";
+    import { generateRandomString } from "#lib/utils/misc.js";
     import { KEY } from "./Splitpanes.svelte";
     import type { ClientCallbacks, IPane, PaneInitFunction, SplitContext } from "./index.js";
     import { gatheringKey } from "./internal/GatheringRound.svelte";

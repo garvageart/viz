@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
+    import { onDestroy, onMount } from "svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import LoadingSpinner from "#lib/components/ui/LoadingSpinner.svelte";
     import { getImageGridDisplay } from "#lib/context-menu/menus/image-grid-display.js";
@@ -16,8 +18,6 @@
     import { SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
     import { photosSort } from "#lib/states/sort.svelte.js";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
-    import { addCollectionImages, listCollectionImageUiDs, listImages } from "@viz/api";
-    import { onDestroy, onMount } from "svelte";
     import Dropdown from "../context-menus/Dropdown.svelte";
     import PhotoAssetGrid from "../grid/PhotoAssetGrid.svelte";
     import Button from "../ui/Button.svelte";

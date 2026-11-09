@@ -1,4 +1,17 @@
 <script lang="ts">
+    import { dev } from "$app/env";
+    import { goto } from "$app/navigation";
+    import {
+        type ImageAsset,
+        Label as ImageLabel,
+        type KeywordUpdate,
+        batchUpdateImages,
+        deleteKeyword,
+        removeAssetsFromKeywords,
+        updateKeyword
+    } from "@viz/api";
+    import debounce from "lodash-es/debounce";
+    import { type ComponentProps, onDestroy } from "svelte";
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import PhotoAssetGrid from "#lib/components/grid/PhotoAssetGrid.svelte";
@@ -38,19 +51,6 @@
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import type { EntityGridArray } from "#lib/types/asset.js";
     import { getImageLabel } from "#lib/utils/images.js";
-    import { dev } from "$app/env";
-    import { goto } from "$app/navigation";
-    import {
-        type ImageAsset,
-        Label as ImageLabel,
-        type KeywordUpdate,
-        batchUpdateImages,
-        deleteKeyword,
-        removeAssetsFromKeywords,
-        updateKeyword
-    } from "@viz/api";
-    import debounce from "lodash-es/debounce";
-    import { type ComponentProps, onDestroy } from "svelte";
     import type { PageProps } from "./$types";
 
     let { data }: PageProps = $props();

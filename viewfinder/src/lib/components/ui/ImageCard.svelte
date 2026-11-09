@@ -1,9 +1,9 @@
 <script lang="ts">
+    import { type ImageAsset } from "@viz/api";
     import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
     import Favourite from "#lib/components/ui/Favourite.svelte";
     import { createImageDragItems, draggable } from "#lib/drag-drop/directives.svelte.js";
     import { getImageLabel, getTakenAt } from "#lib/utils/images.js";
-    import { type ImageAsset } from "@viz/api";
     import AssetImage, { type AssetImageProps } from "./AssetImage.svelte";
 
     export type ImageVariant = "mini" | "full" | "simple";

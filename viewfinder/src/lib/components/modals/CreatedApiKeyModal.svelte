@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { createApiKey } from "@viz/api";
     import { Scope, scopes } from "#lib/auth/scopes.gen.js";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Button from "#lib/components/ui/Button.svelte";
@@ -6,7 +7,6 @@
     import InputText from "#lib/components/ui/InputText.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { copyToClipboard } from "#lib/utils/misc.js";
-    import { createApiKey } from "@viz/api";
     import Modal from "./Modal.svelte";
 
     let { id, onClose, onSuccess }: { id?: string; onClose: () => void; onSuccess: () => void } = $props();

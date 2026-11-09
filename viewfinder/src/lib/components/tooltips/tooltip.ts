@@ -1,7 +1,7 @@
-import { ZIndex } from "#lib/constants/z-index.js";
 import { type Component, mount, unmount } from "svelte";
 import tippy, { type Instance, type Props } from "tippy.js";
 import "tippy.js/dist/tippy.css";
+import { ZIndex } from "#lib/constants/z-index.js";
 
 type TippyOptions = Omit<Partial<Props>, "content"> & {
     component?: Component<any>;

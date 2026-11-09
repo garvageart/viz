@@ -6,11 +6,11 @@
 </script>
 
 <script lang="ts">
-    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
-    import { generateRandomString } from "#lib/utils/misc.js";
     import type { Snippet } from "svelte";
     import type { HTMLAttributes } from "svelte/elements";
     import { slide } from "svelte/transition";
+    import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
+    import { generateRandomString } from "#lib/utils/misc.js";
     import MaterialIcon from "./MaterialIcon.svelte";
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "ontoggle"> {
