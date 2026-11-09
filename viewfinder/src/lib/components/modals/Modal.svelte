@@ -81,12 +81,25 @@
     }
 
     onMount(() => {
-        const autoFocusEl = modalEl?.querySelector<HTMLElement>("[autofocus]");
-        if (autoFocusEl) {
-            autoFocusEl.focus();
-        } else {
+        requestAnimationFrame(() => {
+            const autoFocusEl = modalEl?.querySelector<HTMLElement>("[autofocus]");
+            if (autoFocusEl) {
+                autoFocusEl.focus();
+                return;
+            }
+
+            const contentEl = modalEl?.querySelector<HTMLElement>(".modal-content");
+            const firstInput = contentEl?.querySelector<HTMLElement>(
+                'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex="0"]'
+            );
+
+            if (firstInput) {
+                firstInput.focus();
+                return;
+            }
+
             modalEl?.focus();
-        }
+        });
 
         modalEl?.addEventListener("keydown", handleKeyDown);
         return () => {
@@ -137,15 +150,15 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        position: relative;
-        border-radius: 0.5em;
+        overflow: hidden;
+        border-radius: var(--viz-border-radius-lg);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 
     .modal-header {
         width: 100%;
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: center;
         box-sizing: border-box;
         border-bottom: var(--viz-border-thin);
@@ -153,9 +166,6 @@
 
         h1 {
             font-size: var(--viz-font-size-lg);
-            position: absolute;
-            left: 0;
-            right: 0;
             text-align: center;
             pointer-events: none;
         }
@@ -173,7 +183,7 @@
     }
 
     .modal-content.padding {
-        padding: 1rem;
+        padding: var(--viz-spacing-sm);
     }
 
     @media (max-width: 40rem) {
