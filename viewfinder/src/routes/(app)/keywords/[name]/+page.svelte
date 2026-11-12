@@ -96,8 +96,6 @@
             return undefined;
         }
 
-        // If we are in "Select All" mode, the 'selected' set contains lightweight {uid} objects.
-        // We prefer picking a "rich" asset from the current view so that toolbars/inspectors show real data.
         if (selectionScope.isSelectAll && displayData.length > 0) {
             const firstRich = displayData.find((i) => selectionScope.has(i));
             if (firstRich) {
@@ -134,7 +132,7 @@
 
     // UI Stuff
     let showCollNameInput = $state(false);
-    let colour = $derived(data.keyword.colour);
+    let colour = $derived(data.keyword.colour ?? "");
 
     const debouncedUpdateKeyword = debounce(async (name: string, colour: string) => {
         const res = await updateKeyword(data.keyword.uid, {
@@ -166,19 +164,8 @@
     });
 
     let imageGridArray: EntityGridArray<ImageAsset> | undefined = $state();
-    let groups: DateGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return groupImagesByDate(displayData);
-        }
-        return [];
-    });
-
-    let consolidatedGroups: ConsolidatedGroup[] = $derived.by(() => {
-        if (viewSettings.showDates) {
-            return getConsolidatedGroups(groups);
-        }
-        return [];
-    });
+    let groups: DateGroup[] = $derived(groupImagesByDate(displayData));
+    let consolidatedGroups: ConsolidatedGroup[] = $derived(getConsolidatedGroups(groups));
 
     let gridCtxMenu = $derived(
         getImageGridDisplay({

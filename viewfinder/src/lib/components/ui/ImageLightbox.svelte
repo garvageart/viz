@@ -790,8 +790,10 @@
                     <Button
                         id="act-expand-lightbox"
                         class="lightbox-button-icon"
-                        title={lightboxState.filmstrip.visible ? "Hide Filmstrip" : "Show Filmstrip"}
-                        iconName={lightboxState.filmstrip.visible ? "collapse_content" : "expand_content"}
+                        title="Toggle Filmstrip"
+                        iconName="view_sidebar"
+                        // i didn't like that the "sidebar" part of the icon was showing the wrong side
+                        style="transform: rotateY(180deg);"
                         onclick={() => {
                             lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
                         }}

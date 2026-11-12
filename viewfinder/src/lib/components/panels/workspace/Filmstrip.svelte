@@ -297,10 +297,6 @@
                 class:selected={isSelected}
                 use:draggable={{
                     items: () => {
-                        if (!targetScope) {
-                            return [];
-                        }
-
                         if (!targetScope.has(image)) {
                             selectionManager.setActive(targetScope.id);
                             targetScope?.select(image);

@@ -954,20 +954,28 @@
         if (shouldKeepSelection(target)) {
             return;
         }
+
         selection.clear();
     }
 
-    function unselectImagesOnClickOutsideAssetContainer(_element: HTMLElement) {
+    function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
         const clickHandler = (e: MouseEvent) => {
             if (disableOutsideUnselect) {
                 return;
             }
+
             const target = e.target as HTMLElement;
+
+            if (element.contains(target)) {
+                return;
+            }
 
             // Check if we should preserve the selection
             if (shouldKeepSelection(target)) {
                 return;
             }
+
+            selection.clear();
         };
 
         $effect(() => {

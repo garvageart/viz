@@ -1,11 +1,11 @@
 <script lang="ts">
     const variants: Record<string, string> = {
-    "400": "<path d=\"M440-440v240h-80v-160H200v-80zm160-320v160h160v80H520v-240z\" />"
+    "400": "<path d=\"M80-160v-640h800v640zm620-453h100v-107H700zm0 186h100v-106H700zM160-240h460v-480H160zm540 0h100v-107H700z\" />"
 };
     const filledVariants: Record<string, string> = {
-    "400": "<path d=\"M440-440v240h-60v-180H200v-60zm140-320v180h180v60H520v-240z\" />"
+    "400": "<path d=\"M707-627v-173h173v173zm0 234v-174h173v174zM80-160v-640h567v640zm627 0v-173h173v173z\" />"
 };
-    let { size = "1.5em", className = "", title = "collapse_content", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
+    let { size = "1.5em", className = "", title = "view_sidebar", viewBox = "0 -960 960 960", weight = "400", fill = false, ...rest } = $props();
     
     const activeMap = $derived(fill ? filledVariants : variants);
     const inner = $derived(activeMap[String(weight)] || Object.values(activeMap)[0]);
