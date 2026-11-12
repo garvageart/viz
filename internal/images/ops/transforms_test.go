@@ -8,9 +8,7 @@ import (
 	"viz/internal/config"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	"viz/internal/images"
 	libvips "viz/internal/images/ops/vips"
-	"viz/internal/images/transform"
 )
 
 func TestMain(m *testing.M) {
@@ -23,6 +21,47 @@ func TestMain(m *testing.M) {
 
 	libvips.Shutdown()
 	os.Exit(code)
+}
+
+func TestParseBooleanTransformParams(t *testing.T) {
+	testCases := []struct {
+		name            string
+		path            string
+		includeLocation bool
+		metadata        MetadataPolicy
+	}{
+		{
+			name:            "true values",
+			path:            "/image?includeLocation=true&embed_metadata=true",
+			includeLocation: true,
+			metadata:        MetadataAll,
+		},
+		{
+			name:     "false values",
+			path:     "/image?includeLocation=false&embed_metadata=false",
+			metadata: MetadataNone,
+		},
+		{
+			name: "numeric values are not accepted",
+			path: "/image?includeLocation=1&embed_metadata=1",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			transform := &ImageTransform{}
+			if err := transform.Parse(testCase.path); err != nil {
+				t.Fatalf("Parse() error = %v", err)
+			}
+
+			if transform.IncludeLocation != testCase.includeLocation {
+				t.Errorf("IncludeLocation = %t, want %t", transform.IncludeLocation, testCase.includeLocation)
+			}
+			if transform.Metadata != testCase.metadata {
+				t.Errorf("Metadata = %q, want %q", transform.Metadata, testCase.metadata)
+			}
+		})
+	}
 }
 
 func TestGenerateTransform_ModernSamples(t *testing.T) {
@@ -67,11 +106,11 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 			// Test cases for each image
 			testCases := []struct {
 				name   string
-				params *transform.TransformParams
+				params *TransformParams
 			}{
 				{
 					name: "Resize 200x200 WebP",
-					params: &transform.TransformParams{
+					params: &TransformParams{
 						Width:   200,
 						Height:  200,
 						Format:  "webp",
@@ -80,7 +119,7 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 				},
 				{
 					name: "Resize Height 300 JPG",
-					params: &transform.TransformParams{
+					params: &TransformParams{
 						Height:  300,
 						Format:  "jpg",
 						Quality: 75,
@@ -88,7 +127,7 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 				},
 				{
 					name: "Resize Width 150 PNG",
-					params: &transform.TransformParams{
+					params: &TransformParams{
 						Width:   150,
 						Format:  "png",
 						Quality: 90,
@@ -98,7 +137,8 @@ func TestGenerateTransform_ModernSamples(t *testing.T) {
 
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
-					result, err := GenerateTransform(tc.params, imgEnt, data)
+					transform := &ImageTransform{TransformParams: *tc.params, Image: imgEnt}
+					result, err := transform.Generate(data)
 					if err != nil {
 						t.Fatalf("GenerateTransform failed for %s: %v. Hint: On Windows, run .\\scripts\\setup-libvips.ps1 to ensure all delegates (RAW, etc.) are installed.", file.Name(), err)
 					}
@@ -171,7 +211,10 @@ func TestPermanentTransforms(t *testing.T) {
 		t.Fatalf("Failed to read samples directory: %v", err)
 	}
 
-	permTransforms := images.GetAllPermanentTransforms()
+	permTransforms := map[string]TransformParams{
+		"thumbnail": {Format: "webp", Width: 400, Height: 400, Quality: 85},
+		"preview":   {Format: "webp", Width: 1920, Height: 1920, Quality: 90},
+	}
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -200,7 +243,8 @@ func TestPermanentTransforms(t *testing.T) {
 			for name, params := range permTransforms {
 				t.Run(string(name), func(t *testing.T) {
 					p := params
-					result, err := GenerateTransform(&p, imgEnt, data)
+					transform := &ImageTransform{TransformParams: p, Image: imgEnt}
+					result, err := transform.Generate(data)
 					if err != nil {
 						t.Fatalf("GenerateTransform failed for %s with %s: %v. Hint: On Windows, run .\\scripts\\setup-libvips.ps1 to ensure all delegates (RAW, etc.) are installed.", file.Name(), name, err)
 					}
@@ -267,15 +311,16 @@ func TestGenerateTransform_EmbedMetadata(t *testing.T) {
 		},
 	}
 
-	params := &transform.TransformParams{
-		Format:        "jpg",
-		Width:         200,
-		Height:        200,
-		Quality:       80,
-		EmbedMetadata: true,
+	params := &TransformParams{
+		Format:   "jpg",
+		Width:    200,
+		Height:   200,
+		Quality:  80,
+		Metadata: MetadataAll,
 	}
 
-	result, err := GenerateTransform(params, imgEnt, data)
+	transform := &ImageTransform{TransformParams: *params, Image: imgEnt}
+	result, err := transform.Generate(data)
 	if err != nil {
 		t.Fatalf("GenerateTransform with EmbedMetadata failed: %v", err)
 	}
@@ -301,10 +346,11 @@ func TestGenerateTransform_EmbedMetadata(t *testing.T) {
 	}
 
 	// Verify that empty Format defaults to the asset's file type and encodes properly (not raw buffer)
-	paramsDefaultFormat := &transform.TransformParams{
-		EmbedMetadata: true,
+	paramsDefaultFormat := &TransformParams{
+		Metadata: MetadataAll,
 	}
-	resultDefault, err := GenerateTransform(paramsDefaultFormat, imgEnt, data)
+	defaultTransform := &ImageTransform{TransformParams: *paramsDefaultFormat, Image: imgEnt}
+	resultDefault, err := defaultTransform.Generate(data)
 	if err != nil {
 		t.Fatalf("GenerateTransform with default format failed: %v", err)
 	}

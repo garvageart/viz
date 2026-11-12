@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 	imageops "viz/internal/images/ops"
-	"viz/internal/images/transform"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -155,9 +154,6 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 
 	ext := imgEnt.ImageMetadata.FileType
 
-	var transformParams *transform.TransformParams
-	var terr error
-
 	onProgress("Generating transforms", 80)
 
 	// Generate thumbnail transform (permanent paths)
@@ -167,12 +163,12 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 			"path": imgEnt.ImagePaths.Thumbnail,
 		}))
 
-		transformParams, terr = imageops.ParseTransformParams(imgEnt.ImagePaths.Thumbnail)
-		if terr != nil {
+		transformParams := &imageops.ImageTransform{Image: imgEnt}
+		if terr := transformParams.Parse(imgEnt.ImagePaths.Thumbnail); terr != nil {
 			return terr
 		}
 
-		result, terr := imageops.GenerateTransform(transformParams, imgEnt, originalData)
+		result, terr := transformParams.Generate(originalData)
 		if terr != nil {
 			if terr.Error() == images.CacheErrTransformExists {
 				jobs.Logger.Debug("GenerateTransformFromPath: transform already exists", loggerFields.Add(watermill.LogFields{
@@ -208,12 +204,12 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 			"path": imgEnt.ImagePaths.Preview,
 		}))
 
-		transformParams, terr = imageops.ParseTransformParams(imgEnt.ImagePaths.Preview)
-		if terr != nil {
+		transformParams := &imageops.ImageTransform{Image: imgEnt}
+		if terr := transformParams.Parse(imgEnt.ImagePaths.Preview); terr != nil {
 			return terr
 		}
 
-		result, terr := imageops.GenerateTransform(transformParams, imgEnt, originalData)
+		result, terr := transformParams.Generate(originalData)
 		if terr != nil {
 			if terr.Error() == images.CacheErrTransformExists {
 				jobs.Logger.Debug("GenerateTransformFromPath: transform already exists", loggerFields.Add(watermill.LogFields{

@@ -11,7 +11,6 @@ import (
 	"time"
 	"viz/internal/entities"
 	imageops "viz/internal/images/ops"
-	"viz/internal/images/transform"
 )
 
 func getRSS() float64 {
@@ -70,24 +69,26 @@ func simulatePipeline(originalData []byte) error {
 
 	// 5. image_process: Generate Preview Transform
 	imgEnt := entities.ImageAsset{Uid: "benchmark-image-uid"}
-	previewParams := transform.TransformParams{
+	previewParams := imageops.TransformParams{
 		Width:   2048,
 		Quality: 85,
 		Format:  "jpeg",
 	}
-	previewRes, err := imageops.GenerateTransform(&previewParams, imgEnt, originalData)
+	previewTransform := &imageops.ImageTransform{TransformParams: previewParams, Image: imgEnt}
+	previewRes, err := previewTransform.Generate(originalData)
 	if err != nil {
 		return fmt.Errorf("preview transform failed: %w", err)
 	}
 	_ = previewRes
 
 	// 6. image_process: Generate Thumbnail Transform
-	thumbParams := transform.TransformParams{
+	thumbParams := imageops.TransformParams{
 		Width:   600,
 		Quality: 85,
 		Format:  "jpeg",
 	}
-	thumbRes, err := imageops.GenerateTransform(&thumbParams, imgEnt, originalData)
+	thumbTransform := &imageops.ImageTransform{TransformParams: thumbParams, Image: imgEnt}
+	thumbRes, err := thumbTransform.Generate(originalData)
 	if err != nil {
 		return fmt.Errorf("thumbnail transform failed: %w", err)
 	}

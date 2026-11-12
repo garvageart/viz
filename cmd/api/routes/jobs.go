@@ -18,7 +18,6 @@ import (
 	libhttp "viz/internal/http"
 	"viz/internal/images"
 	imageops "viz/internal/images/ops"
-	"viz/internal/images/transform"
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
 )
@@ -405,8 +404,8 @@ func checkMissingTransforms(img entities.ImageAsset, transformPath string, missi
 		return nil // Cannot check without complete metadata
 	}
 
-	params, err := imageops.ParseTransformParams(transformPath)
-	if err != nil {
+	params := &imageops.ImageTransform{Image: img}
+	if err := params.Parse(transformPath); err != nil {
 		logger.Warn("failed to parse transform params", slog.String("uid", img.Uid), slog.String("path", transformPath), slog.Any("error", err))
 		// If params cannot be parsed, treat as missing/invalid and enqueue for reprocessing
 		if !containsUid(*missingUids, img.Uid) {
@@ -415,7 +414,7 @@ func checkMissingTransforms(img entities.ImageAsset, transformPath string, missi
 		return fmt.Errorf("failed to parse transform params for %s: %w", transformPath, err)
 	}
 
-	transformEtag := *transform.CreateTransformEtag(img, params)
+	transformEtag := params.ETag()
 	ext := params.Format
 	if ext == "" {
 		ext = img.ImageMetadata.FileType // Fallback if format isn't specified in path

@@ -16,7 +16,7 @@ import (
 	"viz/internal/config"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	"viz/internal/images/transform"
+	imageops "viz/internal/images/ops"
 	"viz/internal/uid"
 )
 
@@ -213,28 +213,26 @@ func TestETagReconstruction(t *testing.T) {
 		},
 	}
 
-	params := transform.TransformParams{
+	params := imageops.TransformParams{
 		Width:   100,
 		Height:  200,
 		Quality: 80,
 		Format:  "webp",
 	}
 
-	etag1 := transform.CreateTransformEtag(img, &params)
-	if etag1 == nil {
-		t.Fatal("CreateTransformEtag returned nil")
-	}
+	transform := imageops.ImageTransform{TransformParams: params, Image: img}
+	etag1 := transform.ETag()
 
 	// 1. Stability check
-	etag2 := transform.CreateTransformEtag(img, &params)
-	if *etag1 != *etag2 {
-		t.Errorf("ETags are not stable. Got %s and %s", *etag1, *etag2)
+	etag2 := transform.ETag()
+	if etag1 != etag2 {
+		t.Errorf("ETags are not stable. Got %s and %s", etag1, etag2)
 	}
 
 	// 2. Sensitivity check
-	params.Width = 101
-	etag3 := transform.CreateTransformEtag(img, &params)
-	if *etag1 == *etag3 {
+	transform.Width = 101
+	etag3 := transform.ETag()
+	if etag1 == etag3 {
 		t.Errorf("ETag should change when params change")
 	}
 }

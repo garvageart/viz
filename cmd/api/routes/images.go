@@ -31,7 +31,6 @@ import (
 	"viz/internal/images"
 	imageops "viz/internal/images/ops"
 	libvips "viz/internal/images/ops/vips"
-	"viz/internal/images/transform"
 	"viz/internal/jobs"
 	"viz/internal/jobs/workers"
 	libos "viz/internal/os"
@@ -134,8 +133,10 @@ func createNewImageEntity(logger *slog.Logger, fileName string, libvipsImg *libv
 	thumbParams, _ := images.GetPermanentTransformParams(images.TransformThumbnail)
 	previewParams, _ := images.GetPermanentTransformParams(images.TransformPreview)
 
-	thumbnailPath := fmt.Sprintf("/images/%s/file?%s", id, thumbParams.ToQueryString())
-	previewPath := fmt.Sprintf("/images/%s/file?%s", id, previewParams.ToQueryString())
+	thumbnailQuery := (&imageops.ImageTransform{TransformParams: thumbParams}).ToQueryString()
+	previewQuery := (&imageops.ImageTransform{TransformParams: previewParams}).ToQueryString()
+	thumbnailPath := fmt.Sprintf("/images/%s/file?%s", id, thumbnailQuery)
+	previewPath := fmt.Sprintf("/images/%s/file?%s", id, previewQuery)
 
 	paths := dto.ImagePaths{
 		Original:  originalPath,
@@ -380,8 +381,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		uid := chi.URLParam(req, "uid")
 		logger := logger.With(slog.String("uid", uid))
 
-		params, err := imageops.ParseTransformParams(req.URL.String())
-		if err != nil {
+		params := &imageops.ImageTransform{}
+		if err := params.Parse(req.URL.String()); err != nil {
 			render.Status(req, http.StatusBadRequest)
 			render.JSON(res, req, dto.ErrorResponse{Error: "Invalid transform parameters"})
 			return
@@ -396,7 +397,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 
 		var imgEnt entities.ImageAsset
-		query := db.Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
+		query := db.Preload("Owner").Preload("UploadedBy").Preload("Keywords").
+			Model(&entities.ImageAsset{}).Where("uid = ? AND deleted_at IS NULL", uid)
 		if req.URL.Query().Get("token") == "" {
 			query = queries.ApplyImageAccessControlFilter(query, req)
 		}
@@ -412,6 +414,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			render.JSON(res, req, dto.ErrorResponse{Error: "Failed to fetch image from database"})
 			return
 		}
+		params.Image = imgEnt
 
 		isDownload := req.URL.Query().Get("download") == "1"
 		if isDownload {
@@ -419,19 +422,18 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 				return
 			}
 
-			// When downloading an image, default to embedding metadata unless explicitly disabled
-			embedParam := req.URL.Query().Get("embed_metadata")
-			if embedParam != "false" && embedParam != "0" {
-				params.EmbedMetadata = true
+			// Downloads include metadata by default; metadata=none opts out.
+			if params.Metadata == "" {
+				params.Metadata = imageops.MetadataAll
 			}
 		}
 
-		hasTransformParams := params.Format != "" || params.Width > 0 || params.Height > 0 || params.Quality > 0 || params.Rotate > 0 || params.Flip != "" || params.EmbedMetadata
-		if !hasTransformParams {
+		if params.ToQueryString() == "" {
 			serveOriginalImage(res, req, logger, &imgEnt, isDownload)
 			return
 		}
 
+		params.Image = imgEnt
 		serveTransformedImage(res, req, logger, &imgEnt, params, isDownload)
 	})
 
@@ -1184,6 +1186,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			})
 		}
 
+		// FIXME: Yep I hate this
 		var msg *string
 		if anyFailed {
 			m := fmt.Sprintf("failed to delete/move ids: %s", func() string {
@@ -1203,6 +1206,8 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			Message: msg,
 		}
 
+		// TODO: Use type-safe broadcaster and send ONLY the array. Maybe also
+		// a specific multiple images key such as `images-deleted`
 		for _, r := range resultsArr {
 			if r.Deleted {
 				_ = wsBroker.Broadcast("image-deleted", map[string]any{
@@ -1294,7 +1299,7 @@ func serveOriginalImage(res http.ResponseWriter, req *http.Request, logger *slog
 	http.ServeContent(res, req, imgEnt.ImageMetadata.FileName, imgEnt.UpdatedAt, bytes.NewReader(imageData))
 }
 
-func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, params *transform.TransformParams, isDownload bool) {
+func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *slog.Logger, imgEnt *entities.ImageAsset, params *imageops.ImageTransform, isDownload bool) {
 	// 1. Determine if this is a "permanent" transform path (ignore cache-busting 'v' query param)
 	reqURI := req.URL.String()
 	q := req.URL.Query()
@@ -1310,7 +1315,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 	hasVersionParam := req.URL.Query().Get("v") != ""
 
 	// 2. Generate ETag for the transform
-	transformETag := *transform.CreateTransformEtag(*imgEnt, params)
+	transformETag := params.ETag()
 
 	// 3. Check client-side cache first
 	if match := req.Header.Get("If-None-Match"); match != "" {
@@ -1323,14 +1328,13 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		}
 	}
 
-	if modifiedSince := req.Header.Get("If-Modified-Since"); modifiedSince != "" {
-		if t, err := http.ParseTime(modifiedSince); err == nil {
-			if !imgEnt.UpdatedAt.After(t) {
-				logger.Debug("client-side cache hit (If-Modified-Since)", slog.Time("last-modified", imgEnt.UpdatedAt))
-				res.WriteHeader(http.StatusNotModified)
-				return
-			}
-		}
+	modifiedSince := req.Header.Get("If-Modified-Since")
+	modifiedAt, err := http.ParseTime(modifiedSince)
+
+	if err == nil && !imgEnt.UpdatedAt.After(modifiedAt) {
+		logger.Debug("client-side cache hit (If-Modified-Since)", slog.Time("last-modified", imgEnt.UpdatedAt))
+		res.WriteHeader(http.StatusNotModified)
+		return
 	}
 
 	ext := params.Format
@@ -1350,6 +1354,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		logger.Debug("server-side cache hit", slog.String("key", cacheKey))
 		res.Header().Set("Etag", fmt.Sprintf(`"%s"`, transformETag))
 		res.Header().Set("Last-Modified", imgEnt.UpdatedAt.UTC().Format(http.TimeFormat))
+
 		// Prevent XSS if the image is an SVG or other dangerous type
 		res.Header().Set("Content-Security-Policy", "sandbox")
 
@@ -1390,7 +1395,7 @@ func serveTransformedImage(res http.ResponseWriter, req *http.Request, logger *s
 		return
 	}
 
-	tresult, err := imageops.GenerateTransform(params, *imgEnt, originalData)
+	tresult, err := params.Generate(originalData)
 	if err != nil {
 		logger.Error("failed to generate transform", slog.Any("error", err))
 		render.Status(req, http.StatusInternalServerError)

@@ -2,7 +2,7 @@ package images
 
 import "maps"
 
-import "viz/internal/images/transform"
+import imageops "viz/internal/images/ops"
 
 // PermanentTransformName is a type for permanent transform names
 type PermanentTransformName string
@@ -15,7 +15,7 @@ const (
 )
 
 // permanentTransforms defines the parameters for different types of permanent transforms.
-var permanentTransforms = map[PermanentTransformName]transform.TransformParams{
+var permanentTransforms = map[PermanentTransformName]imageops.TransformParams{
 	TransformThumbnail: {
 		Format:  "webp",
 		Width:   400,
@@ -31,15 +31,15 @@ var permanentTransforms = map[PermanentTransformName]transform.TransformParams{
 }
 
 // GetPermanentTransformParams returns the transform parameters for a given permanent transform name.
-func GetPermanentTransformParams(name PermanentTransformName) (transform.TransformParams, bool) {
+func GetPermanentTransformParams(name PermanentTransformName) (imageops.TransformParams, bool) {
 	params, ok := permanentTransforms[name]
 	return params, ok
 }
 
 // GetAllPermanentTransforms returns a copy of all permanent transform definitions.
 // Callers may safely mutate the returned map without affecting internal state.
-func GetAllPermanentTransforms() map[PermanentTransformName]transform.TransformParams {
-	out := make(map[PermanentTransformName]transform.TransformParams, len(permanentTransforms))
+func GetAllPermanentTransforms() map[PermanentTransformName]imageops.TransformParams {
+	out := make(map[PermanentTransformName]imageops.TransformParams, len(permanentTransforms))
 	maps.Copy(out, permanentTransforms)
 	return out
 }

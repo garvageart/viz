@@ -23,7 +23,7 @@ import (
 	"viz/internal/config"
 	"viz/internal/dto"
 	"viz/internal/entities"
-	"viz/internal/images/transform"
+	imageops "viz/internal/images/ops"
 )
 
 const (
@@ -513,7 +513,8 @@ func GetPermanentTransformHashes(db *gorm.DB) (map[string]bool, error) {
 			}
 			// Recalculate etag for each permanent transform and add its hash to the set
 			for _, params := range GetAllPermanentTransforms() {
-				etag := *transform.CreateTransformEtag(img, &params)
+				transform := imageops.ImageTransform{TransformParams: params, Image: img}
+				etag := transform.ETag()
 				// The filename is the SHA1 hash of the etag
 				fname := cacheFileName(etag, params.Format)
 				hash := strings.TrimSuffix(fname, filepath.Ext(fname))

@@ -6,10 +6,55 @@ import (
 	"strconv"
 	"strings"
 	"viz/internal/entities"
+	"viz/internal/images/colorspace"
 	libvips "viz/internal/images/ops/vips"
-	"viz/internal/images/transform"
 	customxmp "viz/internal/xmp"
 )
+
+type ResizeMode string
+type ColorSpace string
+type MetadataPolicy string
+
+const (
+	ResizeNone       ResizeMode = "none"
+	ResizeWidth      ResizeMode = "width"
+	ResizeHeight     ResizeMode = "height"
+	ResizeLongEdge   ResizeMode = "long-edge"
+	ResizeShortEdge  ResizeMode = "short-edge"
+	ResizeDimensions ResizeMode = "dimensions"
+
+	ColorSpaceSRGB        ColorSpace = "sRGB"
+	ColorSpaceAdobeRGB    ColorSpace = "AdobeRGB"
+	ColorSpaceProPhoto    ColorSpace = "ProPhoto"
+	ColorSpaceDisplayP3   ColorSpace = "DisplayP3"
+	ColorSpaceRec2020     ColorSpace = "Rec2020"
+	ColorSpaceColorMatch  ColorSpace = "ColorMatch"
+	ColorSpaceGrayGamma18 ColorSpace = "GrayGamma18"
+	ColorSpaceGrayGamma22 ColorSpace = "GrayGamma22"
+	ColorSpacesGray       ColorSpace = "sGray"
+
+	MetadataAll          MetadataPolicy = "all"
+	MetadataCopyright    MetadataPolicy = "copyright"
+	MetadataContact      MetadataPolicy = "contact"
+	MetadataExceptCamera MetadataPolicy = "except-camera"
+	MetadataNone         MetadataPolicy = "none"
+)
+
+// TransformParams defines the parameters for an image transformation.
+type TransformParams struct {
+	Format          string
+	Width           int64
+	Height          int64
+	Quality         int64
+	Rotate          int
+	Flip            string
+	Kernel          string
+	BitDepth        int
+	ResizeMode      ResizeMode
+	ColorSpace      ColorSpace
+	Metadata        MetadataPolicy
+	IncludeLocation bool
+}
 
 type TransformResult struct {
 	ImageData     []byte
@@ -17,79 +62,195 @@ type TransformResult struct {
 	Ext           string
 }
 
-func ParseTransformParams(pathStr string) (*transform.TransformParams, error) {
-	u, err := url.Parse(pathStr)
+// ImageTransform binds a source image to the shared transform options.
+type ImageTransform struct {
+	TransformParams
+	Image entities.ImageAsset
+}
+
+func (t *ImageTransform) Parse(path string) error {
+	parsedURL, err := url.Parse(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	q := u.Query()
+	query := parsedURL.Query()
+	t.Format = query.Get("format")
+	t.Flip = query.Get("flip")
 
-	params := &transform.TransformParams{}
-	params.Format = q.Get("format")
-	params.Flip = q.Get("flip")
-	params.Kernel = q.Get("kernel")
-
-	// Check for 'w' (short for width) first, then 'width'
-	if widthParam := q.Get("w"); widthParam != "" {
-		if w, err := strconv.ParseInt(widthParam, 10, 64); err == nil {
-			params.Width = w
-		}
-	} else if widthParam := q.Get("width"); widthParam != "" {
-		if w, err := strconv.ParseInt(widthParam, 10, 64); err == nil {
-			params.Width = w
-		}
+	switch t.Flip {
+	case "h":
+		t.Flip = "horizontal"
+	case "v":
+		t.Flip = "vertical"
 	}
 
-	// Check for 'h' (short for height) first, then 'height'
-	if heightParam := q.Get("h"); heightParam != "" {
-		if h, err := strconv.ParseInt(heightParam, 10, 64); err == nil {
-			params.Height = h
-		}
-	} else if heightParam := q.Get("height"); heightParam != "" {
-		if h, err := strconv.ParseInt(heightParam, 10, 64); err == nil {
-			params.Height = h
+	t.Kernel = query.Get("kernel")
+	t.ResizeMode = ResizeMode(t.queryValue(query, "resizeMode", "resize_mode"))
+	t.ColorSpace = ColorSpace(t.queryValue(query, "colorSpace", "color_space"))
+	t.Metadata = MetadataPolicy(query.Get("metadata"))
+	t.IncludeLocation = t.queryBool(query, "includeLocation", "include_location")
+
+	if legacy := query.Get("embed_metadata"); legacy != "" {
+		switch legacy {
+		case "true":
+			t.Metadata = MetadataAll
+		case "false":
+			t.Metadata = MetadataNone
 		}
 	}
 
-	if qualityParam := q.Get("quality"); qualityParam != "" {
-		if qn, err := strconv.ParseInt(qualityParam, 10, 64); err == nil {
-			params.Quality = qn
+	t.Width = t.parseInt64(t.queryValue(query, "width", "w"))
+	t.Height = t.parseInt64(t.queryValue(query, "height", "h"))
+	t.Quality = t.parseInt64(query.Get("quality"))
+	t.Rotate = int(t.parseInt64(query.Get("rotate")))
+	t.BitDepth = int(t.parseInt64(t.queryValue(query, "bitDepth", "bitdepth")))
+
+	return nil
+}
+
+// ToQueryString serializes the transform parameters into the canonical query format.
+func (t *ImageTransform) ToQueryString() string {
+	query := url.Values{}
+	if t.Format != "" {
+		query.Set("format", t.Format)
+	}
+	if t.Width > 0 {
+		query.Set("width", strconv.FormatInt(t.Width, 10))
+	}
+	if t.Height > 0 {
+		query.Set("height", strconv.FormatInt(t.Height, 10))
+	}
+	if t.Quality > 0 {
+		query.Set("quality", strconv.FormatInt(t.Quality, 10))
+	}
+	if t.Rotate != 0 {
+		query.Set("rotate", strconv.Itoa(t.Rotate))
+	}
+	if t.Flip != "" {
+		query.Set("flip", t.Flip)
+	}
+	if t.Kernel != "" {
+		query.Set("kernel", t.Kernel)
+	}
+	if t.BitDepth > 0 {
+		query.Set("bitDepth", strconv.Itoa(t.BitDepth))
+	}
+	if t.ResizeMode != "" {
+		query.Set("resizeMode", string(t.ResizeMode))
+	}
+	if t.ColorSpace != "" {
+		query.Set("colorSpace", string(t.ColorSpace))
+	}
+	if t.Metadata != "" {
+		query.Set("metadata", string(t.Metadata))
+	}
+	if t.IncludeLocation {
+		query.Set("includeLocation", "true")
+	}
+	return query.Encode()
+}
+
+func (t *ImageTransform) queryValue(query url.Values, names ...string) string {
+	for _, name := range names {
+		if value := query.Get(name); value != "" {
+			return value
 		}
 	}
 
-	if rotateParam := q.Get("rotate"); rotateParam != "" {
-		if r, err := strconv.Atoi(rotateParam); err == nil {
-			params.Rotate = r
-		}
+	return ""
+}
+
+func (t *ImageTransform) queryBool(query url.Values, names ...string) bool {
+	return t.queryValue(query, names...) == "true"
+}
+
+func (t *ImageTransform) parseInt64(value string) int64 {
+	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return parsed
+}
+
+// ETag creates a stable cache key that covers every output-affecting option.
+func (t *ImageTransform) ETag() string {
+	checksum := t.Image.ImageMetadata.Checksum
+	if checksum == "" {
+		checksum = "unknown"
 	}
 
-	if bitdepthParam := q.Get("bitdepth"); bitdepthParam != "" {
-		if bd, err := strconv.Atoi(bitdepthParam); err == nil {
-			params.BitDepth = bd
-		}
+	updatedAt := int64(0)
+	if !t.Image.UpdatedAt.IsZero() {
+		updatedAt = t.Image.UpdatedAt.UnixMilli()
 	}
 
-	if embedParam := q.Get("embed_metadata"); embedParam == "true" || embedParam == "1" {
-		params.EmbedMetadata = true
+	format := strings.ToLower(t.Format)
+	if format == "" {
+		format = strings.ToLower(t.Image.ImageMetadata.FileType)
 	}
 
-	return params, nil
+	return fmt.Sprintf("%s-%d-%dx%d-%s-%d-%d-%s-%s-%d-%s-%s-%s-%t",
+		checksum, updatedAt, t.Width, t.Height, format, t.normalizedQuality(int64(t.Quality)),
+		t.normalizedRotation(), t.Flip, t.normalizedKernel(), t.BitDepth,
+		t.normalizedResizeMode(), t.normalizedColorSpace(), t.normalizedMetadata(),
+		t.IncludeLocation,
+	)
+}
+
+func (t *ImageTransform) normalizedKernel() string {
+	if t.Kernel == "" && t.normalizedResizeMode() != ResizeNone {
+		return "lanczos3"
+	}
+
+	return t.Kernel
+}
+
+func (t *ImageTransform) normalizedResizeMode() ResizeMode {
+	if t.ResizeMode != "" {
+		return t.ResizeMode
+	}
+
+	if t.Width > 0 || t.Height > 0 {
+		return ResizeDimensions
+	}
+
+	return ResizeNone
+}
+
+func (t *ImageTransform) normalizedColorSpace() ColorSpace {
+	if t.ColorSpace == "" {
+		return ColorSpaceSRGB
+	}
+
+	return t.ColorSpace
+}
+
+func (t *ImageTransform) normalizedMetadata() MetadataPolicy {
+	if t.Metadata == "" {
+		return MetadataAll
+	}
+
+	return t.Metadata
 }
 
 // GenerateTransform generates permanent cached transforms for thumbnail/preview paths if present.
 // These are the URLs stored in ImagePaths (e.g. /images/<uid>/file?format=webp&w=400&h=400&quality=85)
-func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageAsset, originalData []byte) (result *TransformResult, err error) {
+func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult, err error) {
+	params := &t.TransformParams
+	imgEnt := t.Image
 	ext := params.Format
+
 	if ext == "" {
 		if imgEnt.ImageMetadata.FileType == "" {
 			return nil, fmt.Errorf("missing image metadata to determine file type")
 		}
+
 		ext = imgEnt.ImageMetadata.FileType
 	}
 
 	// Build transform ETag key same as route
-	transformEtag := transform.CreateTransformEtag(imgEnt, params)
+	transformEtag := t.ETag()
 
 	// Perform transform using libvips similarly to the route
 	libvipsImg, err := libvips.NewImageFromBuffer(originalData, libvips.DefaultLoadOptions())
@@ -111,44 +272,56 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 	}
 
 	// Ensure consistent color profile (sRGB) for web display
-	if err := NormalizeToSRGB(libvipsImg); err != nil {
+	colorSpace := params.ColorSpace
+	if colorSpace == "" {
+		colorSpace = ColorSpaceSRGB
+	}
+
+	if err := colorspace.Transform(libvipsImg, colorspace.Profile(colorSpace)); err != nil {
 		return nil, fmt.Errorf("failed to normalize to sRGB: %w", err)
 	}
 
-	if params.Rotate > 0 {
-		var angle libvips.Angle
-		switch params.Rotate {
-		case 90:
-			angle = libvips.AngleD90
-		case 180:
-			angle = libvips.AngleD180
-		case 270:
-			angle = libvips.AngleD270
-		default:
-			angle = libvips.AngleD0
-		}
-		if err := libvipsImg.Rotate(float64(angle), &libvips.RotateOptions{}); err != nil {
+	rotate := t.normalizedRotation()
+	switch rotate {
+	case 90:
+		if err := libvipsImg.Rotate(float64(libvips.AngleD90), &libvips.RotateOptions{}); err != nil {
 			return nil, fmt.Errorf("failed to rotate image: %w", err)
 		}
+	case 180:
+		if err := libvipsImg.Rotate(float64(libvips.AngleD180), &libvips.RotateOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to rotate image: %w", err)
+		}
+	case 270:
+		if err := libvipsImg.Rotate(float64(libvips.AngleD270), &libvips.RotateOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to rotate image: %w", err)
+		}
+	case 0:
+	default:
+		return nil, fmt.Errorf("rotation must be a multiple of 90 degrees")
 	}
 
 	if params.Flip != "" {
 		var direction libvips.Direction
 		shouldFlip := true
+
 		switch params.Flip {
 		case "horizontal":
 			direction = libvips.DirectionHorizontal
 		case "vertical":
 			direction = libvips.DirectionVertical
 		default:
-			shouldFlip = false
+			return nil, fmt.Errorf("unsupported flip direction %q", params.Flip)
 		}
+
 		if shouldFlip {
-			_ = libvipsImg.Flip(direction)
+			if err := libvipsImg.Flip(direction); err != nil {
+				return nil, fmt.Errorf("failed to flip image: %w", err)
+			}
 		}
 	}
 
-	if params.Width > 0 || params.Height > 0 {
+	width, height := t.resolveResizeDimensions(int64(libvipsImg.Width()), int64(libvipsImg.Height()))
+	if width > 0 || height > 0 {
 		var kernel libvips.Kernel
 		if params.Kernel != "" {
 			switch params.Kernel {
@@ -164,12 +337,8 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 				kernel = libvips.KernelLanczos2
 			case "lanczos3":
 				kernel = libvips.KernelLanczos3
-			case "mks2013":
-				kernel = libvips.KernelMks2013
-			case "mks2021":
-				kernel = libvips.KernelMks2021
 			default:
-				kernel = libvips.KernelLanczos3 // Default to Lanczos3
+				return nil, fmt.Errorf("unsupported resize kernel %q", params.Kernel)
 			}
 		} else {
 			kernel = libvips.KernelLanczos3
@@ -180,15 +349,15 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 		imgW := float64(libvipsImg.Width())
 		imgH := float64(libvipsImg.Height())
 
-		if params.Width > 0 && params.Height > 0 {
+		if width > 0 && height > 0 {
 			// Both provided: "contain" behavior (fit within box)
-			wScale := float64(params.Width) / imgW
-			hScale := float64(params.Height) / imgH
+			wScale := float64(width) / imgW
+			hScale := float64(height) / imgH
 			scale = min(wScale, hScale)
-		} else if params.Width > 0 {
-			scale = float64(params.Width) / imgW
-		} else if params.Height > 0 {
-			scale = float64(params.Height) / imgH
+		} else if width > 0 {
+			scale = float64(width) / imgW
+		} else if height > 0 {
+			scale = float64(height) / imgH
 		}
 
 		if err := libvipsImg.Resize(scale, &libvips.ResizeOptions{Kernel: kernel}); err != nil {
@@ -197,9 +366,17 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 	}
 
 	// Embed metadata if requested
-	if params.EmbedMetadata {
+	metadataPolicy := params.Metadata
+	if metadataPolicy == "" {
+		metadataPolicy = MetadataAll
+	}
+
+	if metadataPolicy != MetadataNone {
 		xmpBytes, xmpErr := customxmp.GenerateXMP(imgEnt)
-		if xmpErr == nil && len(xmpBytes) > 0 {
+		if xmpErr != nil {
+			return nil, fmt.Errorf("failed to generate XMP metadata: %w", xmpErr)
+		}
+		if len(xmpBytes) > 0 {
 			libvipsImg.SetXMP(xmpBytes)
 		}
 	}
@@ -208,23 +385,15 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 	var imageData []byte
 	switch strings.ToLower(ext) {
 	case "webp":
-		opts := &libvips.WebpsaveBufferOptions{
-			Q:      int(params.Quality),
-			Effort: 2,
-		}
+		opts := &libvips.WebpsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Effort: 2}
 
-		if params.EmbedMetadata {
-			opts.Keep = libvips.KeepAll
-		}
+		opts.Keep = t.metadataKeep(params.Metadata)
 
 		imageData, err = libvipsImg.WebpsaveBuffer(opts)
 		if err != nil {
 			// WebP buffer encoding failed on ultra-high resolution image; fallback gracefully to JPEG
 			var jpegErr error
-			jpegOpts := &libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true}
-			if params.EmbedMetadata {
-				jpegOpts.Keep = libvips.KeepAll
-			}
+			jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: t.metadataKeep(params.Metadata)}
 
 			imageData, jpegErr = libvipsImg.JpegsaveBuffer(jpegOpts)
 			if jpegErr == nil {
@@ -237,23 +406,18 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 			Filter:      libvips.PngFilterNone,
 			Interlace:   false,
 			Palette:     false,
-			Compression: int(params.Quality),
+			Compression: t.pngCompression(params.Quality),
 		}
 
 		if params.BitDepth > 0 {
 			pngOpts.Bitdepth = params.BitDepth
 		}
 
-		if params.EmbedMetadata {
-			pngOpts.Keep = libvips.KeepAll
-		}
+		pngOpts.Keep = t.metadataKeep(params.Metadata)
 
 		imageData, err = libvipsImg.PngsaveBuffer(pngOpts)
 	case "jpg", "jpeg":
-		jpegOpts := &libvips.JpegsaveBufferOptions{Q: int(params.Quality), Interlace: true}
-		if params.EmbedMetadata {
-			jpegOpts.Keep = libvips.KeepAll
-		}
+		jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: t.metadataKeep(params.Metadata)}
 
 		imageData, err = libvipsImg.JpegsaveBuffer(jpegOpts)
 	case "avif", "heif":
@@ -262,26 +426,21 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 			heifBitDepth = params.BitDepth
 		}
 
-		heifOpts := &libvips.HeifsaveBufferOptions{Q: int(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false}
-		if params.EmbedMetadata {
-			heifOpts.Keep = libvips.KeepAll
-		}
+		heifOpts := &libvips.HeifsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false, Keep: t.metadataKeep(params.Metadata)}
 
 		imageData, err = libvipsImg.HeifsaveBuffer(heifOpts)
 	case "tiff":
 		tiffOpts := libvips.DefaultTiffsaveBufferOptions()
-		tiffOpts.Q = int(params.Quality)
+		tiffOpts.Q = t.normalizedQuality(params.Quality)
 		if params.BitDepth > 0 {
 			tiffOpts.Bitdepth = params.BitDepth
 		}
 
-		if params.EmbedMetadata {
-			tiffOpts.Keep = libvips.KeepAll
-		}
+		tiffOpts.Keep = t.metadataKeep(params.Metadata)
 
 		imageData, err = libvipsImg.TiffsaveBuffer(tiffOpts)
 	default:
-		imageData, err = libvipsImg.RawsaveBuffer(&libvips.RawsaveBufferOptions{Keep: libvips.KeepAll})
+		return nil, fmt.Errorf("unsupported output format %q", ext)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode transform: %w", err)
@@ -289,7 +448,77 @@ func GenerateTransform(params *transform.TransformParams, imgEnt entities.ImageA
 
 	return &TransformResult{
 		ImageData:     imageData,
-		TransformHash: transformEtag,
+		TransformHash: &transformEtag,
 		Ext:           ext,
 	}, nil
+}
+
+func (t *ImageTransform) resolveResizeDimensions(sourceWidth, sourceHeight int64) (int64, int64) {
+	params := &t.TransformParams
+	width, height := params.Width, params.Height
+	mode := t.normalizedResizeMode()
+
+	switch mode {
+	case ResizeNone:
+		return 0, 0
+	case ResizeWidth:
+		if width > 0 {
+			height = 0
+		}
+	case ResizeHeight:
+		if height > 0 {
+			width = 0
+		}
+	case ResizeLongEdge, ResizeShortEdge:
+		edge := width
+		if edge == 0 {
+			edge = height
+		}
+		if edge <= 0 {
+			return 0, 0
+		}
+		sourceEdge := max(sourceWidth, sourceHeight)
+		if mode == ResizeShortEdge {
+			sourceEdge = min(sourceWidth, sourceHeight)
+		}
+		scale := float64(edge) / float64(sourceEdge)
+		return int64(float64(sourceWidth) * scale), int64(float64(sourceHeight) * scale)
+	case ResizeDimensions:
+	default:
+		return 0, 0
+	}
+	return width, height
+}
+
+func (t *ImageTransform) normalizedQuality(quality int64) int {
+	if quality == 0 {
+		return 85
+	}
+	return int(max(0, min(100, quality)))
+}
+
+func (t *ImageTransform) normalizedRotation() int {
+	rotation := t.Rotate % 360
+	if rotation < 0 {
+		rotation += 360
+	}
+
+	return rotation
+}
+
+func (t *ImageTransform) pngCompression(quality int64) int {
+	q := t.normalizedQuality(quality)
+
+	scaledQuality := int64(q) * 9
+	roundedQuality := (scaledQuality + 50) / 100
+
+	return 9 - int(roundedQuality)
+}
+
+func (t *ImageTransform) metadataKeep(policy MetadataPolicy) libvips.Keep {
+	if policy == "" || policy == MetadataAll {
+		return libvips.KeepAll
+	}
+
+	return libvips.KeepNone
 }
