@@ -209,10 +209,6 @@
                 getFullImagePath(`/images/${encodeURIComponent(asset.uid)}/file`);
             const urlObj = new URL(rawUrl, window.location.origin);
 
-            if (exportSettings.includeMetadata) {
-                urlObj.searchParams.set("embed_metadata", "true");
-            }
-
             const task = new DownloadFile(urlObj.toString(), filename, "GET");
 
             imageTasks.push(task);
@@ -246,7 +242,7 @@
                 task.state = DownloadState.PROCESSING;
                 task.progress = 0;
                 const transformInput: TransformInput = {
-                    asset,
+                    image: asset,
                     params: {
                         format: exportSettings.format,
                         quality: exportSettings.quality,
@@ -326,7 +322,7 @@
                 task.state = DownloadState.PROCESSING;
                 task.progress = 0;
                 const transformInput: TransformInput = {
-                    asset,
+                    image: asset,
                     params: {
                         format: exportSettings.format,
                         quality: exportSettings.quality,

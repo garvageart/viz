@@ -4,11 +4,11 @@ import { rgbaToThumbHash } from "thumbhash";
 import { describe, expect, it, vi } from "vitest";
 import { createTestImageObject } from "#lib/data/test.js";
 import { LabelColours } from "#lib/images/constants.js";
+import { ImageTransform } from "#lib/images/vips/vips.js";
 import {
     ByteUnit,
     compareByTakenAtDesc,
     convertEXIFDateTime,
-    createTransformEtag,
     formatAltitude,
     formatBytes,
     formatCoordinates,
@@ -28,8 +28,7 @@ import {
     getThumbhashURL,
     getWhiteBalance,
     isAssetImage,
-    parseExifDate,
-    parseTransformParams
+    parseExifDate
 } from "#lib/utils/images.js";
 
 Settings.defaultLocale = "en-ZA";
@@ -204,78 +203,84 @@ describe("formatMegapixels", () => {
     });
 });
 
-describe("createTransformEtag", () => {
-    it("builds a checksum string from params and image checksum", () => {
+describe("ImageTransform", () => {
+    it("includes every output-affecting option in its cache identity", () => {
         const asset = assetFixture({
             image_metadata: {
                 ...createTestImageObject().image_metadata,
-                checksum: "abc"
+                checksum: "abc",
+                file_type: "jpeg"
             }
         });
-        const etag = createTransformEtag(asset, {
+        const transform = new ImageTransform(asset, {
             width: 100,
             height: 50,
             format: "webp",
             quality: 80,
             rotate: 90,
-            flip: "h",
+            flip: "horizontal",
             kernel: "lanczos3",
-            bitDepth: 8
+            bitDepth: 8,
+            resizeMode: "dimensions",
+            colorSpace: "DisplayP3",
+            metadata: "except-camera",
+            includeLocation: true
         });
-        expect(etag).toBe("abc-100x50-webp-80-90-h-lanczos3-8");
+        const etag = transform.etag();
+        expect(etag).toContain("abc-");
+        expect(etag).toContain("-100x50-webp-80-90-horizontal-lanczos3-8-dimensions-DisplayP3-except-camera-true");
     });
 
-    it("uses defaults for missing params and unknown checksum", () => {
+    it("uses defaults and unknown checksum", () => {
         const noChecksum = assetFixture({
             image_metadata: {
                 ...createTestImageObject().image_metadata,
                 checksum: undefined as unknown as string
             }
         });
-        expect(createTransformEtag(noChecksum, {})).toBe("unknown-0x0--0-0---0");
-    });
-});
-
-describe("parseTransformParams", () => {
-    it("returns an empty object when there are no query params", () => {
-        expect(parseTransformParams("/images/abc/file")).toEqual({});
+        const transform = new ImageTransform(noChecksum);
+        expect(transform.etag()).toContain("unknown-");
+        expect(transform.etag()).toContain("-0x0-");
+        expect(transform.etag()).toContain("-85-");
     });
 
-    it("parses format, colorSpace, metadata, and includeLocation", () => {
-        const params = parseTransformParams(
-            "/images/abc/file?format=webp&colorSpace=sRGB&metadata=all&includeLocation=false"
+    it("parses the shared transform parameters and legacy aliases", () => {
+        const asset = assetFixture();
+        const transform = ImageTransform.parse(
+            asset,
+            "/images/abc/file?format=webp&colorSpace=sRGB&metadata=all&includeLocation=false" +
+                "&w=100&h=50&quality=80&rotate=-90&bitdepth=16&flip=h&kernel=lanczos3"
         );
-        expect(params).toEqual({
+        expect(transform.image).toBe(asset);
+        expect(transform.format).toBe("webp");
+        expect(transform.colorSpace).toBe("sRGB");
+        expect(transform.metadata).toBe("all");
+        expect(transform.includeLocation).toBe(false);
+        expect(transform.width).toBe(100);
+        expect(transform.height).toBe(50);
+        expect(transform.quality).toBe(80);
+        expect(transform.rotate).toBe(-90);
+        expect(transform.bitDepth).toBe(16);
+        expect(transform.flip).toBe("horizontal");
+        expect(transform.kernel).toBe("lanczos3");
+        expect(transform.resizeMode).toBe("dimensions");
+    });
+
+    it("does not accept numeric boolean query values", () => {
+        const transform = ImageTransform.parse(assetFixture(), "/images/abc/file?includeLocation=1&embed_metadata=1");
+
+        expect(transform.includeLocation).toBe(false);
+        expect(transform.metadata).toBe("all");
+    });
+
+    it("serializes the canonical transform query", () => {
+        const transform = new ImageTransform(assetFixture(), {
             format: "webp",
-            colorSpace: "sRGB",
-            metadata: "all",
-            includeLocation: false
+            width: 640,
+            resizeMode: "long-edge",
+            metadata: "all"
         });
-    });
-
-    it("parses width/height via shorthand and longhand", () => {
-        expect(parseTransformParams("?w=100&h=50")).toEqual({ width: 100, height: 50 });
-        expect(parseTransformParams("?width=200&height=100")).toEqual({ width: 200, height: 100 });
-    });
-
-    it("parses quality, rotate, and bitdepth", () => {
-        expect(parseTransformParams("?quality=80&rotate=90&bitdepth=16")).toEqual({
-            quality: 80,
-            rotate: 90,
-            bitDepth: 16
-        });
-    });
-
-    it("parses flip and kernel", () => {
-        expect(parseTransformParams("?flip=h&kernel=lanczos3")).toEqual({ flip: "h", kernel: "lanczos3" });
-    });
-
-    it("ignores non-numeric values for numeric params", () => {
-        expect(parseTransformParams("?width=abc&quality=xyz")).toEqual({});
-    });
-
-    it("parses includeLocation=false as false", () => {
-        expect(parseTransformParams("?includeLocation=false")).toEqual({ includeLocation: false });
+        expect(transform.toQueryString()).toBe("format=webp&width=640&resizeMode=long-edge");
     });
 });
 

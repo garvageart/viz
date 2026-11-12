@@ -1,10 +1,7 @@
 import {
     type CollectionDetailResponse,
-    type ColorSpace,
     type ImageAsset,
     type Keyword,
-    type MetadataPolicy,
-    type TransformParams,
     downloadImagesZipBlob,
     signDownload
 } from "@viz/api";
@@ -264,111 +261,6 @@ export function getImageMegapixels(image: ImageAsset, precision = 0) {
 /** Format a raw pixel count as megapixels with the given decimal precision (e.g. 12.4) */
 export function formatMegapixels(pixelCount: number, precision = 1) {
     return (pixelCount / 1_000_000).toFixed(precision);
-}
-
-export function parseTransformParams(pathStr: string): TransformParams {
-    const url = new URL(pathStr, window.location.origin); // not really true, just there so the thing doesn't break
-    const q = url.searchParams;
-
-    const params: TransformParams = {};
-
-    const format = q.get("format");
-    if (format) {
-        params.format = format as TransformParams["format"];
-    }
-
-    const colorSpace = q.get("colorSpace");
-    if (colorSpace) {
-        params.colorSpace = colorSpace as ColorSpace;
-    }
-
-    const metadata = q.get("metadata");
-    if (metadata) {
-        params.metadata = metadata as MetadataPolicy;
-    }
-
-    const includeLocation = q.get("includeLocation");
-    if (includeLocation) {
-        params.includeLocation = includeLocation === "true";
-    }
-
-    const flip = q.get("flip");
-    if (flip) {
-        params.flip = flip;
-    }
-
-    const kernel = q.get("kernel");
-    if (kernel) {
-        params.kernel = kernel;
-    }
-
-    // Support both shorthand and longhand as parameter names
-    // Note: just for now
-    let widthParam = q.get("width");
-    if (!widthParam) {
-        widthParam = q.get("w");
-    }
-
-    if (widthParam) {
-        const w = parseInt(widthParam, 10);
-        if (!isNaN(w)) {
-            params.width = w;
-        }
-    }
-
-    let heightParam = q.get("height");
-    if (!heightParam) {
-        heightParam = q.get("h");
-    }
-
-    if (heightParam) {
-        const h = parseInt(heightParam, 10);
-        if (!isNaN(h)) {
-            params.height = h;
-        }
-    }
-
-    const qualityParam = q.get("quality");
-    if (qualityParam) {
-        const qn = parseInt(qualityParam, 10);
-        if (!isNaN(qn)) {
-            params.quality = qn;
-        }
-    }
-
-    const rotateParam = q.get("rotate");
-    if (rotateParam) {
-        const r = parseInt(rotateParam, 10);
-        if (!isNaN(r)) {
-            params.rotate = r;
-        }
-    }
-
-    const bitdepthParam = q.get("bitdepth");
-    if (bitdepthParam) {
-        const bd = parseInt(bitdepthParam, 10);
-        if (!isNaN(bd)) {
-            params.bitDepth = bd;
-        }
-    }
-
-    return params;
-}
-
-export function createTransformEtag(imgEnt: ImageAsset, params: TransformParams): string {
-    // TODO: "unknown" isn't necessarily something i would actually want in a checksum
-    // it's a lazy fallback
-    const checksum = imgEnt.image_metadata.checksum ?? "unknown";
-    const w = params.width ?? 0;
-    const h = params.height ?? 0;
-    const fmt = params.format ?? "";
-    const quality = params.quality ?? 0;
-    const rotate = params.rotate ?? 0;
-    const flip = params.flip ?? "";
-    const kernel = params.kernel ?? "";
-    const bitDepth = params.bitDepth ?? 0;
-
-    return `${checksum}-${w}x${h}-${fmt}-${quality}-${rotate}-${flip}-${kernel}-${bitDepth}`;
 }
 
 export async function collectionExportPhotos(uids: string[], data: CollectionDetailResponse) {

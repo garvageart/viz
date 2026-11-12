@@ -1,14 +1,12 @@
 import * as Comlink from "comlink";
-import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
+import { ImageTransform, type TransformInput, type TransformResult } from "#lib/images/vips/vips.js";
 
 export async function transformSingleImage(
     input: TransformInput,
     onProgress?: (percent: number) => void
 ): Promise<{ result?: TransformResult; error?: string }> {
-    const { generateTransform } = await import("#lib/images/vips/vips.js");
-
     try {
-        const result = await generateTransform(input, onProgress);
+        const result = await new ImageTransform(input.image, input.params).generate(input.originalData, onProgress);
         return { result };
     } catch (error) {
         console.error("[Worker] Image transform failed:", error);
@@ -24,8 +22,6 @@ export async function exportImagesParallel(
     onProgress?: (index: number, percent: number) => void
 ) {
     // Dynamically import vips here to avoid top-level await blocking Comlink initialization
-    const { generateTransform } = await import("#lib/images/vips/vips.js");
-
     const results: { result?: TransformResult; error?: string; index: number }[] = [];
 
     // If we have a shared counter, use Atomics for parallel coordination
@@ -38,9 +34,13 @@ export async function exportImagesParallel(
             }
 
             try {
-                const result = await generateTransform(images[index], (percent) => {
-                    onProgress?.(index, percent);
-                });
+                const input = images[index];
+                const result = await new ImageTransform(input.image, input.params).generate(
+                    input.originalData,
+                    (percent) => {
+                        onProgress?.(index, percent);
+                    }
+                );
                 results.push({ result, index });
             } catch (error) {
                 console.error("[Worker] Image transform failed at index", index, ":", error);
@@ -51,9 +51,13 @@ export async function exportImagesParallel(
     } else if (staticIndex !== undefined && staticIndex < images.length) {
         // Fallback: process the single image specified by staticIndex
         try {
-            const result = await generateTransform(images[staticIndex], (percent) => {
-                onProgress?.(staticIndex, percent);
-            });
+            const input = images[staticIndex];
+            const result = await new ImageTransform(input.image, input.params).generate(
+                input.originalData,
+                (percent) => {
+                    onProgress?.(staticIndex, percent);
+                }
+            );
             results.push({ result, index: staticIndex });
         } catch (error) {
             console.error("[Worker] Image transform failed at static index", staticIndex, ":", error);
