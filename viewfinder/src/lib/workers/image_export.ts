@@ -1,11 +1,12 @@
 import * as Comlink from "comlink";
-import { ImageTransform, type TransformInput, type TransformResult } from "#lib/images/vips/vips.js";
+import type { TransformInput, TransformResult } from "#lib/images/vips/vips.js";
 
 export async function transformSingleImage(
     input: TransformInput,
     onProgress?: (percent: number) => void
 ): Promise<{ result?: TransformResult; error?: string }> {
     try {
+        const { ImageTransform } = await import("#lib/images/vips/vips.js");
         const result = await new ImageTransform(input.image, input.params).generate(input.originalData, onProgress);
         return { result };
     } catch (error) {
@@ -22,6 +23,7 @@ export async function exportImagesParallel(
     onProgress?: (index: number, percent: number) => void
 ) {
     // Dynamically import vips here to avoid top-level await blocking Comlink initialization
+    const { ImageTransform } = await import("#lib/images/vips/vips.js");
     const results: { result?: TransformResult; error?: string; index: number }[] = [];
 
     // If we have a shared counter, use Atomics for parallel coordination
