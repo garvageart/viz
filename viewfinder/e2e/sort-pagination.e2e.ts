@@ -8,10 +8,11 @@ interface ImageRequest {
 
 /**
  * Seeds a persisted sort preference into the app's IndexedDB `settings` store.
- * The key mirrors what `SortState("photos")` uses: `sort.photos`.
+ * Sort preferences are stored in the `sort` settings scope under `photos`.
  */
 async function seedSortPreference(page: Page, value: object) {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await page.evaluate(async (sortValue) => {
         const openDb = (): Promise<IDBDatabase> =>
             new Promise((resolve, reject) => {
@@ -28,6 +29,31 @@ async function seedSortPreference(page: Page, value: object) {
 
         const db = await openDb();
         await new Promise<void>((resolve, reject) => {
+            const deadline = Date.now() + 10000;
+
+            const waitForInitialSettingsSave = () => {
+                const tx = db.transaction("settings", "readonly");
+                const request = tx.objectStore("settings").get("sort");
+                request.onsuccess = () => {
+                    if (request.result !== undefined) {
+                        resolve();
+                        return;
+                    }
+
+                    if (Date.now() >= deadline) {
+                        reject(new Error("Timed out waiting for initial settings to persist"));
+                        return;
+                    }
+
+                    window.setTimeout(waitForInitialSettingsSave, 50);
+                };
+                request.onerror = () => reject(request.error);
+            };
+
+            waitForInitialSettingsSave();
+        });
+
+        await new Promise<void>((resolve, reject) => {
             const tx = db.transaction("settings", "readwrite");
             tx.objectStore("settings").put({ photos: sortValue }, "sort");
             tx.oncomplete = () => resolve();
@@ -35,6 +61,10 @@ async function seedSortPreference(page: Page, value: object) {
         });
         db.close();
     }, value);
+
+    // The app has already hydrated in-memory settings on the initial visit
+    // Reload so it reads the preference we just wrote before navigating to photos
+    await page.reload({ waitUntil: "networkidle" });
 }
 
 test.describe("photos sort persistence across pagination", () => {
