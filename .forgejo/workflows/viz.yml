@@ -520,7 +520,7 @@ jobs:
 
             - name: Create Release
               id: release
-              uses: softprops/action-gh-release@v2
+              uses: garvageart/action-gh-release@v2
               with:
                   tag_name: ${{ needs.build-images.outputs.tag_name }}
                   name: ${{ needs.build-images.outputs.tag_name }}
