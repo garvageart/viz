@@ -4,8 +4,10 @@
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
     import MaterialIcon from "./MaterialIcon.svelte";
 
+    export type BadgeVariant = "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";
+
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        variant?: "default" | "warning" | "error" | "info" | "success" | "neutral" | "outline";
+        variant?: BadgeVariant;
         size?: "small" | "standard" | "large";
         weight?: "regular" | "bold";
         font?: "display" | "mono";

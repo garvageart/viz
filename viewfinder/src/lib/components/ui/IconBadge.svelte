@@ -2,11 +2,11 @@
     import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon, { type IconProps } from "./MaterialIcon.svelte";
 
-    type Variant = "primary" | "info" | "warning" | "error" | "success" | "neutral";
-    type BadgeShape = "rounded" | "circle" | "pill";
+    export type IconBadgeVariant = "primary" | "info" | "warning" | "error" | "success" | "neutral";
+    export type BadgeShape = "rounded" | "circle" | "pill";
 
     interface Props extends IconProps {
-        variant?: Variant;
+        variant?: IconBadgeVariant;
         bgColor?: string;
         color?: string;
         shape?: BadgeShape;
@@ -25,7 +25,7 @@
         ...props
     }: Props & SvelteHTMLElements["span"] = $props();
 
-    const variantBgMap: Record<Variant, string> = {
+    const variantBgMap: Record<IconBadgeVariant, string> = {
         primary: "var(--viz-primary)",
         info: "var(--viz-info-color)",
         warning: "var(--viz-warning-color)",
