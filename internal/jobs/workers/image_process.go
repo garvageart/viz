@@ -152,6 +152,23 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 	encoded := images.EncodeThumbhashToString(thumbhash)
 	imgEnt.ImageMetadata.Thumbhash = &encoded
 
+	onProgress("Updating database", 70)
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&entities.ImageAsset{}).Where("uid = ?", imgEnt.Uid).Updates(entities.ImageAsset{ImageMetadata: imgEnt.ImageMetadata}).Error; err != nil {
+			return fmt.Errorf("failed to update image entity: %w", err)
+		}
+
+		if err := tx.Where("uid = ?", imgEnt.Uid).First(&imgEnt).Error; err != nil {
+			return fmt.Errorf("failed to reload updated image entity: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+
 	ext := imgEnt.ImageMetadata.FileType
 
 	onProgress("Generating transforms", 80)
@@ -236,21 +253,6 @@ func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, 
 
 			jobs.Logger.Debug("finished generating preview transform", loggerFields)
 		}
-	}
-
-	onProgress("Updating database", 90)
-
-	err = db.Transaction(func(tx *gorm.DB) error {
-		// Update image entity in DB
-		if err := tx.Model(&entities.ImageAsset{}).Where("uid = ?", imgEnt.Uid).Updates(entities.ImageAsset{ImageMetadata: imgEnt.ImageMetadata}).Error; err != nil {
-			return fmt.Errorf("failed to update image entity: %w", err)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("transaction failed: %w", err)
 	}
 
 	onProgress("Completed", 100)

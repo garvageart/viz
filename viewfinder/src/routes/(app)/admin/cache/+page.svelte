@@ -111,11 +111,9 @@
 {/snippet}
 
 {#snippet confirmBody()}
-    <div
-        style="display: flex; flex-direction: column; gap: var(--viz-spacing-md); margin-bottom: var(--viz-spacing-md);"
-    >
+    <div>
         <span>Are you sure you want to clear the image cache? This will delete cached transformations.</span>
-        <Checkbox label="Keep permanent transforms (thumbnails & previews)" bind:checked={keepPermanent} />
+        <Checkbox label="Keep permanent transforms" bind:checked={keepPermanent} />
     </div>
 {/snippet}
 

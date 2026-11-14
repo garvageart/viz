@@ -443,8 +443,8 @@ func checkMissingTransforms(img entities.ImageAsset, transformPath string, missi
 func findMissingTransforms(db *gorm.DB, logger *slog.Logger) ([]string, error) {
 	var allImages []entities.ImageAsset
 	var err error
-	// Fetch uid, image_paths, and image_metadata needed for cache key calculation
-	if err = db.Select("uid", "image_paths", "image_metadata").Find(&allImages).Error; err != nil {
+	// Fetch updated_at as well because it is part of the transform cache key.
+	if err = db.Select("uid", "updated_at", "image_paths", "image_metadata").Find(&allImages).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch all images: %w", err)
 	}
 
