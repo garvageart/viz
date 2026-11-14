@@ -42,6 +42,7 @@
         if (onConfirm) {
             onConfirm();
         }
+
         lightboxManager.close(id, true);
     }
 
@@ -54,7 +55,7 @@
     }
 </script>
 
-<Modal {id} {heading} width="25%" applyPadding={true}>
+<Modal {id} {heading} applyPadding={true}>
     <div class="confirmation-modal">
         <form id="confirmation-form" onsubmit={handleConfirmSubmit}>
             <div class="confirmation-content">
@@ -87,6 +88,12 @@
         flex-direction: column;
         width: 100%;
         color: var(--viz-text-primary);
+
+        #confirmation-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--viz-spacing-md);
+        }
 
         .confirmation-content {
             display: flex;

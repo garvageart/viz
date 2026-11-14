@@ -29,7 +29,7 @@
         headerSnippet,
         fillContainer = false,
         heading,
-        width = "50%",
+        width = "40%",
         height,
         applyPadding = false,
         zIndex = ZIndex.Modal,
@@ -183,7 +183,7 @@
     }
 
     .modal-content.padding {
-        padding: var(--viz-spacing-sm);
+        padding: var(--viz-spacing-md);
     }
 
     @media (max-width: 40rem) {
@@ -191,10 +191,6 @@
             width: 95% !important;
             max-height: 90vh;
             border-radius: var(--viz-border-radius-md);
-        }
-
-        .modal-content.padding {
-            padding: var(--viz-spacing-sm);
         }
     }
 </style>
