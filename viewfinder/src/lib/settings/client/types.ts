@@ -12,6 +12,10 @@ export interface ImageLightboxScopeSettings {
     };
 }
 
+export interface ImageGridSettings {
+    showInfo: boolean
+}
+
 export interface SavedExportSettings {
     format: ExportFormats;
     quality: number;

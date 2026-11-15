@@ -2,6 +2,7 @@ import type {
     DownloadScopeSettings,
     ExportScopeSettings,
     FavouritesScopeSettings,
+    ImageGridSettings,
     ImageLightboxScopeSettings,
     SortScopeSettings,
     UploadScopeSettings
@@ -16,6 +17,7 @@ export interface AppSettings {
     imageLightbox: ImageLightboxScopeSettings;
     export: ExportScopeSettings;
     favourites: FavouritesScopeSettings;
+    grid: ImageGridSettings;
 }
 
 export type SettingKey<T> = Extract<keyof T, string>;
@@ -50,6 +52,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
         sidePanel: {
             visible: true
         }
+    },
+    grid: {
+        showInfo: true
     },
     export: {
         panel: {
@@ -98,7 +103,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export class SettingsDatabase<T extends Record<string, any>> {
-    private data: T;
+    data: T;
     private ready = $state(false);
 
     constructor(defaults: T) {
@@ -155,6 +160,10 @@ export class SettingsDatabase<T extends Record<string, any>> {
 
     get<K extends SettingKey<T>>(key: K): T[K] {
         return this.data[key];
+    }
+
+    set<K extends SettingKey<T>>(key: K, value: T[K]) {
+        this.data[key] = value;
     }
 }
 

@@ -26,6 +26,7 @@
     } from "#lib/keyboard/keyboard.svelte.js";
     import { VizMimeTypes } from "#lib/mime.ts";
     import type { ConsolidatedGroup, GridImage } from "#lib/photo-layout/index.js";
+    import { settings } from "#lib/settings/client/index.ts";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { isMobile } from "#lib/states/index.svelte.js";
     import { type ImageScopeId, SelectionScopeNames, selectionManager } from "#lib/states/selection.svelte.js";
@@ -81,6 +82,9 @@
         disableExternalScroll = false
     }: PhotoSpecificProps = $props();
 
+    // Settings
+    let gridSettings = settings.get("grid");
+    
     // Selection Management
     let selection = $derived(selectionManager.getScope(scopeId));
     let selectedItems = $derived(selection.selectedItems);
@@ -1203,7 +1207,7 @@
                 <div class="multi-select-ring" transition:fade={{ duration: 120 }}></div>
             {/if}
 
-            {#if !isMobile}
+            {#if !isMobile && gridSettings.showInfo}
                 <div class="photo-overlay">
                     <div class="photo-overlay-inner">
                         <div class="photo-name">{asset?.name}</div>
@@ -1541,36 +1545,27 @@
         left: 0;
         right: 0;
         bottom: 0;
-        transform: translateY(100%);
-        transition: transform 160ms ease;
-        pointer-events: none;
-    }
 
-    .photo-overlay-inner {
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
-        color: white;
-        padding: 0.5rem;
-        font-size: 0.9rem;
-        pointer-events: auto;
-        font-size: var(--viz-font-size-lg);
-    }
+        .photo-overlay-inner {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+            color: white;
+            padding: var(--viz-spacing-sm);
+            font-size: var(--viz-font-size-lg);
+        }
 
-    .asset-photo:hover .photo-overlay {
-        transform: translateY(0%);
-    }
+        .photo-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .photo-name {
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .photo-meta {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 0.5rem;
+        .photo-meta {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--viz-spacing-sm);
+        }
     }
 
     .justified-item {
