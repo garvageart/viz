@@ -1,6 +1,6 @@
 <script lang="ts">
     import { dev } from "$app/env";
-    import { afterNavigate, beforeNavigate } from "$app/navigation";
+    import { afterNavigate, beforeNavigate, onNavigate } from "$app/navigation";
     import { page, updated } from "$app/state";
     import "@fontsource-variable/radio-canada-big/index.css";
     import "@fontsource-variable/roboto-mono/index.css";
@@ -102,6 +102,10 @@
         if (updated.current && !willUnload && to) {
             location.href = to.url.href;
         }
+    });
+
+    onNavigate(() => {
+        lightboxManager.close();
     });
 
     afterNavigate((navigation) => {

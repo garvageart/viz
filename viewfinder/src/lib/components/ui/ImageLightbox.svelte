@@ -423,7 +423,9 @@
             if (idx !== -1) {
                 const nextIdx = (idx - 1 + images.length) % images.length;
                 const nextImage = images[nextIdx];
+
                 lightboxImage = nextImage;
+
                 const activeScope = selectionManager.getActiveScope();
                 activeScope?.select(nextImage);
             }
