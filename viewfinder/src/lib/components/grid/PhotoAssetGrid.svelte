@@ -84,7 +84,7 @@
 
     // Settings
     let gridSettings = settings.get("grid");
-    
+
     // Selection Management
     let selection = $derived(selectionManager.getScope(scopeId));
     let selectedItems = $derived(selection.selectedItems);
@@ -955,39 +955,11 @@
 
     function handleOuterContainerClick(e: MouseEvent) {
         const target = e.target as HTMLElement;
-        if (shouldKeepSelection(target)) {
+        if (shouldKeepSelection(target) || !disableOutsideUnselect) {
             return;
         }
 
         selection.clear();
-    }
-
-    function unselectImagesOnClickOutsideAssetContainer(element: HTMLElement) {
-        const clickHandler = (e: MouseEvent) => {
-            if (disableOutsideUnselect) {
-                return;
-            }
-
-            const target = e.target as HTMLElement;
-
-            if (element.contains(target)) {
-                return;
-            }
-
-            // Check if we should preserve the selection
-            if (shouldKeepSelection(target)) {
-                return;
-            }
-
-            selection.clear();
-        };
-
-        $effect(() => {
-            document.addEventListener("click", clickHandler);
-            return () => {
-                document.removeEventListener("click", clickHandler);
-            };
-        });
     }
 </script>
 
@@ -1238,7 +1210,6 @@
         class="viz-photo-grid-container no-select"
         class:use-external-scroll={usingExternalScroll}
         onscroll={handleGridScroll}
-        use:unselectImagesOnClickOutsideAssetContainer
         onclick={handleContainerClick}
         // FIXME: this is triggering haphazardly
         onkeydown={onFocus}
