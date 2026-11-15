@@ -4,7 +4,7 @@
  *
  * Scans the `viz/src` tree for `MaterialIcon` usages with literal `iconName`
  * values, attempts to fetch matching SVGs from the Google Material Icons
- * repository across common categories, runs SVGO optimization, and writes
+ * repository across all weights (100-700), runs SVGO optimization, and writes
  * Svelte components to `src/lib/components/icons/generated/`.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "fs";
@@ -17,6 +17,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../../");
 const SRC = join(ROOT, "src");
 const OUT_DIR = join(SRC, "lib/components/icons/generated");
+
+const ALL_WEIGHTS = ["100", "200", "300", "400", "500", "600", "700"];
 
 const CATEGORIES = [
     "action",
@@ -37,8 +39,9 @@ const CATEGORIES = [
 ];
 
 /**
- * Attempt to obtain an SVG for the given icon name.
- * It will prefer a provided weight first, then fall back through common weights.
+ * Attempt to obtain an SVG for the given icon name at a specific weight.
+ * If preferredWeight is provided, only that exact weight is queried so missing
+ * weights are not masked by fallback weights.
  * @param {string} name
  * @param {number|string} [preferredWeight]
  * @param {string} [preferredStyle]
@@ -47,21 +50,12 @@ const CATEGORIES = [
 async function fetchSvgForName(name, preferredWeight, preferredStyle) {
     const s = sanitizeNameForFile(name);
     const variants = [s, `ic_${s}`, s.replace(/^ic_/, "")];
-    const defaultWeights = [400, 300, 200, 100, 500, 600, 700];
+    const defaultWeights = ["400", "300", "200", "100", "500", "600", "700"];
     const defaultStyles = ["sharp", "rounded", "outlined"];
 
-    /** @type {string[]} */
-    const weights = [];
     const pw = preferredWeight ? String(preferredWeight).trim() : "";
-    if (pw && !weights.includes(pw)) {
-        weights.push(pw);
-    }
-
-    for (const w of defaultWeights) {
-        if (!weights.includes(String(w))) {
-            weights.push(String(w));
-        }
-    }
+    /** @type {string[]} */
+    const weights = pw ? [pw] : defaultWeights;
 
     /** @type {string[]} */
     const styles = [];
@@ -74,24 +68,22 @@ async function fetchSvgForName(name, preferredWeight, preferredStyle) {
         }
     }
 
-    // 1. Try official Google Symbols repo first (direct access, high quality)
-    for (const style of styles) {
-        for (const v of variants) {
-            const nm = v.replace(/^ic_/, "");
-            const url = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${nm}/materialsymbols${style}/${nm}_24px.svg`;
+    // 1. Try official Google Symbols repo first (only has weight 400 in this path)
+    if (!pw || pw === "400") {
+        for (const style of styles) {
+            for (const v of variants) {
+                const nm = v.replace(/^ic_/, "");
+                const url = `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/${nm}/materialsymbols${style}/${nm}_24px.svg`;
 
-            if (preferredWeight && preferredWeight !== "400") {
-                continue;
+                try {
+                    const res = await fetch(url);
+                    if (res && res.ok) {
+                        const text = await res.text();
+                        console.log(`Fetched from Google Symbols (400, ${style}):`, url);
+                        return text;
+                    }
+                } catch (e) {}
             }
-
-            try {
-                const res = await fetch(url);
-                if (res && res.ok) {
-                    const text = await res.text();
-                    console.log(`Fetched from Google Symbols (400, ${style}):`, url);
-                    return text;
-                }
-            } catch (e) {}
         }
     }
 
@@ -144,20 +136,23 @@ async function fetchSvgForName(name, preferredWeight, preferredStyle) {
         }
     }
 
-    // 4. Final fallback: older google/material-design-icons repo
-    const googleBase = "https://raw.githubusercontent.com/google/material-design-icons/master";
-    for (const cat of CATEGORIES) {
-        for (const v of variants) {
-            const filename = `ic_${v}_24px.svg`.replace(/ic_ic_/, "ic_");
-            const url = `${googleBase}/${cat}/svg/production/${filename}`;
-            try {
-                const res = await fetch(url);
-                if (res && res.ok) {
-                    const text = await res.text();
-                    console.log("Fetched from old Google repo:", url);
-                    return text;
-                }
-            } catch (e) {}
+    // 4. Final fallback: older google/material-design-icons repo (only has weight 400)
+    if (!pw || pw === "400") {
+        const googleBase = "https://raw.githubusercontent.com/google/material-design-icons/master";
+        for (const cat of CATEGORIES) {
+            for (const v of variants) {
+                const filename = `ic_${v}_24px.svg`.replace(/ic_ic_/, "ic_");
+                const url = `${googleBase}/${cat}/svg/production/${filename}`;
+                
+                try {
+                    const res = await fetch(url);
+                    if (res && res.ok) {
+                        const text = await res.text();
+                        console.log("Fetched from old Google repo:", url);
+                        return text;
+                    }
+                } catch (e) {}
+            }
         }
     }
 
@@ -243,8 +238,8 @@ ${sortedNames.map((n) => `    | "${n}"`).join("\n")};
 }
 
 /**
- * Scan source files for `iconName` usages, fetch matching SVGs and
- * generate Svelte components under `src/lib/components/icons/generated/`.
+ * Scan source files for `iconName` usages, fetch matching SVGs across all weights,
+ * and generate Svelte components under `src/lib/components/icons/generated/`.
  * @returns {Promise<void>}
  */
 async function main() {
@@ -302,7 +297,6 @@ Options:
     console.log("Total distinct icon names:", names.size);
 
     for (const [name, entry] of names.entries()) {
-        const requiredWeights = new Set(["400", ...Array.from(entry.weights)]);
         const requiredStyles = new Set(["sharp", ...Array.from(entry.styles)]);
 
         requiredStyles.delete("filled");
@@ -323,7 +317,7 @@ Options:
                 continue;
             }
 
-            console.log(`Processing ${name} (${style}) weights ${Array.from(requiredWeights).join(",")}`);
+            console.log(`Processing ${name} (${style}) weights ${ALL_WEIGHTS.join(",")}`);
 
             /** @type {Record<string,string>} */
             const variants = {};
@@ -331,7 +325,7 @@ Options:
             const filledVariants = {};
             let finalViewBox = "0 0 24 24";
 
-            for (const weight of Array.from(requiredWeights)) {
+            for (const weight of ALL_WEIGHTS) {
                 const rawSvg = await fetchSvgForName(name, weight, style);
                 if (rawSvg) {
                     const optimized = optimize(rawSvg, { multipass: true }).data;
@@ -350,6 +344,8 @@ Options:
                     const innerMatch = cleaned.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
                     const inner = innerMatch ? innerMatch[1].trim() : cleaned;
                     variants[String(weight)] = inner.replace(/\/>/g, " \/>");
+                } else {
+                    console.log(`Weight ${weight} not available for ${name} (${style}), skipping.`);
                 }
 
                 const s = sanitizeNameForFile(name);
@@ -456,7 +452,6 @@ Options:
 
     if (failedCacheChanged) {
         if (Object.keys(failedCache).length === 0) {
-            const { unlinkSync } = await import("fs");
             if (existsSync(failedCachePath)) {
                 unlinkSync(failedCachePath);
                 console.log("Deleted empty failed-icons.json.");
