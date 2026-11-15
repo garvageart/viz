@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { clamp } from "lodash-es";
     import type { SvelteHTMLElements } from "svelte/elements";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { generateRandomString } from "#lib/utils/misc.js";
@@ -64,17 +65,6 @@
 
     const precision = $derived(Math.max(getPrecision(step), min !== undefined ? getPrecision(min) : 0));
 
-    function clamp(val: number): number {
-        let clamped = val;
-        if (min !== undefined && clamped < min) {
-            clamped = min;
-        }
-        if (max !== undefined && clamped > max) {
-            clamped = max;
-        }
-        return clamped;
-    }
-
     function setValue(newVal: number | undefined) {
         if (newVal === undefined) {
             value = undefined;
@@ -86,7 +76,8 @@
         }
 
         const normalized = roundToPrecision(newVal, precision);
-        const clamped = clamp(normalized);
+        // lodash's clamp requires numeric bounds; treat omitted bounds as unbounded.
+        const clamped = clamp(normalized, min ?? -Infinity, max ?? Infinity);
         value = clamped;
         textValue = String(clamped);
 
