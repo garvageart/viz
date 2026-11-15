@@ -13,7 +13,7 @@ export interface ImageLightboxScopeSettings {
 }
 
 export interface ImageGridSettings {
-    showInfo: boolean
+    showInfo: boolean;
 }
 
 export interface SavedExportSettings {

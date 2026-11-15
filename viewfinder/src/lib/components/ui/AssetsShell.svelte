@@ -139,7 +139,7 @@
                         class="toolbar-button"
                         title="Toggle Image Information"
                         onclick={() => {
-                            settings.data.grid.showInfo = !settings.data.grid.showInfo
+                            settings.data.grid.showInfo = !settings.data.grid.showInfo;
                         }}
                     />
                     {#if dev && grid.type === "grid"}
