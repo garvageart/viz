@@ -3,6 +3,7 @@
     import type { SvelteHTMLElements } from "svelte/elements";
     import { ZIndex } from "#lib/constants/z-index.js";
     import { ContextKeys } from "#lib/context-keys.js";
+    import { computePosition } from "#lib/utils/positioning.js";
     import ContextMenuItem from "./ContextMenuItem.svelte";
     import { contextMenu } from "./context-menu.svelte";
     import type { ActiveContextMenuState, MenuItem } from "./types";
@@ -81,7 +82,7 @@
     let position = $state<{ top: number; left: number }>({ top: -9999, left: -9999 });
     let isPositioned = $state(false);
 
-    function computePosition(
+    function computePositionMenu(
         el: HTMLElement,
         currentAnchor: Anchor,
         opts: { align: "left" | "right"; offsetX: number; offsetY: number }
@@ -90,47 +91,21 @@
             return { top: 0, left: 0 };
         }
 
-        const safeMargin = 8;
-        const menuRect = el.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        // Menus always open below the anchor; `align` only controls which edge
+        // of the anchor the menu is aligned to. Coordinate anchors ignore align.
+        const isElementAnchor = currentAnchor instanceof HTMLElement;
+        const align = isElementAnchor && opts.align === "right" ? "end" : "start";
+        const crossOffset = isElementAnchor && opts.align === "right" ? -opts.offsetX : opts.offsetX;
 
-        let left = safeMargin;
-        let top = safeMargin;
-
-        if (currentAnchor instanceof HTMLElement) {
-            const rect = currentAnchor.getBoundingClientRect();
-
-            if (opts.align === "left") {
-                left = rect.left + opts.offsetX;
-            } else {
-                left = rect.right - menuRect.width - opts.offsetX;
-            }
-
-            top = rect.bottom + opts.offsetY;
-
-            // Flip above if insufficient space below and more space above
-            const spaceBelow = vh - rect.bottom;
-            const spaceAbove = rect.top;
-            if (menuRect.height + safeMargin > spaceBelow && spaceAbove > spaceBelow) {
-                top = rect.top - menuRect.height - opts.offsetY;
-            }
-        } else {
-            left = currentAnchor.x + opts.offsetX;
-            top = currentAnchor.y + opts.offsetY;
-
-            // If coordinates overflow bottom edge, flip upward
-            if (top + menuRect.height + safeMargin > vh && currentAnchor.y - menuRect.height > 0) {
-                top = currentAnchor.y - menuRect.height - opts.offsetY;
-            }
-        }
-
-        // Clamp inside viewport
-        const maxLeft = Math.max(safeMargin, vw - menuRect.width - safeMargin);
-        const maxTop = Math.max(safeMargin, vh - menuRect.height - safeMargin);
-
-        left = Math.round(Math.max(safeMargin, Math.min(left, maxLeft)));
-        top = Math.round(Math.max(safeMargin, Math.min(top, maxTop)));
+        // The boundary is auto-detected from the anchor so menus stay inside
+        // the panel they were opened in, falling back to the window viewport.
+        const { left, top } = computePosition(el, currentAnchor, {
+            side: "bottom",
+            align,
+            offset: opts.offsetY,
+            crossOffset,
+            margin: 8
+        });
 
         return { left, top };
     }
@@ -159,7 +134,7 @@
             }
 
             if (enablePortal) {
-                position = computePosition(menuEl, activeState.anchor, {
+                position = computePositionMenu(menuEl, activeState.anchor, {
                     align: activeState.align,
                     offsetX: activeState.offsetX,
                     offsetY: activeState.offsetY

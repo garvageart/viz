@@ -1,17 +1,34 @@
 <script lang="ts">
     import { LabelColours } from "#lib/images/constants.js";
+    import { positionDropdown } from "#lib/utils/positioning.js";
 
     interface Props {
         label: LabelColours | null;
         onSelect?: (label: LabelColours | null) => void;
         variant?: "expanded" | "compact";
         enableSelection?: boolean;
+        /**
+         * Optional clipping boundary for the dropdown. When omitted, the nearest
+         * clipping/scrollable ancestor is used, falling back to the window.
+         */
+        boundary?: HTMLElement | null;
     }
 
-    let { label = $bindable(), onSelect, variant = "expanded", enableSelection = true }: Props = $props();
+    let { label = $bindable(), onSelect, variant = "expanded", enableSelection = true, boundary }: Props = $props();
 
     let isOpen = $state(false);
     let dropdownContainer = $state<HTMLElement>();
+    let dropdownEl = $state<HTMLElement>();
+    let triggerButton = $state<HTMLButtonElement>();
+
+    const dropdownPosition = $derived.by(() => {
+        if (!isOpen || !dropdownEl || !triggerButton) {
+            return { left: -9999, top: -9999, ready: false };
+        }
+
+        const { left, top } = positionDropdown(dropdownEl, triggerButton, boundary);
+        return { left, top, ready: true };
+    });
 
     const nullNoneLabelStyle = $derived(
         `background-color: var(--viz-surface-base);${enableSelection === false ? " border: none;" : ""}`
@@ -21,6 +38,7 @@
         if (!enableSelection) {
             return;
         }
+
         label = newLabel;
         onSelect?.(newLabel);
     }
@@ -47,7 +65,7 @@
                     if (label === colour) {
                         handleSelect(null);
                     } else {
-                        handleSelect(colour as LabelColours);
+                        handleSelect(colour);
                     }
                 }}
                 type="button"
@@ -69,12 +87,19 @@
                         }
                     }}
                     disabled={!enableSelection}
-                    title="Select label"
+                    title="Select Label"
                     type="button"
+                    bind:this={triggerButton}
                 >
                 </button>
                 {#if isOpen}
-                    <div class="label-dropdown">
+                    <div
+                        class="label-dropdown"
+                        bind:this={dropdownEl}
+                        style:top="{dropdownPosition.top}px"
+                        style:left="{dropdownPosition.left}px"
+                        style:visibility={dropdownPosition.ready ? "visible" : "hidden"}
+                    >
                         {#each Object.entries(LabelColours) as [name, colour]}
                             <button
                                 class="label-selector"
@@ -87,7 +112,6 @@
                                     } else {
                                         handleSelect(colour as LabelColours);
                                     }
-                                    isOpen = false;
                                 }}
                                 type="button"
                             >
@@ -108,7 +132,7 @@
 
     .label-selector-container {
         display: flex;
-        gap: 0.5em;
+        gap: var(--viz-spacing-sm);
 
         &.compact {
             gap: 0em;
@@ -118,7 +142,7 @@
     .label-selector {
         display: inline-flex;
         align-items: center;
-        gap: 0.5em;
+        gap: var(--viz-spacing-sm);
         width: var(--viz-font-size-std);
         height: var(--viz-font-size-std);
         border: 1px solid var(--viz-border-subtle);
@@ -162,9 +186,7 @@
     }
 
     .label-dropdown {
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
+        position: fixed;
         z-index: 1000;
         background-color: var(--viz-surface-base);
         border: 1px solid var(--viz-border-subtle);
