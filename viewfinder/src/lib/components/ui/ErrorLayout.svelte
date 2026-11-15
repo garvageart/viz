@@ -60,14 +60,12 @@
         {/if}
 
         <div class="actions">
-            <Button class="actions-button" onclick={() => goto("/")}>
-                <MaterialIcon iconName="home" />
-                Go Home
+            <Button iconName="home" class="actions-button" onclick={() => goto("/")}>
+                <span>Home</span>
             </Button>
 
-            <Button class="actions-button" onclick={() => history.back()}>
-                <MaterialIcon iconName="arrow_back" />
-                Go Back
+            <Button iconName="arrow_back" class="actions-button" onclick={() => history.back()}>
+                <span>Back</span>
             </Button>
         </div>
     </div>

@@ -94,22 +94,25 @@
         z-index: var(--viz-z-local);
         height: var(--viz-toolbar-height);
         background-color: var(--viz-surface-panel);
-        border-top: var(--viz-border-thin);
-        width: 100%;
+        width: 90%;
         max-width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-direction: row;
         box-sizing: border-box;
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-lg);
         padding: var(--viz-spacing-md);
         gap: var(--viz-spacing-sm);
         container-type: inline-size;
 
         &.fixed {
             position: sticky;
-            bottom: 0;
-            margin-top: auto;
+            bottom: 1rem;
+            left: 0;
+            right: 0;
+            margin: auto;
         }
     }
 
@@ -170,13 +173,15 @@
                 display: none;
             }
 
-            /* gosh */
+            /* gosh let me just ignore this for now */
+            /* 
             &.selection-toolbar {
                 .leading > :global(:not(.selection-info)),
                 .trailing > :global(:not(.selection-actions)) {
                     display: none !important;
                 }
             }
+            */
         }
 
         .viz-toolbar-section {
@@ -201,7 +206,7 @@
         @include compact-toolbar;
     }
 
-    @container (max-width: 768px) {
+    @container (max-width: 1024px) {
         @include compact-toolbar;
     }
 </style>
