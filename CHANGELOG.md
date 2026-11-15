@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.6] - 2026-11-15
+
+- style(viewfinder): add missing semicolons to grid settings (6e8f0501)
+- style(viewfinder): refine floating toolbar and error layout (2ad6c37e)
+- fix(viewfinder): improve filmstrip keyboard navigation (38860f41)
+- fix(viewfinder): close lightbox on navigation (a6a579f0)
+- feat(viewfinder): surface label update failures (b4d47010)
+- fix(viewfinder): restore optional bounds in InputNumber clamp (273308fc)
+- refactor(viewfinder): consolidate grid click-outside selection clearing (3c813994)
+- feat(viewfinder): add image grid info overlay toggle (b4a6fe58)
+- feat(viewfinder): add floating positioning utility and use it for menus (55f60996)
+
 ## [0.37.5] - 2026-11-14
 
 - fix(viewfinder): refine modal sizing and spacing (77b1cb95)
