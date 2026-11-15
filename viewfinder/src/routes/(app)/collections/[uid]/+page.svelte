@@ -824,7 +824,7 @@
 {#snippet selectionToolbarSnippet()}
     <div class="triage-group">
         <ImageLabelViewer
-            variant="expanded"
+            variant="compact"
             label={getImageLabel(selectionFirstImage)}
             onSelect={async (selectedLabel) => {
                 if (!selectionFirstImage) {
@@ -849,20 +849,11 @@
                     }
                 });
 
-                if (res.status === 200) {
-                    const uidSet = new Set(res.data.uids);
-                    collectionState.images = collectionState.images.map((i) => {
-                        if (uidSet.has(i.uid)) {
-                            return {
-                                ...i,
-                                image_metadata: {
-                                    ...i.image_metadata,
-                                    label: labelToSend
-                                }
-                            };
-                        }
-
-                        return i;
+                if (res.status !== 200) {
+                    toasts.add({
+                        type: "error",
+                        title: "Failed to update label",
+                        message: res.data.error
                     });
                 }
             }}

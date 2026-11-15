@@ -425,17 +425,18 @@
                                             return img.uid;
                                         });
 
-                                        await batchUpdateImages({
+                                        const res = await batchUpdateImages({
                                             uids,
                                             update: {
                                                 image_metadata: { label: labelToSend }
                                             }
                                         });
 
-                                        for (const img of imageSelection.selectedItems) {
-                                            if (img.image_metadata) {
-                                                img.image_metadata.label = labelToSend;
-                                            }
+                                        if (res.status !== 200) {
+                                            toasts.add({
+                                                message: "Failed to label images",
+                                                type: "error"
+                                            });
                                         }
                                     }}
                                 />
