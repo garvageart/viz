@@ -157,7 +157,7 @@
         }
 
         const targetIdx = isPrevious ? currentIdx - 1 : currentIdx + 1;
-        if (targetIdx >= 0 && targetIdx < filmstripImages.length) {
+        if (targetIdx < filmstripImages.length) {
             handleImageClick(filmstripImages[targetIdx], e);
         }
     }
@@ -232,7 +232,8 @@
 
         el.scrollIntoView({
             behavior: "instant",
-            block: "nearest"
+            inline: "center",
+            block: "center"
         });
 
         if (document.activeElement && containerRef?.contains(document.activeElement)) {
@@ -295,6 +296,7 @@
                 class="filmstrip-item"
                 class:active={isActive}
                 class:selected={isSelected}
+                data-entity-id={image.uid}
                 use:draggable={{
                     items: () => {
                         if (!targetScope.has(image)) {
