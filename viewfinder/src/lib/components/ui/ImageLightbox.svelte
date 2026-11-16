@@ -537,7 +537,7 @@
         if (lastZoomPercentage !== undefined && lastZoomPercentage !== percentage) {
             statusIndicator?.show(`Zoom: ${percentage}%`);
         }
-        
+
         lastZoomPercentage = percentage;
     });
 
