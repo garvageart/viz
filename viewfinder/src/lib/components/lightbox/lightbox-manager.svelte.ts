@@ -1,4 +1,4 @@
-import type { Component } from "svelte";
+import type { Component, ComponentProps } from "svelte";
 import { ZIndex } from "#lib/constants/z-index.js";
 import { generateRandomString } from "#lib/utils/misc.js";
 
@@ -32,10 +32,10 @@ export class LightboxManager {
         });
     }
 
-    find<TProps extends Record<string, any> = any>(component: Component<any>): LightboxItem<TProps> | undefined {
+    find<T extends Component<any>>(component: T): LightboxItem<ComponentProps<T>> | undefined {
         return this.stack.find((item) => {
             return item.component === component;
-        });
+        }) as LightboxItem<ComponentProps<T>> | undefined;
     }
 
     getById(id: string): LightboxItem | undefined {
