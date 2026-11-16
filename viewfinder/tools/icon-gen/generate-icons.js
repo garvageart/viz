@@ -143,7 +143,7 @@ async function fetchSvgForName(name, preferredWeight, preferredStyle) {
             for (const v of variants) {
                 const filename = `ic_${v}_24px.svg`.replace(/ic_ic_/, "ic_");
                 const url = `${googleBase}/${cat}/svg/production/${filename}`;
-                
+
                 try {
                     const res = await fetch(url);
                     if (res && res.ok) {
