@@ -12,6 +12,7 @@
         getConsolidatedGroups,
         groupImagesByDate
     } from "#lib/photo-layout/index.js";
+    import { settings } from "#lib/settings/client/index.ts";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "#lib/sort/sort.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { viewSettings } from "#lib/states/index.svelte.js";
@@ -171,7 +172,7 @@
             </div>
         {:else}
             <div class="modal-body">
-                <VizToolbar fixed={false} style="border-top: none; border-bottom: var(--viz-border-thin);">
+                <VizToolbar floating={false} style="border-top: none; border-bottom: var(--viz-border-thin);">
                     {#snippet leading()}
                         <div class="toolbar-group">
                             <Dropdown
@@ -198,6 +199,14 @@
                                     galleryState.pagination.page = -1;
                                     galleryState.hasMore = true;
                                     galleryState.paginate();
+                                }}
+                            />
+                            <Button
+                                iconName="description"
+                                class="toolbar-button"
+                                title="Toggle Image Information"
+                                onclick={() => {
+                                    settings.data.grid.showInfo = !settings.data.grid.showInfo;
                                 }}
                             />
                         </div>

@@ -23,7 +23,7 @@
         };
     });
 
-    export function showStatusIndicator(message: string) {
+    export function show(message: string) {
         text = message;
     }
 </script>

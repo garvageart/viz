@@ -6,7 +6,6 @@
     import Dropdown from "#lib/components/context-menus/Dropdown.svelte";
     import EntityView from "#lib/components/grid/EntityView.svelte";
     import Button from "#lib/components/ui/Button.svelte";
-    import { settings } from "#lib/settings/client/index.ts";
     import { applySortSelection, currentSortId, sortOptions, toggleSortOrder } from "#lib/sort/sort.js";
     import { type ScopeItem, selectionManager } from "#lib/states/selection.svelte.js";
     import { type SortState, photosSort } from "#lib/states/sort.svelte.js";
@@ -111,7 +110,7 @@
     </div>
 
     {#if showToolbars}
-        <VizToolbar {selectionScope} {...toolbarProps} fixed={true}>
+        <VizToolbar {selectionScope} {...toolbarProps} floating={true}>
             {#snippet leading()}
                 <div class="toolbar-group">
                     {@render toolbarButton({
@@ -132,14 +131,6 @@
                         title="Toggle Sort Order ({sortState.value.order})"
                         onclick={() => {
                             toggleSortOrder(sortState);
-                        }}
-                    />
-                    <Button
-                        iconName="description"
-                        class="toolbar-button"
-                        title="Toggle Image Information"
-                        onclick={() => {
-                            settings.data.grid.showInfo = !settings.data.grid.showInfo;
                         }}
                     />
                     {#if dev && grid.type === "grid"}

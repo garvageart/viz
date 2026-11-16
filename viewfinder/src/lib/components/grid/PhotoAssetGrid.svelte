@@ -791,6 +791,10 @@
         }
     });
 
+    $effect(() => {
+        selection.active && scrollToAsset(selection.active);
+    });
+
     // Load-more is owned by the "view" the user is looking at: fire when the
     // viewport is near the bottom of the *loaded* content (loadedHeight), not
     // the estimated total height (totalHeight).

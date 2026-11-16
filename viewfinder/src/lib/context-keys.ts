@@ -1,3 +1,4 @@
 export enum ContextKeys {
-    ModalZIndex = "modal-z-index"
+    ModalZIndex = "modal-z-index",
+    LightboxZIndex = "lightbox-z-index"
 }

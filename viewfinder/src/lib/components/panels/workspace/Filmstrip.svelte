@@ -1,7 +1,8 @@
 <script lang="ts">
     import { type ImageAsset, getAssetImagePath, listCollectionImages } from "@viz/api";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
-    import ImageCard from "#lib/components/ui/ImageCard.svelte";
+    import AssetImage from "#lib/components/ui/AssetImage.svelte";
+    // import ImageCard from "#lib/components/ui/ImageCard.svelte";
     import ImageLightbox from "#lib/components/ui/ImageLightbox.svelte";
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import { VizMimeTypes } from "#lib/constants.js";
@@ -249,25 +250,11 @@
             return;
         }
 
-        const openItem = lightboxManager.find(ImageLightbox);
-        if (openItem) {
-            openItem.props.lightboxImage = target;
-            return;
-        }
-
         lightboxManager.open(
             ImageLightbox,
             {
-                lightboxImage: target,
-                images: filmstripImages,
-                onImageUpdated: (image) => {
-                    filmstripImages = filmstripImages.map((i) => {
-                        if (i.uid === image.uid) {
-                            return image;
-                        }
-                        return i;
-                    });
-                }
+                image: target,
+                images: filmstripImages
             },
             {
                 backgroundOpacity: 1,
@@ -324,7 +311,11 @@
                 aria-label={`Select image ${image.name}`}
                 bind:this={itemRefs[i]}
             >
-                <ImageCard asset={image} variant="mini" objectFit="contain" resolution="thumbnail" />
+                <!-- {#if display === "card"}
+                    <ImageCard asset={image} variant="mini" objectFit="contain" resolution="thumbnail" />
+                {:else} -->
+                <AssetImage asset={image} />
+                <!-- {/if} -->
             </button>
         {/each}
     {/if}
@@ -442,12 +433,13 @@
         flex-direction: column;
         overflow: hidden;
         cursor: pointer;
-        background-color: #0d0d0d;
+        background-color: var(--viz-surface-card);
         transition:
             background-color 0.1s ease,
             border-color 0.1s ease;
         flex-shrink: 0;
         box-sizing: border-box;
+        border: var(--viz-border-thin);
 
         &:focus,
         &:focus-visible {
@@ -456,20 +448,16 @@
         }
 
         &:hover {
-            background-color: #1a1a1a;
-            border-color: var(--viz-border-subtle);
+            border-color: var(--viz-primary);
         }
 
         &.active {
-            border-color: var(--viz-primary);
-            background-color: #1a1a1a;
             box-shadow: 0 0 0 2px var(--viz-primary);
             z-index: 2;
             outline: none;
         }
 
         &.selected:not(.active) {
-            border-color: var(--viz-primary);
             background-color: #1a1a1a;
             box-shadow: 0 0 0 1px var(--viz-primary);
             z-index: 1;

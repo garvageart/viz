@@ -64,6 +64,7 @@
         getConsolidatedGroups,
         groupImagesByDate
     } from "#lib/photo-layout/index.js";
+    import { settings } from "#lib/settings/client/index.ts";
     import { sortCollectionImages } from "#lib/sort/sort.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { debugMode, isLayoutPage, viewSettings } from "#lib/states/index.svelte.js";
@@ -597,7 +598,7 @@
         lightboxManager.open(
             ImageLightbox,
             {
-                lightboxImage: asset,
+                image: asset,
                 images: getDisplayArray()
             },
             {
@@ -746,17 +747,23 @@
 {/snippet}
 
 {#snippet leadingSnippet()}
-    {#if !isLayoutPage()}
-        <Button
-            iconName="filter_list"
-            class="toolbar-button"
-            tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
-            aria-label="Filter"
-            onclick={openFilterModal}
-        >
-            <span>Filter</span>
-        </Button>
-    {/if}
+    <Button
+        iconName="filter_list"
+        class="toolbar-button"
+        tooltipParams={{ component: ActiveFiltersTooltip, placement: "bottom-start" }}
+        aria-label="Filter"
+        onclick={openFilterModal}
+    >
+        <span>Filter</span>
+    </Button>
+    <Button
+        iconName="description"
+        class="toolbar-button"
+        title="Toggle Image Information"
+        onclick={() => {
+            settings.data.grid.showInfo = !settings.data.grid.showInfo;
+        }}
+    />
     <Dropdown
         id="coll-view-dropdown"
         iconName="grid_view"

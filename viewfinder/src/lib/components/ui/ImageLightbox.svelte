@@ -1,21 +1,29 @@
 <script lang="ts">
     import { dev } from "$app/env";
-    import { type ImageAsset, getAssetImagePath, updateImage } from "@viz/api";
+    import { type ImageAsset, Label, batchUpdateImages, getAssetImagePath, updateImage } from "@viz/api";
+    import { Popover } from "bits-ui";
     import { untrack } from "svelte";
     import type { MouseEventHandler } from "svelte/elements";
     import { slide } from "svelte/transition";
     import { hideAll } from "tippy.js";
     import CropOverlay from "#lib/components/image-tools/CropOverlay.svelte";
     import CropTools from "#lib/components/image-tools/CropTools.svelte";
+    import ImageLabelViewer from "#lib/components/image-tools/ImageLabelViewer.svelte";
+    import StarRating from "#lib/components/image-tools/StarRating.svelte";
     import { lightboxManager } from "#lib/components/lightbox/lightbox-manager.svelte.js";
     import Filmstrip from "#lib/components/panels/workspace/Filmstrip.svelte";
     import Button from "#lib/components/ui/Button.svelte";
+    import Slider from "#lib/components/ui/Slider.svelte";
     import StatusIndicator from "#lib/components/ui/StatusIndicator.svelte";
     import ExportPanel from "#lib/components/ui/panels/ExportPanel.svelte";
     import MetadataPanel from "#lib/components/ui/panels/MetadataPanel.svelte";
+    import VizToolbar from "#lib/components/ui/toolbars/VizToolbar.svelte";
+    import { ZIndex } from "#lib/constants/z-index.ts";
+    import { deleteSelectedImages } from "#lib/context-menu/menus/images.ts";
+    import { LabelColours } from "#lib/images/constants.ts";
     import { ImageLoader } from "#lib/images/loader/image-loader.svelte.js";
     import type { ActiveCropLayout, CropRect } from "#lib/images/zoom/crop-utils.js";
-    import { ImageZoomState } from "#lib/images/zoom/zoom-utils.svelte.js";
+    import { ImageZoomState, mapValueToRange } from "#lib/images/zoom/zoom-utils.svelte.js";
     import { KbdShortcutTier, KeybindAction, keyboardManager } from "#lib/keyboard/keyboard.svelte.js";
     import { settings } from "#lib/settings/client/settings.svelte.ts";
     import { isMobile } from "#lib/states/index.svelte.js";
@@ -24,13 +32,13 @@
     import Splitpanes from "#lib/third-party/svelte-splitpanes/Splitpanes.svelte";
     import { toasts } from "#lib/toast-notifcations/toasts.svelte.js";
     import { downloadOriginalImageFile } from "#lib/utils/http.js";
-    import { isAssetImage } from "#lib/utils/images.js";
+    import { getImageLabel } from "#lib/utils/images.js";
     import AssetImage from "./AssetImage.svelte";
     import FloatingPanel from "./FloatingPanel.svelte";
 
     interface Props {
         id?: string;
-        lightboxImage: ImageAsset;
+        image: ImageAsset;
         images?: ImageAsset[];
         show?: boolean;
         onClose?: () => void;
@@ -41,7 +49,7 @@
 
     let {
         id,
-        lightboxImage = $bindable(),
+        image,
         images = [],
         show = $bindable(true),
         onClose,
@@ -50,9 +58,14 @@
         onImageUpdated
     }: Props = $props();
 
+    const activeScope = $derived(selectionManager.getActiveScope());
+    let focusedAsset = $derived(activeScope.active);
+    let lightboxImage = $derived(focusedAsset ?? image);
+
     function closeLightbox() {
         show = false;
         onClose?.();
+
         if (id) {
             lightboxManager.dismiss(id);
         } else {
@@ -63,25 +76,6 @@
     $effect(() => {
         if (show) {
             hideAll();
-        }
-    });
-
-    let focusedAsset = $derived(isAssetImage(selectionManager.focusedItem) ? selectionManager.focusedItem : undefined);
-
-    $effect(() => {
-        if (focusedAsset && focusedAsset.uid !== lightboxImage.uid) {
-            lightboxImage = focusedAsset;
-        }
-    });
-
-    $effect(() => {
-        if (!lightboxImage) {
-            return;
-        }
-
-        const activeScope = selectionManager.getActiveScope();
-        if (activeScope && activeScope.active?.uid !== lightboxImage.uid) {
-            activeScope.select(lightboxImage);
         }
     });
 
@@ -537,18 +531,21 @@
 
     let statusIndicator: ReturnType<typeof StatusIndicator> | undefined = $state();
 
+    $effect(() => {
+        if (!lightboxImage) {
+            console.log("yo");
+            return;
+        }
+
+        statusIndicator?.show(`Zoom: ${zoomState.percentage}%`);
+    });
+
     function handleWheel(event: WheelEvent) {
         zoomState.handleWheel(event);
-        if (!zoomState.isAtFit) {
-            statusIndicator?.showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
-        }
     }
 
     function handleDoubleClick(event: MouseEvent) {
         zoomState.handleDoubleClick(event);
-        if (!zoomState.isAtFit) {
-            statusIndicator?.showStatusIndicator(`Zoom: ${zoomState.nativeZoomPercentage}%`);
-        }
     }
 
     $effect(() => {
@@ -719,10 +716,8 @@
 {#snippet imagePane()}
     <Pane minSize={20}>
         <div
-            class="image-viewport"
-            class:can-pan={zoomState.canPan}
-            class:is-panning={zoomState.isDragging}
             bind:this={viewportEl}
+            class="image-viewport"
             role="presentation"
             onwheel={handleWheel}
             ondblclick={handleDoubleClick}
@@ -775,32 +770,6 @@
                     {/if}
                 </div>
                 <div class="image-icon-buttons">
-                    {#if lightboxState.filmstrip.visible}
-                        <Button
-                            id="act-move-filmstrip"
-                            class="lightbox-button-icon"
-                            title="Move Filmstrip"
-                            iconName={lightboxState.filmstrip.position === "bottom"
-                                ? "bottom_panel_open"
-                                : "left_panel_open"}
-                            onclick={() => {
-                                lightboxState.filmstrip.position =
-                                    lightboxState.filmstrip.position === "bottom" ? "side" : "bottom";
-                            }}
-                        />
-                    {/if}
-                    <Button
-                        id="act-expand-lightbox"
-                        class="lightbox-button-icon"
-                        title="Toggle Filmstrip"
-                        iconName="view_sidebar"
-                        // i didn't like that the "sidebar" part of the icon was showing the wrong side
-                        style="transform: rotateY(180deg);"
-                        onclick={() => {
-                            lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
-                        }}
-                    />
-                    <div class="image-icon-button-separator"></div>
                     {#if !isCropping}
                         {#if dev}
                             <Button
@@ -923,6 +892,201 @@
                 {/if}
             </div>
 
+            {#if !isCropping}
+                <VizToolbar
+                    selectionScope={activeScope}
+                    floating={true}
+                    showSelectionState={false}
+                    onpointerdown={(e) => e.stopPropagation()}
+                >
+                    {#snippet leading()}
+                        <Popover.Root>
+                            <Popover.Trigger>
+                                {#snippet child({ props })}
+                                    <Button iconName="zoom_in" {...props}>
+                                        <span>{zoomState.percentage}%</span>
+                                    </Button>
+                                {/snippet}
+                            </Popover.Trigger>
+                            <Popover.Portal>
+                                <Popover.Content
+                                    side="top"
+                                    align="start"
+                                    sideOffset={8}
+                                    class="lightbox-zoom-popover"
+                                    style={`z-index: ${ZIndex.Lightbox + 1};`}
+                                >
+                                    <div class="zoom-popover-controls">
+                                        <Button
+                                            iconName="zoom_out"
+                                            class="zoom-control-button"
+                                            title="Zoom out"
+                                            aria-label="Zoom out"
+                                            disabled={zoomState.value <= ImageZoomState.MIN_ZOOM}
+                                            onclick={() => {
+                                                zoomState.toCenter(zoomState.value / ImageZoomState.STEP);
+                                            }}
+                                        />
+                                        <Slider
+                                            class="zoom-slider"
+                                            thumbStyle="dot"
+                                            min={0}
+                                            max={100}
+                                            step={0.1}
+                                            value={mapValueToRange(
+                                                zoomState.value,
+                                                ImageZoomState.MIN_ZOOM,
+                                                ImageZoomState.MAX_ZOOM,
+                                                0,
+                                                100
+                                            )}
+                                            oninput={(event) => {
+                                                const newZoom = mapValueToRange(
+                                                    event.currentTarget.valueAsNumber,
+                                                    0,
+                                                    100,
+                                                    ImageZoomState.MIN_ZOOM,
+                                                    ImageZoomState.MAX_ZOOM
+                                                );
+                                                zoomState.toCenter(newZoom);
+                                            }}
+                                        />
+                                        <Button
+                                            iconName="zoom_in"
+                                            class="zoom-control-button"
+                                            title="Zoom In"
+                                            aria-label="Zoom In"
+                                            disabled={zoomState.value >= ImageZoomState.MAX_ZOOM}
+                                            onclick={() => {
+                                                zoomState.toCenter(zoomState.value * ImageZoomState.STEP);
+                                            }}
+                                        />
+                                        <Button
+                                            class="zoom-control-button"
+                                            title="Actual Size"
+                                            aria-label="Actual Size"
+                                            disabled={zoomState.isAtOneToOne}
+                                            onclick={() => {
+                                                zoomState.toCenter(zoomState.oneToOneZoom);
+                                            }}
+                                        >
+                                            1:1
+                                        </Button>
+                                        <Button
+                                            iconName="fit_screen"
+                                            class="zoom-control-button"
+                                            title="Fit to viewport"
+                                            aria-label="Fit to viewport"
+                                            disabled={zoomState.isAtFit}
+                                            onclick={() => zoomState.fitZoom()}
+                                        />
+                                    </div>
+                                </Popover.Content>
+                            </Popover.Portal>
+                        </Popover.Root>
+                        <div class="toolbar-button-separator"></div>
+                        <Button
+                            id="act-expand-lightbox"
+                            title="Toggle Filmstrip"
+                            iconName="view_carousel"
+                            onclick={() => {
+                                lightboxState.filmstrip.visible = !lightboxState.filmstrip.visible;
+                            }}
+                        />
+                        {#if lightboxState.filmstrip.visible}
+                            <Button
+                                id="act-move-filmstrip"
+                                title="Move Filmstrip"
+                                iconName={lightboxState.filmstrip.position === "bottom"
+                                    ? "bottom_panel_open"
+                                    : "left_panel_open"}
+                                onclick={() => {
+                                    lightboxState.filmstrip.position =
+                                        lightboxState.filmstrip.position === "bottom" ? "side" : "bottom";
+                                }}
+                            />
+                        {/if}
+                    {/snippet}
+
+                    {#snippet selectionActions()}
+                        <div class="triage-group">
+                            <ImageLabelViewer
+                                variant="expanded"
+                                label={getImageLabel(focusedAsset)}
+                                onSelect={async (selectedLabel) => {
+                                    if (!focusedAsset) {
+                                        return;
+                                    }
+
+                                    // Reverse lookup: find the key (Name) for the selected color (Value)
+                                    const entry = Object.entries(LabelColours).find(([_, colour]) => {
+                                        return colour === selectedLabel;
+                                    });
+                                    const labelName = entry ? entry[0] : null;
+                                    const labelToSend = labelName as Label | null;
+
+                                    const uids = activeScope.selectedItems.map((img) => {
+                                        return img.uid;
+                                    });
+
+                                    const res = await batchUpdateImages({
+                                        uids,
+                                        update: {
+                                            image_metadata: { label: labelToSend }
+                                        }
+                                    });
+
+                                    // Do not manually updated asset objects, they have load() function dependencies. Leave this is as is
+                                    if (res.status !== 200) {
+                                        toasts.add({
+                                            message: "Failed to label images",
+                                            type: "error"
+                                        });
+                                    }
+                                }}
+                            />
+                            <StarRating
+                                value={focusedAsset?.image_metadata.rating ?? 0}
+                                onChange={async (rating) => {
+                                    if (!focusedAsset) {
+                                        return;
+                                    }
+
+                                    const uids = activeScope.selectedItems.map((img) => {
+                                        return img.uid;
+                                    });
+
+                                    const res = await batchUpdateImages({
+                                        uids,
+                                        update: {
+                                            image_metadata: { rating }
+                                        }
+                                    });
+
+                                    // Do not manually updated asset objects, they have load() function dependencies. Leave this is as is
+                                    if (res.status !== 200) {
+                                        toasts.add({
+                                            message: "Failed to label images",
+                                            type: "error"
+                                        });
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div class="toolbar-separator"></div>
+
+                        <Button
+                            iconName="delete"
+                            class="toolbar-button"
+                            title="Delete"
+                            aria-label="Delete selected images"
+                            onclick={() => {
+                                deleteSelectedImages(activeScope);
+                            }}
+                        />
+                    {/snippet}
+                </VizToolbar>
+            {/if}
             <!-- TODO: Change this to a general action status indicator to support all actions -->
             <!-- e.g. "Date Change: 11-06-2026, 20:42:01" -->
             <div class="status-indicator-container">
@@ -975,8 +1139,8 @@
 
 {#snippet filmstripPane()}
     <Pane
-        size={lightboxState.filmstrip.position === "bottom" ? 20 : 15}
-        minSize={lightboxState.filmstrip.position === "bottom" ? 20 : 15}
+        size={lightboxState.filmstrip.position === "bottom" ? 15 : 15}
+        minSize={lightboxState.filmstrip.position === "bottom" ? 15 : 15}
     >
         <div class="lightbox-filmstrip-container" class:side={lightboxState.filmstrip.position === "side"}>
             <Filmstrip />
@@ -1027,7 +1191,7 @@
         </Pane>
 
         {#if lightboxState.sidePanel.visible}
-            <Pane size={20}>
+            <Pane minSize={15} size={20} maxSize={30}>
                 <div class="side-panel" class:crop-mode={isCropping} transition:slide={{ axis: "x" }}>
                     {#if isCropping}
                         <CropTools
@@ -1128,12 +1292,12 @@
         box-sizing: border-box;
     }
 
-    .image-icon-button-separator {
+    .toolbar-button-separator {
         width: 1px;
         background-color: var(--viz-border-subtle);
         margin: 0 var(--viz-spacing-xxs);
         flex-shrink: 0;
-        height: 80%;
+        height: 100%;
     }
 
     :global(.lightbox-button-icon) {
@@ -1169,20 +1333,36 @@
     .image-viewport {
         position: relative;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100%;
         width: 100%;
         overflow: hidden;
         box-sizing: border-box;
+    }
 
-        &.can-pan {
-            cursor: grab;
-        }
+    :global(.lightbox-zoom-popover) {
+        position: relative;
+        padding: var(--viz-spacing-xs);
+        background-color: var(--viz-surface-popover);
+        border: var(--viz-border-thin);
+        border-radius: var(--viz-border-radius-md);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        outline: none;
+    }
 
-        &.is-panning {
-            cursor: grabbing;
-        }
+    .zoom-popover-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-sm);
+        white-space: nowrap;
+    }
+
+    .triage-group {
+        display: flex;
+        align-items: center;
+        gap: var(--viz-spacing-std);
     }
 
     .lightbox-filmstrip-container {
@@ -1200,6 +1380,14 @@
         max-height: 100%;
         width: 100%;
         height: 100%;
+
+        &.can-pan {
+            cursor: grab;
+        }
+
+        &.is-panning {
+            cursor: grabbing;
+        }
 
         &.has-crop {
             overflow: hidden !important;

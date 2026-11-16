@@ -6,9 +6,11 @@
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the toolbar sticks to the top of its scrolling container */
-        fixed?: boolean;
-        /** Selection scope to monitor for selection count and clear operations */
+        floating?: boolean;
+        /** Selection scope to monitor for selection state and take action */
         selectionScope?: SelectionScope<ScopeItem> | null;
+        /** Selection scope to monitor for selection count and clear operations */
+        showSelectionState?: boolean;
         /** Leading content (left side: e.g. intake buttons, context title) */
         leading?: Snippet;
         /** Selection actions content (appears immediately following the selection count on the left) */
@@ -20,8 +22,9 @@
     }
 
     let {
-        fixed = true,
+        floating = true,
         selectionScope = null,
+        showSelectionState = true,
         leading,
         selectionActions,
         trailing,
@@ -37,7 +40,7 @@
     {...props}
     class="viz-toolbar-container viz-toolbar {className}"
     class:selection-toolbar={hasSelection}
-    class:fixed
+    class:floating
     data-keep-selection="true"
 >
     <div class="viz-toolbar-section leading">
@@ -45,7 +48,7 @@
             {@render leading()}
         {/if}
 
-        {#if hasSelection && selectionScope}
+        {#if hasSelection && selectionScope && showSelectionState}
             <div class="selection-info">
                 <Button
                     variant="ghost"
@@ -94,7 +97,7 @@
         z-index: var(--viz-z-local);
         height: var(--viz-toolbar-height);
         background-color: var(--viz-surface-panel);
-        width: 90%;
+        width: 100%;
         max-width: 100%;
         display: flex;
         align-items: center;
@@ -102,13 +105,14 @@
         flex-direction: row;
         box-sizing: border-box;
         border: var(--viz-border-thin);
-        border-radius: var(--viz-border-radius-lg);
         padding: var(--viz-spacing-md);
         gap: var(--viz-spacing-sm);
         container-type: inline-size;
 
-        &.fixed {
+        &.floating {
+            border-radius: var(--viz-border-radius-lg);
             position: sticky;
+            width: 90%;
             bottom: 1rem;
             left: 0;
             right: 0;

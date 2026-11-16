@@ -1,15 +1,13 @@
 <script lang="ts">
-    import { type Snippet } from "svelte";
+    import { type Snippet, setContext } from "svelte";
+    import type { MouseEventHandler } from "svelte/elements";
     import { ZIndex } from "#lib/constants/z-index.js";
+    import { ContextKeys } from "#lib/context-keys.ts";
     import { debugMode } from "#lib/states/index.svelte.js";
 
     interface Props {
         children: Snippet;
-        onclick?: (
-            e: MouseEvent & {
-                currentTarget: EventTarget & Window;
-            }
-        ) => void;
+        onclick?: MouseEventHandler<Window>;
         onclose?: () => void;
         show: boolean;
         lightboxElement?: HTMLElement | undefined;
@@ -32,6 +30,8 @@
         zIndex = ZIndex.Lightbox,
         closeOnEsc = true
     }: Props = $props();
+
+    setContext(ContextKeys.LightboxZIndex, () => zIndex);
 
     let resolvedBackground = $derived.by(() => {
         if (backgroundOpacity === undefined || backgroundOpacity === null) {

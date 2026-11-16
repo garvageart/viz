@@ -161,6 +161,7 @@
         justify-content: space-between;
         align-items: center;
         box-sizing: border-box;
+        background-color: var(--viz-surface-base);
         border-bottom: var(--viz-border-thin);
         padding: var(--viz-spacing-sm);
 

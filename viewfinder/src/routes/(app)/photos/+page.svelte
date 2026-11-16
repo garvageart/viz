@@ -39,6 +39,7 @@
         getConsolidatedGroups,
         groupImagesByDate
     } from "#lib/photo-layout/index.js";
+    import { settings } from "#lib/settings/client/index.js";
     import { applySortSelection, currentSortId, sortCollectionImages, sortOptions } from "#lib/sort/sort.js";
     import { filterManager } from "#lib/states/filter.svelte.js";
     import { viewSettings } from "#lib/states/index.svelte.js";
@@ -152,7 +153,7 @@
         lightboxManager.open(
             ImageLightbox,
             {
-                lightboxImage: target,
+                image: target,
                 images: sortedFilteredImages,
                 onImageUpdated: (image) => {
                     galleryState.images = galleryState.images.map((i) => {
@@ -441,7 +442,7 @@
                 <div class="toolbar-separator"></div>
                 <div class="triage-group">
                     <ImageLabelViewer
-                        variant="expanded"
+                        variant="compact"
                         label={getImageLabel(selectionFirstImage)}
                         onSelect={async (selectedLabel) => {
                             if (!selectionFirstImage) {
@@ -577,6 +578,14 @@
                         iconName="grid_view"
                         items={displayMenuItems}
                         showSelectionIndicator={false}
+                    />
+                    <Button
+                        iconName="description"
+                        class="toolbar-button"
+                        title="Toggle Image Information"
+                        onclick={() => {
+                            settings.data.grid.showInfo = !settings.data.grid.showInfo;
+                        }}
                     />
                 </div>
             {/snippet}
