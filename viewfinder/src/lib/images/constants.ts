@@ -9,7 +9,8 @@ export enum LabelColours {
     Purple = "#9355f7",
     Pink = "#f755a1",
     Green = "#19dd61",
-    Blue = "#106ea5"
+    Blue = "#106ea5",
+    None = "var(--viz-surface-input)"
 }
 
 export const DEFAULT_IMAGE_COLUMNS: TableColumn<ImageAsset>[] = [

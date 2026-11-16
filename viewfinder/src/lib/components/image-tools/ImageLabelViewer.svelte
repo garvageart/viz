@@ -8,7 +8,7 @@
         variant?: "expanded" | "compact";
         enableSelection?: boolean;
         /**
-         * Optional clipping boundary for the dropdown. When omitted, the nearest
+         * Optional clipping boundary for the popover. When omitted, the nearest
          * clipping/scrollable ancestor is used, falling back to the window.
          */
         boundary?: HTMLElement | null;
@@ -17,22 +17,18 @@
     let { label = $bindable(), onSelect, variant = "expanded", enableSelection = true, boundary }: Props = $props();
 
     let isOpen = $state(false);
-    let dropdownContainer = $state<HTMLElement>();
-    let dropdownEl = $state<HTMLElement>();
+    let popoverContainer = $state<HTMLElement>();
+    let popoverEl = $state<HTMLElement>();
     let triggerButton = $state<HTMLButtonElement>();
 
-    const dropdownPosition = $derived.by(() => {
-        if (!isOpen || !dropdownEl || !triggerButton) {
+    const popoverPosition = $derived.by(() => {
+        if (!isOpen || !popoverEl || !triggerButton) {
             return { left: -9999, top: -9999, ready: false };
         }
 
-        const { left, top } = positionDropdown(dropdownEl, triggerButton, boundary);
+        const { left, top } = positionDropdown(popoverEl, triggerButton, boundary);
         return { left, top, ready: true };
     });
-
-    const nullNoneLabelStyle = $derived(
-        `background-color: var(--viz-surface-base);${enableSelection === false ? " border: none;" : ""}`
-    );
 
     function handleSelect(newLabel: LabelColours | null) {
         if (!enableSelection) {
@@ -44,13 +40,17 @@
     }
 
     function handleClickOutside(event: MouseEvent) {
-        if (isOpen && dropdownContainer && !dropdownContainer.contains(event.target as Node)) {
+        if (isOpen && popoverContainer && !popoverContainer.contains(event.target as Node)) {
             isOpen = false;
         }
     }
 </script>
 
 <svelte:window onclick={handleClickOutside} />
+
+{#snippet noneButton()}
+    <span class="none-line"> </span>
+{/snippet}
 
 {#if variant === "expanded"}
     <div class="label-selector-container">
@@ -70,17 +70,20 @@
                 }}
                 type="button"
             >
+                {#if name === "None"}
+                    {@render noneButton()}
+                {/if}
             </button>
         {/each}
     </div>
 {:else if variant === "compact"}
-    {#if enableSelection || label !== null}
+    {#if enableSelection}
         <div class="label-selector-container" class:compact={variant === "compact"}>
-            <div class="compact-container" bind:this={dropdownContainer}>
+            <div class="compact-container" bind:this={popoverContainer}>
                 <button
                     class="label-selector-trigger"
                     class:disable-select={!enableSelection}
-                    style={!label ? nullNoneLabelStyle : `background-color: ${label};`}
+                    style={!label ? "" : `background-color: ${label};`}
                     onclick={() => {
                         if (enableSelection) {
                             isOpen = !isOpen;
@@ -91,14 +94,17 @@
                     type="button"
                     bind:this={triggerButton}
                 >
+                    {#if !label}
+                        {@render noneButton()}
+                    {/if}
                 </button>
                 {#if isOpen}
                     <div
-                        class="label-dropdown"
-                        bind:this={dropdownEl}
-                        style:top="{dropdownPosition.top}px"
-                        style:left="{dropdownPosition.left}px"
-                        style:visibility={dropdownPosition.ready ? "visible" : "hidden"}
+                        class="label-popover"
+                        bind:this={popoverEl}
+                        style:top="{popoverPosition.top}px"
+                        style:left="{popoverPosition.left}px"
+                        style:visibility={popoverPosition.ready ? "visible" : "hidden"}
                     >
                         {#each Object.entries(LabelColours) as [name, colour]}
                             <button
@@ -142,6 +148,8 @@
     .label-selector {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
+        overflow: clip;
         gap: var(--viz-spacing-sm);
         width: var(--viz-font-size-std);
         height: var(--viz-font-size-std);
@@ -166,12 +174,24 @@
         pointer-events: none;
     }
 
+    .none-line {
+        width: 2px;
+        height: 150%;
+        background-color: red;
+        rotate: -45deg;
+    }
+
     .label-selector-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: clip;
+        gap: var(--viz-spacing-sm);
         width: var(--viz-font-size-std);
         height: var(--viz-font-size-std);
-        outline: none;
         border: 1px solid var(--viz-border-subtle);
         background-color: var(--viz-surface-base);
+        color: var(--viz-text-primary);
         cursor: pointer;
         padding: 0;
 
@@ -185,7 +205,7 @@
         }
     }
 
-    .label-dropdown {
+    .label-popover {
         position: fixed;
         z-index: 1000;
         background-color: var(--viz-surface-base);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ImageZoomState, calculateZoomTo } from "./zoom-utils.svelte";
+import { ImageZoomState, calculateZoomTo, mapValueToRange } from "./zoom-utils.svelte";
 
 describe("ImageZoomState Controller", () => {
     it("initializes with default 1.0 zoom and zero offsets", () => {
@@ -32,12 +32,14 @@ describe("ImageZoomState Controller", () => {
     });
 
     it("calculates oneToOneZoom and nativeZoomPercentage with dependencies", () => {
-        const mockImg = {
-            clientWidth: 1000,
-            clientHeight: 600,
-            naturalWidth: 4000,
-            naturalHeight: 2400
-        } as unknown as HTMLImageElement;
+        const mockImg = new Image();
+
+        Object.defineProperties(mockImg, {
+            clientWidth: { value: 1000, configurable: true },
+            clientHeight: { value: 600, configurable: true },
+            naturalWidth: { value: 4000, configurable: true },
+            naturalHeight: { value: 2400, configurable: true }
+        });
 
         let cropFraction = 1.0;
 
@@ -51,15 +53,13 @@ describe("ImageZoomState Controller", () => {
         expect(state.oneToOneZoom).toBe(4.0);
 
         // At 1.0x zoom, percentage is 100%
-        expect(state.nativeZoomPercentage).toBe(100);
-        expect(state.zoomPercentage).toBe(100);
+        expect(state.percentage).toBe(100);
         expect(state.isAtFit).toBe(true);
         expect(state.isAtOneToOne).toBe(false);
 
         // At 4.0x zoom, percentage is 400%
         state.value = 4.0;
-        expect(state.nativeZoomPercentage).toBe(400);
-        expect(state.zoomPercentage).toBe(400);
+        expect(state.percentage).toBe(400);
         expect(state.isAtFit).toBe(false);
         expect(state.isAtOneToOne).toBe(true);
 
@@ -326,5 +326,17 @@ describe("calculateZoomTo", () => {
         });
 
         expect(result.value).toBe(16);
+    });
+});
+
+describe("mapValueToRange", () => {
+    it("maps and clamps values between arbitrary ranges", () => {
+        expect(mapValueToRange(5, 0, 10, 0.1, 16)).toBeCloseTo(8.05);
+        expect(mapValueToRange(-1, 0, 10, 0.1, 16)).toBe(0.1);
+        expect(mapValueToRange(11, 0, 10, 0.1, 16)).toBe(16);
+    });
+
+    it("returns the output minimum when the input range has no span", () => {
+        expect(mapValueToRange(5, 5, 5, 1, 10)).toBe(1);
     });
 });

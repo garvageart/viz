@@ -28,6 +28,21 @@ export interface ZoomControllerDeps {
     getEffectiveWidthFraction?: () => number;
 }
 
+export function mapValueToRange(
+    value: number,
+    inputMin: number,
+    inputMax: number,
+    outputMin: number,
+    outputMax: number
+): number {
+    if (inputMin === inputMax) {
+        return outputMin;
+    }
+
+    const position = Math.max(0, Math.min(1, (value - inputMin) / (inputMax - inputMin)));
+    return outputMin + position * (outputMax - outputMin);
+}
+
 export class ImageZoomState {
     value = $state(1);
     posX = $state(0);
@@ -36,6 +51,10 @@ export class ImageZoomState {
 
     isDragging = $state(false);
     wasDragging = $state(false);
+
+    static MIN_ZOOM = 0.4;
+    static MAX_ZOOM = 16;
+    static STEP = 1.2;
 
     private dragStart = {
         mouseX: 0,
@@ -67,6 +86,7 @@ export class ImageZoomState {
         if (this.deps?.getEffectiveWidthFraction) {
             return this.deps.getEffectiveWidthFraction();
         }
+
         return 1;
     }
 
@@ -75,6 +95,7 @@ export class ImageZoomState {
         if (img && img.clientWidth > 0 && img.naturalWidth > 0) {
             return Math.max(1, (img.naturalWidth * this.effectiveWidthFraction) / img.clientWidth);
         }
+
         return 1;
     }
 
@@ -82,16 +103,27 @@ export class ImageZoomState {
         return Math.abs(this.value - this.oneToOneZoom) < 0.05;
     }
 
-    get nativeZoomPercentage(): number {
-        return Math.round(this.value * 100);
-    }
-
-    get zoomPercentage(): number {
+    get percentage(): number {
         return Math.round(this.value * 100);
     }
 
     get canPan(): boolean {
         return true;
+    }
+
+    fitZoom() {
+        this.value = 1;
+        this.posX = 0;
+        this.posY = 0;
+    }
+
+    toCenter(newZoom: number) {
+        const viewportRect = this.deps?.getContainerEl()?.getBoundingClientRect();
+        if (!viewportRect) {
+            return;
+        }
+
+        this.zoomTo(newZoom, viewportRect.left + viewportRect.width / 2, viewportRect.top + viewportRect.height / 2);
     }
 
     zoomTo(newZoom: number, clientX: number, clientY: number) {
@@ -238,7 +270,7 @@ export function calculateZoomTo(options: ZoomOptions): ZoomState {
     const cursorCenterY = clientY - viewportRect.top - Vh / 2;
 
     // Clamp zoom factor between 0.1 (10%) and 16.0 (1600%)
-    const nextZoom = Math.max(0.1, Math.min(newZoom, 16));
+    const nextZoom = Math.max(ImageZoomState.MIN_ZOOM, Math.min(newZoom, ImageZoomState.MAX_ZOOM));
 
     // Calculate translations targeting the mapped coordinate under the new zoom
     const zoomRatio = nextZoom / value;

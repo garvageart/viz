@@ -6,6 +6,7 @@
         label?: string;
         description?: string;
         disabled?: boolean;
+        thumbStyle?: "dot" | "line";
         min?: number;
         max?: number;
         step?: number;
@@ -18,6 +19,7 @@
         label,
         description,
         disabled = false,
+        thumbStyle = "line",
         min = 0,
         max = 100,
         step = 1,
@@ -58,6 +60,7 @@
         {disabled}
         bind:value
         style:background={trackBackground}
+        class={thumbStyle}
         oninput={(e) => {
             props.oninput?.(e);
         }}
@@ -125,7 +128,6 @@
         width: 100%;
         height: 6px;
         border: var(--viz-border-thin);
-        border-radius: 0; // Flat sharp track
         outline: none;
         -webkit-appearance: none;
         appearance: none;
@@ -137,16 +139,18 @@
             background: transparent;
         }
 
+        &::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            background: transparent;
+        }
+
         &::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 6px;
-            height: var(--viz-font-size-2xl);
             background: var(--viz-primary);
             border: 1px solid var(--viz-border-subtle);
-            border-radius: 0; // Flat, sharp tick mark thumb
             cursor: ew-resize;
-            margin-top: -6px; // Center vertically on track
             transition:
                 background-color 0.1s,
                 border-color 0.1s;
@@ -157,18 +161,9 @@
             }
         }
 
-        &::-moz-range-track {
-            width: 100%;
-            height: 4px;
-            background: transparent;
-        }
-
         &::-moz-range-thumb {
-            width: 6px;
-            height: 16px;
             background: var(--viz-surface-hover);
             border: 1px solid var(--viz-border-subtle);
-            border-radius: 0;
             cursor: ew-resize;
             transition:
                 background-color 0.1s,
@@ -186,10 +181,51 @@
                     0 0 0 2px var(--viz-surface-panel),
                     0 0 0 4px var(--viz-primary);
             }
+
             &::-moz-range-thumb {
                 box-shadow:
                     0 0 0 2px var(--viz-surface-panel),
                     0 0 0 4px var(--viz-primary);
+            }
+        }
+
+        &.line {
+            &::-webkit-slider-runnable-track {
+                border-radius: 0; // Flat sharp track
+            }
+
+            &::-webkit-slider-thumb {
+                width: 6px;
+                height: var(--viz-font-size-2xl);
+                border-radius: 0; // Flat, sharp tick mark thumb
+                margin-top: -6px; // Center vertically on track
+            }
+
+            &::-moz-range-thumb {
+                width: 6px;
+                height: 16px;
+                border-radius: 0;
+            }
+        }
+
+        &.dot {
+            border-radius: 999px;
+
+            &::-webkit-slider-runnable-track {
+                border-radius: 999px;
+            }
+
+            &::-webkit-slider-thumb {
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                margin-top: -5px; // Center vertically on track
+            }
+
+            &::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
             }
         }
     }
