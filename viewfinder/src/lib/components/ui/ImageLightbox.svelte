@@ -530,14 +530,15 @@
     };
 
     let statusIndicator: ReturnType<typeof StatusIndicator> | undefined = $state();
+    let lastZoomPercentage: number | undefined;
 
     $effect(() => {
-        if (!lightboxImage) {
-            console.log("yo");
-            return;
+        const percentage = zoomState.percentage;
+        if (lastZoomPercentage !== undefined && lastZoomPercentage !== percentage) {
+            statusIndicator?.show(`Zoom: ${percentage}%`);
         }
-
-        statusIndicator?.show(`Zoom: ${zoomState.percentage}%`);
+        
+        lastZoomPercentage = percentage;
     });
 
     function handleWheel(event: WheelEvent) {
