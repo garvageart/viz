@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.7] - 2026-11-16
+
+- brah? (9d442577)
+- refactor(viewfinder): simplify photo page lightbox logic (96b4ba50)
+- feat(viewfinder): optimize zoom indicator in ImageLightbox (87df4a55)
+- feat(viewfinder): improve LightboxManager type safety (4355b6bc)
+- refactor(viewfinder): overhaul image lightbox and toolbar integrations (736946b0)
+- refactor(viewfinder): improve zoom and label viewer primitives (148274be)
+- refactor(viewfinder): remove unused ModalLightbox component (e50f33ba)
+- chore(viewfinder): format icon generator script (5c1f9bb0)
+- chore(viewfinder): update icons to download all weights (eb6f1d88)
+
 ## [0.37.6] - 2026-11-15
 
 - style(viewfinder): add missing semicolons to grid settings (6e8f0501)
