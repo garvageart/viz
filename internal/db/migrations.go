@@ -118,7 +118,9 @@ func MigrateUsersTable(db *gorm.DB, logger *slog.Logger) {
 // the current shape and then drops them. It runs inside the centralized
 // backfill transaction, so any failure rolls the whole step back and no data
 // is lost. Rows are all-or-nothing by design: if any payload is not a valid
-// JSON object, the step fails instead of silently dropping data.
+// JSON object, the step fails instead of silently dropping data. Payloads
+// are validated one row at a time and each write is applied in small id
+// ordered batches, so memory stays bounded regardless of table size.
 func MigrateLegacyWorkerJobs(tx *gorm.DB, logger *slog.Logger) error {
 	migrator := tx.Migrator()
 	if !migrator.HasColumn("worker_jobs", "payload") {
@@ -129,68 +131,131 @@ func MigrateLegacyWorkerJobs(tx *gorm.DB, logger *slog.Logger) error {
 	// Refuse to proceed if any payload is not a valid JSON object. Payloads
 	// live in a text column, so an SQL cast here could abort the surrounding
 	// transaction and make the cause unreadable. Validate in Go instead:
-	// one pass over the payloads, no writes happen on this path.
-	var rows []struct {
-		ID      uint
-		Payload string
-	}
-	if err := tx.Raw(`SELECT id, payload FROM worker_jobs WHERE payload IS NOT NULL`).Scan(&rows).Error; err != nil {
+	// a streaming pass over the payloads, no writes happen on this path.
+	rows, err := tx.Raw(`SELECT id, payload FROM worker_jobs WHERE payload IS NOT NULL ORDER BY id`).Rows()
+	if err != nil {
 		return fmt.Errorf("scan worker_jobs payloads: %w", err)
 	}
 
 	var invalid []uint
-	for _, row := range rows {
+	for rows.Next() {
+		var id uint
+		var payload string
+		if err := rows.Scan(&id, &payload); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("read worker_jobs payload: %w", err)
+		}
+
 		var probe map[string]json.RawMessage
-		if err := json.Unmarshal([]byte(row.Payload), &probe); err != nil || probe == nil {
-			invalid = append(invalid, row.ID)
+		if err := json.Unmarshal([]byte(payload), &probe); err != nil || probe == nil {
+			invalid = append(invalid, id)
 			if len(invalid) >= 10 {
 				break
 			}
 		}
 	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return fmt.Errorf("scan worker_jobs payloads: %w", err)
+	}
+	_ = rows.Close()
 	if len(invalid) > 0 {
 		return fmt.Errorf("worker_jobs contains payloads that are not JSON objects (offending ids %v); aborting migration, no data changed", invalid)
 	}
 
-	updated := tx.Exec(`UPDATE worker_jobs
-		SET type = CASE type
-			WHEN 'image_process' THEN 'ImageProcess'
-			WHEN 'exif_process' THEN 'ExifProcess'
-			WHEN 'xmp_generation' THEN 'XmpGeneration'
-			ELSE type
-		END
-		WHERE type IN ('image_process', 'exif_process', 'xmp_generation')`)
-	if updated.Error != nil {
-		return fmt.Errorf("remap worker_jobs type values: %w", updated.Error)
+	// runBackfillBatch applies one worker_jobs backfill step in small
+	// id-ordered batches instead of a single statement over the whole table,
+	// keeping memory and lock time bounded regardless of table size. Each
+	// batch is selected by id under the same predicate the apply function
+	// clears, so the loop terminates once no rows match.
+	runBackfillBatch := func(step string, predicate string, apply func(tx *gorm.DB, ids []uint) (int64, error)) error {
+		const batchSize = 1000
+		var total int64
+		for batch := 1; ; batch++ {
+			var ids []uint
+			query := fmt.Sprintf(`SELECT id FROM worker_jobs WHERE %s ORDER BY id LIMIT %d`, predicate, batchSize)
+			if err := tx.Raw(query).Scan(&ids).Error; err != nil {
+				return fmt.Errorf("select worker_jobs ids for %s: %w", step, err)
+			}
+
+			if len(ids) == 0 {
+				break
+			}
+
+			updated, err := apply(tx, ids)
+			if err != nil {
+				return fmt.Errorf("apply worker_jobs %s batch %d: %w", step, batch, err)
+			}
+
+			if updated == 0 {
+				return fmt.Errorf("worker_jobs %s batch %d selected %d rows but updated none; stopping to avoid an infinite loop", step, batch, len(ids))
+			}
+
+			total += updated
+			logger.Info("worker_jobs backfill batch applied",
+				slog.String("step", step),
+				slog.Int("batch", batch),
+				slog.Int64("rows_total", total),
+			)
+		}
+
+		logger.Info("worker_jobs backfill step complete", slog.String("step", step), slog.Int64("rows", total))
+		return nil
 	}
-	logger.Info("worker_jobs type values remapped", slog.Int64("rows", updated.RowsAffected))
+
+	if err := runBackfillBatch("type remap",
+		`type IN ('image_process', 'exif_process', 'xmp_generation')`,
+		func(tx *gorm.DB, ids []uint) (int64, error) {
+			res := tx.Exec(`UPDATE worker_jobs
+				SET type = CASE type
+					WHEN 'image_process' THEN 'ImageProcess'
+					WHEN 'exif_process' THEN 'ExifProcess'
+					WHEN 'xmp_generation' THEN 'XmpGeneration'
+					ELSE type
+				END
+				WHERE id IN ?`, ids)
+			return res.RowsAffected, res.Error
+		}); err != nil {
+		return err
+	}
 
 	// Move the enqueued timestamp into created_at, verbatim. Once it lives in
 	// created_at it is the correct value: the moment the job was enqueued is
 	// the job's creation time. The original created_at (row insert time) is
 	// superseded intentionally. Must run before enqueued_at is dropped.
-	backdated := tx.Exec(`UPDATE worker_jobs SET created_at = enqueued_at WHERE enqueued_at IS NOT NULL`)
-	if backdated.Error != nil {
-		return fmt.Errorf("migrate worker_jobs enqueued_at into created_at: %w", backdated.Error)
+	// 
+	// This code reads terribly. Don't mind it pls.
+	if err := runBackfillBatch("enqueued_at to created_at",
+		`enqueued_at IS NOT NULL AND created_at IS DISTINCT FROM enqueued_at`,
+		func(tx *gorm.DB, ids []uint) (int64, error) {
+			res := tx.Exec(`UPDATE worker_jobs SET created_at = enqueued_at WHERE id IN ?`, ids)
+			return res.RowsAffected, res.Error
+		}); err != nil {
+		return err
 	}
-	logger.Info("worker_jobs enqueued_at copied into created_at", slog.Int64("rows", backdated.RowsAffected))
 
-	copied := tx.Exec(`UPDATE worker_jobs SET data = payload::jsonb WHERE data IS NULL AND payload IS NOT NULL`)
-	if copied.Error != nil {
-		return fmt.Errorf("copy worker_jobs payload into data: %w", copied.Error)
+	if err := runBackfillBatch("payload copy",
+		`data IS NULL AND payload IS NOT NULL`,
+		func(tx *gorm.DB, ids []uint) (int64, error) {
+			res := tx.Exec(`UPDATE worker_jobs SET data = payload::jsonb WHERE id IN ?`, ids)
+			return res.RowsAffected, res.Error
+		}); err != nil {
+		return err
 	}
-	logger.Info("worker_jobs payload copied into data", slog.Int64("rows", copied.RowsAffected))
 
-	failed := tx.Exec(`UPDATE worker_jobs
-		SET error = jsonb_build_object(
-			'code', COALESCE(NULLIF(error_code, ''), 'worker_error'),
-			'message', COALESCE(NULLIF(error_msg, ''), 'Unknown error')
-		)
-		WHERE error IS NULL AND (error_code IS NOT NULL OR error_msg IS NOT NULL)`)
-	if failed.Error != nil {
-		return fmt.Errorf("migrate worker_jobs error columns: %w", failed.Error)
+	if err := runBackfillBatch("error migration",
+		`error IS NULL AND (error_code IS NOT NULL OR error_msg IS NOT NULL)`,
+		func(tx *gorm.DB, ids []uint) (int64, error) {
+			res := tx.Exec(`UPDATE worker_jobs
+				SET error = jsonb_build_object(
+					'code', COALESCE(NULLIF(error_code, ''), 'worker_error'),
+					'message', COALESCE(NULLIF(error_msg, ''), 'Unknown error')
+				)
+				WHERE id IN ?`, ids)
+			return res.RowsAffected, res.Error
+		}); err != nil {
+		return err
 	}
-	logger.Info("worker_jobs error columns migrated", slog.Int64("rows", failed.RowsAffected))
 
 	dropped := tx.Exec(`ALTER TABLE worker_jobs
 		DROP COLUMN IF EXISTS topic,
