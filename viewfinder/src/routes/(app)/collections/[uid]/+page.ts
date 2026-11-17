@@ -11,7 +11,6 @@ export const load: PageLoad = async ({ params, depends }) => {
         getCollection(params.uid, {
             sortBy: collectionDetailSort.value.by,
             order: collectionDetailSort.value.order
-        }),
-        "Failed to load collection"
+        })
     );
 };

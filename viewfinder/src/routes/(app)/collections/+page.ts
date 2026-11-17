@@ -5,5 +5,5 @@ import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ depends }) => {
     depends(DataKeys.Collections);
-    return sendVizAPIRequest(listCollections(), "Failed to load collections");
+    return sendVizAPIRequest(listCollections());
 };

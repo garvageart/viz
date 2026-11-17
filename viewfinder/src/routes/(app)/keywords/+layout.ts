@@ -3,6 +3,6 @@ import { sendVizAPIRequest } from "#lib/utils/http.js";
 import type { LayoutLoad } from "./$types";
 
 export const load: LayoutLoad = async () => {
-    const data = await sendVizAPIRequest(listKeywords(), "Failed to load keywords");
+    const data = await sendVizAPIRequest(listKeywords());
     return data;
 };

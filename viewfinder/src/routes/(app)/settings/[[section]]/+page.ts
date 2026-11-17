@@ -8,7 +8,7 @@ export const load: PageLoad = async ({ params }) => {
         redirect(307, "/settings/general");
     }
 
-    const settings = await sendVizAPIRequest(getUserSettings(), "Failed to load user settings");
+    const settings = await sendVizAPIRequest(getUserSettings());
 
     return {
         settings,

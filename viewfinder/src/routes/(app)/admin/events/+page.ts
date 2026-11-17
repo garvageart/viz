@@ -11,9 +11,9 @@ interface PageLoadData {
 
 export const load: PageLoad = async (): Promise<PageLoadData> => {
     const [stats, metrics, historyRes] = await Promise.all([
-        sendVizAPIRequest(getWsStats(), "Failed to load stats"),
-        sendVizAPIRequest(getWsMetrics(), "Failed to load metrics"),
-        sendVizAPIRequest(getEventsSince({ limit: 50 }), "Failed to load history")
+        sendVizAPIRequest(getWsStats()),
+        sendVizAPIRequest(getWsMetrics()),
+        sendVizAPIRequest(getEventsSince({ limit: 50 }))
     ]);
 
     return {

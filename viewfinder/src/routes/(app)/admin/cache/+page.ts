@@ -2,7 +2,7 @@ import { getCacheStatus } from "@viz/api";
 import { sendVizAPIRequest } from "#lib/utils/http.js";
 
 export async function load() {
-    const cacheStatus = await sendVizAPIRequest(getCacheStatus(), "Failed to load cache status");
+    const cacheStatus = await sendVizAPIRequest(getCacheStatus());
 
     return {
         cacheStatus

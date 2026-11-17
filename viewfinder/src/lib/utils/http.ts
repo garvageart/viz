@@ -1,29 +1,67 @@
+import type { ApiResponse, DataType } from "@oazapfts/runtime";
 import { error } from "@sveltejs/kit";
-import { API_BASE_URL, type ImageAsset, downloadImagesZipBlob, getImageFileBlob, signDownload } from "@viz/api";
+import {
+    API_BASE_URL,
+    type ErrorResponse,
+    type ImageAsset,
+    downloadImagesZipBlob,
+    getImageFileBlob,
+    signDownload
+} from "@viz/api";
 import { debugMode } from "#lib/states/index.svelte.js";
 import type { ImageUploadFileMetadata } from "#lib/upload/manager.svelte.js";
 
-type ExtractSuccessData<R> = [Extract<R, { status: 200 }>] extends [never]
-    ? R extends { data: infer D }
-        ? D
-        : never
-    : Extract<R, { status: 200 }> extends { data: infer D }
-      ? D
-      : never;
+// typescript is funny as hell
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type ErrorStatusPattern = `${4 | 5}${Digit}${Digit}`;
 
-export async function sendVizAPIRequest<R extends { data: any; status: number }>(
-    promise: Promise<R>,
-    fallbackMessage = "Failed to load request data"
-): Promise<ExtractSuccessData<R>> {
+type IsErrorStatus<S extends number> = number extends S ? false : `${S}` extends ErrorStatusPattern ? true : false;
+
+type NonErrorCodes<R extends ApiResponse> = R extends { status: infer S extends number }
+    ? IsErrorStatus<S> extends true
+        ? never
+        : S
+    : never;
+
+type DataBearingResponses<R extends ApiResponse> = Extract<R, { data: any }>;
+type BodylessNonErrorResponses<R extends ApiResponse> =
+    Extract<R, { status: NonErrorCodes<R> }> extends infer T ? (T extends { data: any } ? never : T) : never;
+
+/** Includes data from 2XX responses, plus `undefined` for bodyless 2XX/3XX responses. */
+type ExtractSuccessData<R extends ApiResponse> =
+    | DataType<DataBearingResponses<R>, NonErrorCodes<R>>
+    | ([BodylessNonErrorResponses<R>] extends [never] ? never : undefined);
+
+function isErrorStatus(status: number): boolean {
+    return status >= 400 && status < 600;
+}
+
+/**
+ * Awaits an oazapfts API request and unwraps its response payload.
+ *
+ * Any status outside 400-599 is treated as non-error: 2XX data is returned, and
+ * bodyless 2XX/3XX responses resolve to `undefined`. The return type is the union
+ * of data from every non-error response in `R`.
+ *
+ * A 4XX/5XX response throws SvelteKit's `error()`, using `ErrorResponse.error` as
+ * the message. SvelteKit turns this into an expected error response passed to
+ * `handleError`; it must not be caught if SvelteKit is to handle it.
+ *
+ * @template R The generated API response union, including oazapfts' `headers` property.
+ * @param promise The pending generated API request.
+ * @returns The data from a non-error response, or `undefined` if it has no body.
+ * @throws {import("@sveltejs/kit").HttpError} If the response status is in the 400-599 range.
+ */
+export async function sendVizAPIRequest<R extends ApiResponse>(promise: Promise<R>): Promise<ExtractSuccessData<R>> {
     const res = await promise;
-    if (res.status === 200) {
-        return res.data as ExtractSuccessData<R>;
+
+    if (!isErrorStatus(res.status)) {
+        return ("data" in res ? res.data : undefined) as ExtractSuccessData<R>;
     }
 
-    const errorData = res.data as { error?: string } | null | undefined;
-    error(res.status, {
-        message: errorData?.error || fallbackMessage
-    });
+    const errorData = ("data" in res ? res.data : undefined) as ErrorResponse | undefined;
+
+    error(res.status, errorData?.error);
 }
 
 // From https://github.com/immich-app/immich/main/web/src/lib/utils.ts#L55

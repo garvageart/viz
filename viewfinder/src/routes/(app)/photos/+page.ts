@@ -13,7 +13,6 @@ export const load: PageLoad = async ({ depends }) => {
             page: 0,
             sortBy: photosSort.value.by,
             order: photosSort.value.order
-        }),
-        "Failed to load images"
+        })
     );
 };
