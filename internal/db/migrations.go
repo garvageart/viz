@@ -43,6 +43,7 @@ var DefaultBackfills = []BackfillFn{
 	TrimImageNameExtensions,
 	BackfillCollectionImageCounts,
 	MigrateImageKeywords,
+	MigrateLegacyWorkerJobs,
 }
 
 // RunBackfills executes all data backfills and post-migration data transformations sequentially inside a transaction.
@@ -111,6 +112,100 @@ func MigrateUsersTable(db *gorm.DB, logger *slog.Logger) {
 			logger.Error("Failed to rename users.username to users.name", slog.Any("error", err))
 		}
 	}
+}
+
+// MigrateLegacyWorkerJobs migrates the pre-redesign worker_jobs columns into
+// the current shape and then drops them. It runs inside the centralized
+// backfill transaction, so any failure rolls the whole step back and no data
+// is lost. Rows are all-or-nothing by design: if any payload is not a valid
+// JSON object, the step fails instead of silently dropping data.
+func MigrateLegacyWorkerJobs(tx *gorm.DB, logger *slog.Logger) error {
+	migrator := tx.Migrator()
+	if !migrator.HasColumn("worker_jobs", "payload") {
+		logger.Info("worker_jobs legacy columns already absent, skipping")
+		return nil
+	}
+
+	// Refuse to proceed if any payload is not a valid JSON object. Payloads
+	// live in a text column, so an SQL cast here could abort the surrounding
+	// transaction and make the cause unreadable. Validate in Go instead:
+	// one pass over the payloads, no writes happen on this path.
+	var rows []struct {
+		ID      uint
+		Payload string
+	}
+	if err := tx.Raw(`SELECT id, payload FROM worker_jobs WHERE payload IS NOT NULL`).Scan(&rows).Error; err != nil {
+		return fmt.Errorf("scan worker_jobs payloads: %w", err)
+	}
+
+	var invalid []uint
+	for _, row := range rows {
+		var probe map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(row.Payload), &probe); err != nil || probe == nil {
+			invalid = append(invalid, row.ID)
+			if len(invalid) >= 10 {
+				break
+			}
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("worker_jobs contains payloads that are not JSON objects (offending ids %v); aborting migration, no data changed", invalid)
+	}
+
+	updated := tx.Exec(`UPDATE worker_jobs
+		SET type = CASE type
+			WHEN 'image_process' THEN 'ImageProcess'
+			WHEN 'exif_process' THEN 'ExifProcess'
+			WHEN 'xmp_generation' THEN 'XmpGeneration'
+			ELSE type
+		END
+		WHERE type IN ('image_process', 'exif_process', 'xmp_generation')`)
+	if updated.Error != nil {
+		return fmt.Errorf("remap worker_jobs type values: %w", updated.Error)
+	}
+	logger.Info("worker_jobs type values remapped", slog.Int64("rows", updated.RowsAffected))
+
+	// Move the enqueued timestamp into created_at, verbatim. Once it lives in
+	// created_at it is the correct value: the moment the job was enqueued is
+	// the job's creation time. The original created_at (row insert time) is
+	// superseded intentionally. Must run before enqueued_at is dropped.
+	backdated := tx.Exec(`UPDATE worker_jobs SET created_at = enqueued_at WHERE enqueued_at IS NOT NULL`)
+	if backdated.Error != nil {
+		return fmt.Errorf("migrate worker_jobs enqueued_at into created_at: %w", backdated.Error)
+	}
+	logger.Info("worker_jobs enqueued_at copied into created_at", slog.Int64("rows", backdated.RowsAffected))
+
+	copied := tx.Exec(`UPDATE worker_jobs SET data = payload::jsonb WHERE data IS NULL AND payload IS NOT NULL`)
+	if copied.Error != nil {
+		return fmt.Errorf("copy worker_jobs payload into data: %w", copied.Error)
+	}
+	logger.Info("worker_jobs payload copied into data", slog.Int64("rows", copied.RowsAffected))
+
+	failed := tx.Exec(`UPDATE worker_jobs
+		SET error = jsonb_build_object(
+			'code', COALESCE(NULLIF(error_code, ''), 'worker_error'),
+			'message', COALESCE(NULLIF(error_msg, ''), 'Unknown error')
+		)
+		WHERE error IS NULL AND (error_code IS NOT NULL OR error_msg IS NOT NULL)`)
+	if failed.Error != nil {
+		return fmt.Errorf("migrate worker_jobs error columns: %w", failed.Error)
+	}
+	logger.Info("worker_jobs error columns migrated", slog.Int64("rows", failed.RowsAffected))
+
+	dropped := tx.Exec(`ALTER TABLE worker_jobs
+		DROP COLUMN IF EXISTS topic,
+		DROP COLUMN IF EXISTS command,
+		DROP COLUMN IF EXISTS payload,
+		DROP COLUMN IF EXISTS image_uid,
+		DROP COLUMN IF EXISTS error_code,
+		DROP COLUMN IF EXISTS error_msg,
+		DROP COLUMN IF EXISTS enqueued_at`)
+	if dropped.Error != nil {
+		return fmt.Errorf("drop legacy worker_jobs columns: %w", dropped.Error)
+	}
+
+	logger.Info("worker_jobs legacy columns migrated and dropped")
+	return nil
 }
 
 // MigrateCollectionImages moves data from the old JSONB 'images' column in 'collections'

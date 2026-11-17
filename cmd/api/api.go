@@ -46,7 +46,7 @@ type APIServer struct {
 
 // TODO: Create a `createServer/Router` function that returns a router
 // with common defaults for each server type
-func (server APIServer) Launch(router *chi.Mux) *http.Server {
+func (server APIServer) Launch(router *chi.Mux, jobService *jobs.Service) *http.Server {
 	logger := server.Logger
 	serverLogger := slog.NewLogLogger(logger.Handler(), slog.LevelDebug)
 
@@ -67,8 +67,6 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 	dbClient := database.Client
 
 	healthService := debug.NewHealthService(dbClient)
-
-	server.WSBroker = libhttp.NewWSBroker(logger)
 
 	// API Routes
 	router.Route("/api", func(r chi.Router) {
@@ -164,7 +162,11 @@ func (server APIServer) Launch(router *chi.Mux) *http.Server {
 
 		// Admin routes (auth + admin required)
 		r.Mount("/admin", routes.AdminRouter(dbClient, logger, StorageStatsHolder))
-		r.Mount("/jobs", routes.JobsRouter(dbClient, logger))
+		r.Group(func(r chi.Router) {
+			r.Use(libhttp.AuthMiddleware(dbClient, logger))
+			r.Use(libhttp.AdminMiddleware)
+			r.Mount("/jobs", routes.JobsRouter(jobService, logger))
+		})
 	})
 
 	// Serve Frontend (SPA + Static Files)
@@ -329,7 +331,23 @@ func main() {
 	// Initialize persistent cache metrics (Redis or file system fallback)
 	images.InitCache(appConfig.Queue, appConfig.BaseDir, logger)
 
-	httpServer := apiServer.Launch(router)
+	apiServer.WSBroker = libhttp.NewWSBroker(logger)
+
+	defs := workers.Definitions(client, apiServer.WSBroker)
+
+	catalog, err := jobs.NewCatalog(defs...)
+	if err != nil {
+		logger.Error("failed to initialize job catalog", slog.Any("error", err))
+		panic(err)
+	}
+
+	jobService, err := jobs.NewService(client, catalog, logger, apiServer.WSBroker)
+	if err != nil {
+		logger.Error("failed to initialize job service", slog.Any("error", err))
+		panic(err)
+	}
+
+	httpServer := apiServer.Launch(router, jobService)
 
 	// create a cancelable context used by background tasks
 	ctx, globalCancel := context.WithCancel(context.Background())
@@ -354,13 +372,9 @@ func main() {
 		go StorageStatsHolder.StartStorageStatsWorker(ctx, logger, interval)
 	}
 
-	imageWorker := workers.NewImageWorker(client, apiServer.WSBroker)
-	xmpWorker := workers.NewXMPWorker(client, apiServer.WSBroker)
-	exifWorker := workers.NewExifWorker(client, apiServer.WSBroker)
-
 	// Run the job router in a goroutine so we can wait for shutdown signals here
 	go func() {
-		jobs.RunJobQueue(appConfig.Queue, logger, imageWorker, xmpWorker, exifWorker)
+		jobs.RunJobQueue(appConfig.Queue, client, logger, defs...)
 	}()
 
 	// Start the scheduled job scheduler (cron-based periodic jobs)

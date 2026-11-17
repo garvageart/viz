@@ -8,28 +8,17 @@ import (
 // generic job-progress WebSocket events with a consistent payload shape.
 // If wsBroker is nil, the returned function is a no-op.
 func NewProgressCallback(
-	wsBroker *libhttp.WSBroker,
-	jobId string,
+	ws *libhttp.WSBroker,
+	uid string,
 	jobType string,
-	imageId string,
 	filename string,
 ) func(step string, progress int) {
-	if wsBroker == nil {
-		return func(step string, progress int) {}
-	}
 
 	return func(step string, progress int) {
-		wsBroker.Broadcast("job-progress", map[string]any{
-			"uid":       jobId,
-			"jobId":     jobId,
-			"type":      jobType,
-			"topic":     jobType,
-			"image_uid": imageId,
-			"imageId":   imageId,
-			"filename":  filename,
-			"progress":  progress,
-			"status":    step,
-			"step":      step,
+		ws.Broadcast("job-progress", map[string]any{
+			"uid":      uid,
+			"type":     jobType,
+			"progress": progress,
 		})
 	}
 }

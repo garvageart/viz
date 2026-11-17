@@ -78,7 +78,7 @@ func TestImageProcessWritesTransformUsingPersistedUpdatedAt(t *testing.T) {
 	require.NoError(t, db.Create(&img).Error)
 
 	require.NoError(t, db.Where("uid = ?", uid).First(&img).Error)
-	require.NoError(t, ImageProcess(context.Background(), db, img, func(string, int) {}))
+	require.NoError(t, ImageProcess(context.Background(), db, img))
 
 	var processed entities.ImageAsset
 	require.NoError(t, db.Where("uid = ?", uid).First(&processed).Error)

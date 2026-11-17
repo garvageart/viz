@@ -16,9 +16,16 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message/router/plugin"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	goredis "github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
 	"viz/internal/config"
+	"viz/internal/dto"
+	"viz/internal/entities"
 )
+
+// JobStatus is kept as an alias for the in-memory job registry. Persisted
+// status values come from the generated DTO enum.
+type JobStatus = dto.WorkerJobStatus
 
 var (
 	allJobs        = make(map[string]*Job)
@@ -96,17 +103,17 @@ func GetCounts() JobCounts {
 	return jc
 }
 
-// RegisterWorkers registers all JobWorkers with the router.
+// RegisterWorkers registers every worker definition with the router.
 // Call this after initializing Router and PubSub, but before Router.Run().
-func RegisterWorkers(workers ...*Worker) {
+func RegisterWorkers(db *gorm.DB, defs ...Definition) {
 
-	for _, worker := range workers {
-		handler := worker.Handler
-		topic := worker.Topic
-		cm := getOrCreateManager(topic)
+	for _, def := range defs {
+		handler := def.Handle
+		topic := string(def.Name)
+		cm := ensureManager(topic, def.DefaultConcurrency)
 
 		Router.AddConsumerHandler(
-			worker.Name,
+			string(def.Name),
 			topic,
 			Subscriber,
 			func(msg *message.Message) error {
@@ -114,13 +121,24 @@ func RegisterWorkers(workers ...*Worker) {
 				cm.Acquire()
 				defer cm.Release()
 
-				worker.Start()
+				// A queued job may have been cancelled while the process was
+				// still busy. Never start work that was explicitly rejected.
+				var stored entities.WorkerJob
+				if db != nil && db.Where("uid = ?", msg.UUID).First(&stored).Error == nil {
+					if stored.Status == dto.WorkerJobStatusCancelled || stored.Status == dto.WorkerJobStatusCancelRequested {
+						if err := SetJobCancelled(db, stored.Uid); err != nil && Logger != nil {
+							Logger.Error("failed to acknowledge cancelled job", err, watermill.LogFields{"job_uid": stored.Uid})
+						}
+
+						return nil
+					}
+				}
+
 				job := &Job{
-					ctx:      msg.Context(),
-					ID:       msg.UUID,
-					topic:    topic,
-					status:   JobStatusRunning,
-					ImageUid: msg.Metadata.Get("X-Image-Uid"),
+					ctx:    msg.Context(),
+					ID:     msg.UUID,
+					topic:  topic,
+					status: JobStatusRunning,
 				}
 
 				if job.ID == "" {
@@ -146,7 +164,6 @@ func RegisterWorkers(workers ...*Worker) {
 				allJobsMu.Unlock()
 
 				defer func() {
-					worker.Stop()
 					job.SetStatus(JobStatusSuccess)
 					allJobsMu.Lock()
 					delete(allJobs, job.ID)
@@ -159,7 +176,7 @@ func RegisterWorkers(workers ...*Worker) {
 	}
 }
 
-func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker) {
+func RunJobQueue(cfg config.QueueConfig, db *gorm.DB, logger *slog.Logger, defs ...Definition) {
 	var err error
 	Logger = watermill.NewSlogLogger(logger)
 
@@ -258,7 +275,7 @@ func RunJobQueue(cfg config.QueueConfig, logger *slog.Logger, workers ...*Worker
 		middleware.NewThrottle(10, time.Second).Middleware,
 	)
 
-	RegisterWorkers(workers...)
+	RegisterWorkers(db, defs...)
 
 	// Now that all handlers are registered, we're running the Router.
 	// Run is blocking while the router is running.

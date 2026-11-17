@@ -136,6 +136,13 @@ func APIKeyFromContext(r *http.Request) (*entities.APIKey, bool) {
 	return u, ok
 }
 
+// IsAPIKeyAuth reports whether the request was authenticated with an API key
+// rather than a cookie session.
+func IsAPIKeyAuth(r *http.Request) bool {
+	value, ok := r.Context().Value(ctxAPIKeyAuth).(bool)
+	return ok && value
+}
+
 // AuthMiddleware validates the auth cookie against the sessions table, loads the user,
 // and injects it into the request context. 401 is returned for missing/invalid/expired sessions.
 func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) http.Handler {
@@ -301,9 +308,16 @@ func AuthMiddleware(db *gorm.DB, logger *slog.Logger) func(next http.Handler) ht
 func ScopeMiddleware(requiredScopes []imaAuth.Scope) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Cookie-based auth should bypass scope checks
-			if _, ok := UserFromContext(r); ok {
-				next.ServeHTTP(w, r)
+			// Cookie sessions are already role-gated by AdminMiddleware where
+			// required. Only API keys carry scoped permissions.
+			if !IsAPIKeyAuth(r) {
+				if _, ok := UserFromContext(r); ok {
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				render.Status(r, http.StatusUnauthorized)
+				render.JSON(w, r, dto.ErrorResponse{Error: "Unauthenticated"})
 				return
 			}
 
@@ -314,29 +328,10 @@ func ScopeMiddleware(requiredScopes []imaAuth.Scope) func(next http.Handler) htt
 				return
 			}
 
-			// Superadmin bypass
-			if apiKey.User != nil && (apiKey.User.Role == "admin" || apiKey.User.Role == "superadmin") {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			if len(apiKey.Scopes) == 0 {
+			if !imaAuth.HasAllScopes(apiKey.Scopes, requiredScopes) {
 				render.Status(r, http.StatusForbidden)
 				render.JSON(w, r, dto.ErrorResponse{Error: "Insufficient scopes"})
 				return
-			}
-
-			userScopes := make(map[imaAuth.Scope]bool)
-			for _, s := range apiKey.Scopes {
-				userScopes[imaAuth.Scope(s)] = true
-			}
-
-			for _, requiredScope := range requiredScopes {
-				if !userScopes[requiredScope] {
-					render.Status(r, http.StatusForbidden)
-					render.JSON(w, r, dto.ErrorResponse{Error: "Insufficient scopes"})
-					return
-				}
 			}
 
 			next.ServeHTTP(w, r)

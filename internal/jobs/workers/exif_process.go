@@ -29,95 +29,28 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	JobTypeExifProcess = "exif_process"
-	TopicExifProcess   = JobTypeExifProcess
-)
-
-type ExifProcessJob struct {
-	Image entities.ImageAsset
+// ExifProcessPayload is the payload accepted by POST /jobs and sent to the queue.
+// The published JSON Schema is reflected from this struct.
+type ExifProcessPayload struct {
+	Image entities.ImageAsset `json:"image"`
 }
 
-// NewExifWorker creates a worker that extracts EXIF and updates the DB
-func NewExifWorker(db *gorm.DB, wsBroker *libhttp.WSBroker) *jobs.Worker {
-	return jobs.NewWorker(JobTypeExifProcess, TopicExifProcess, "EXIF Processing", 2, func(msg *message.Message) error {
-		var job ExifProcessJob
-		err := json.Unmarshal(msg.Payload, &job)
-		if err != nil {
-			return fmt.Errorf("%s: %w", JobTypeExifProcess, err)
-		}
-
-		if wsBroker != nil {
-			wsBroker.Broadcast("job-started", map[string]any{
-				"uid":       msg.UUID,
-				"jobId":     msg.UUID,
-				"type":      JobTypeExifProcess,
-				"topic":     JobTypeExifProcess,
-				"image_uid": job.Image.Uid,
-				"imageId":   job.Image.Uid,
-				"filename":  job.Image.ImageMetadata.FileName,
-			})
-		}
-
-		// mark running
-		startedAt := time.Now().UTC()
-		_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusRunning, nil, nil, &startedAt, nil)
-
-		onProgress := jobs.NewProgressCallback(
-			wsBroker,
-			msg.UUID,
-			JobTypeExifProcess,
-			job.Image.Uid,
-			job.Image.ImageMetadata.FileName,
-		)
-
-		err = ExifProcess(msg.Context(), db, job.Image, onProgress)
-
-		if err != nil {
-			if wsBroker != nil {
-				wsBroker.Broadcast("job-failed", map[string]any{
-					"uid":       msg.UUID,
-					"jobId":     msg.UUID,
-					"type":      JobTypeExifProcess,
-					"topic":     JobTypeExifProcess,
-					"image_uid": job.Image.Uid,
-					"imageId":   job.Image.Uid,
-					"error":     err.Error(),
-				})
-			}
-			_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusFailed, new("worker_error"), new(jobs.Truncate(err.Error(), 1024)), nil, nil)
-			return err
-		}
-
-		if wsBroker != nil {
-			wsBroker.Broadcast("job-completed", map[string]any{
-				"uid":       msg.UUID,
-				"jobId":     msg.UUID,
-				"type":      JobTypeExifProcess,
-				"topic":     JobTypeExifProcess,
-				"image_uid": job.Image.Uid,
-				"imageId":   job.Image.Uid,
-			})
-		}
-
-		completedAt := time.Now().UTC()
-		_ = jobs.UpdateWorkerJobStatus(db, msg.UUID, jobs.WorkerJobStatusSuccess, nil, nil, nil, &completedAt)
-
-		return nil
-	},
-	)
+// Validate checks that the payload contains the required fields.
+func (j *ExifProcessPayload) Validate() error {
+	if j.Image.Uid == "" {
+		return fmt.Errorf("image uid is required")
+	}
+	return nil
 }
 
 // ExifProcess extracts EXIF and updates the DB (exif + taken_at + optional metadata)
-func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, onProgress func(step string, progress int)) error {
+func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset) error {
 	originalData, err := images.ReadImage(imgEnt.Uid, imgEnt.ImageMetadata.FileName)
 	if err != nil {
 		return fmt.Errorf("failed to read image for exif: %w", err)
 	}
 
-	if onProgress != nil {
-		onProgress("Processing EXIF data", 30)
-	}
+	// onProgress("Processing EXIF data", 30)
 
 	libvipsImg, err := libvips.NewImageFromBuffer(originalData, libvips.DefaultLoadOptions())
 	if err != nil {
@@ -148,9 +81,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	takenAt := imageops.GetTakenAt(imgEnt)
 
 	// Extract XMP Metadata (ACR, Capture One, Standard)
-	if onProgress != nil {
-		onProgress("Processing XMP data", 60)
-	}
+	// onProgress("Processing XMP data", 60)
 
 	if doc, err := xmp.Scan(bytes.NewReader(originalData)); err == nil {
 		defer doc.Close()
@@ -273,9 +204,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 		}
 	}
 
-	if onProgress != nil {
-		onProgress("Updating database", 90)
-	}
+	// onProgress("Updating database", 90)
 
 	// Fetch latest image from DB to ensure we don't overwrite concurrent metadata updates (e.g. dimensions)
 	var dbImage entities.ImageAsset
@@ -284,10 +213,7 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	}
 
 	// Merge extracted data
-	dbImage.ImageMetadata.ColorSpace = imgEnt.ImageMetadata.ColorSpace
-	dbImage.ImageMetadata.HasIccProfile = imgEnt.ImageMetadata.HasIccProfile
-	dbImage.ImageMetadata.FileCreatedAt = imgEnt.ImageMetadata.FileCreatedAt
-	dbImage.ImageMetadata.FileModifiedAt = imgEnt.ImageMetadata.FileModifiedAt
+	dbImage.ImageMetadata = imgEnt.ImageMetadata
 
 	// Only merge extracted metadata if DB version is missing it, to respect user edits
 	if dbImage.ImageMetadata.Rating == nil && imgEnt.ImageMetadata.Rating != nil {
@@ -324,4 +250,105 @@ func ExifProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset, o
 	}
 
 	return nil
+}
+
+// ExifProcessDefinition is the single registration point for the EXIF worker:
+// catalog metadata, job creation, and the queue handler.
+func ExifProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Definition {
+	return jobs.Definition{
+		Name:               dto.ExifProcess,
+		DisplayName:        "EXIF Processing",
+		Description:        "Extract EXIF metadata from original images and update the library index.",
+		Payload:            &ExifProcessPayload{},
+		DefaultConcurrency: 2,
+		MaxConcurrency:     10,
+		BatchSize:          500,
+		TimeoutMs:          30000,
+		MaxRetries:         3,
+		SupportsRetry:      true,
+		SupportsCancel:     true,
+		Handle: func(msg *message.Message) error {
+			var job ExifProcessPayload
+			err := json.Unmarshal(msg.Payload, &job)
+			if err != nil {
+				return fmt.Errorf("%s: %w", dto.ExifProcess, err)
+			}
+
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-started", map[string]any{
+					"uid":       msg.UUID,
+					"jobId":     msg.UUID,
+					"type":      dto.ExifProcess,
+					"topic":     dto.ExifProcess,
+					"image_uid": job.Image.Uid,
+					"imageId":   job.Image.Uid,
+					"filename":  job.Image.ImageMetadata.FileName,
+				})
+			}
+
+			// mark running
+			startedAt := time.Now().UTC()
+			_ = jobs.SetJobRunning(db, msg.UUID, startedAt)
+
+			err = ExifProcess(msg.Context(), db, job.Image)
+
+			if err != nil {
+				if wsBroker != nil {
+					wsBroker.Broadcast("job-failed", map[string]any{
+						"uid":       msg.UUID,
+						"jobId":     msg.UUID,
+						"type":      dto.ExifProcess,
+						"topic":     dto.ExifProcess,
+						"image_uid": job.Image.Uid,
+						"imageId":   job.Image.Uid,
+						"error":     err.Error(),
+					})
+				}
+				_ = jobs.SetJobFailed(db, msg.UUID, dto.JobError{Code: jobs.ErrCodeWorkerError, Message: jobs.Truncate(err.Error(), jobs.MaxErrorMsgLen)}, nil)
+				return err
+			}
+
+			if wsBroker != nil {
+				wsBroker.Broadcast("job-completed", map[string]any{
+					"uid":       msg.UUID,
+					"jobId":     msg.UUID,
+					"type":      dto.ExifProcess,
+					"topic":     dto.ExifProcess,
+					"image_uid": job.Image.Uid,
+					"imageId":   job.Image.Uid,
+				})
+			}
+
+			completedAt := time.Now().UTC()
+			_ = jobs.SetJobCompleted(db, msg.UUID, completedAt)
+
+			return nil
+		},
+		CreateJobs: func(ctx context.Context, db *gorm.DB, raw json.RawMessage, runUID string) (jobs.JobCreationResult, error) {
+			var input ExifProcessPayload
+			if err := json.Unmarshal(raw, &input); err != nil {
+				return jobs.JobCreationResult{}, fmt.Errorf("decode exif process payload: %w", err)
+			}
+
+			if input.Image.Uid == "" {
+				return jobs.JobCreationResult{}, fmt.Errorf("image uid is required")
+			}
+
+			var runUIDPtr *string
+			if runUID != "" {
+				runUIDPtr = &runUID
+			}
+
+			_, err := jobs.Enqueue(db, dto.ExifProcess, &input, jobs.EnqueueOptions{
+				RunUID:      runUIDPtr,
+				Data:        raw,
+				MaxAttempts: 4,
+			})
+			if err != nil {
+				return jobs.JobCreationResult{}, err
+			}
+
+			return jobs.JobCreationResult{TargetCount: 1, QueuedCount: 1}, nil
+		},
+	}
 }

@@ -12,6 +12,8 @@ func Models() []any {
 		User{},
 		DownloadToken{},
 		WorkerJob{},
+		JobRun{},
+		JobTypeConfig{},
 		UserWithPassword{},
 		SettingDefault{},
 		SettingOverride{},

@@ -12,6 +12,7 @@ import (
 	"viz/internal/entities"
 	"viz/internal/images"
 	imageops "viz/internal/images/ops"
+	"viz/internal/jobs/workers"
 	"viz/internal/tests"
 )
 
@@ -24,6 +25,7 @@ func TestFindMissingTransformsUsesImageUpdatedAt(t *testing.T) {
 
 	db := tests.NewTestDB(t)
 	const uid = "missing-transform-etag-test"
+	thumbhash := "test-thumbhash"
 	params, ok := images.GetPermanentTransformParams(images.TransformThumbnail)
 	require.True(t, ok)
 
@@ -32,9 +34,10 @@ func TestFindMissingTransformsUsesImageUpdatedAt(t *testing.T) {
 		Uid:  uid,
 		Name: "test.webp",
 		ImageMetadata: dto.ImageMetadata{
-			FileName: "test.webp",
-			FileType: "webp",
-			Checksum: "test-checksum",
+			FileName:  "test.webp",
+			FileType:  "webp",
+			Checksum:  "test-checksum",
+			Thumbhash: &thumbhash,
 		},
 		ImagePaths: dto.ImagePaths{
 			Thumbnail: path,
@@ -48,7 +51,7 @@ func TestFindMissingTransformsUsesImageUpdatedAt(t *testing.T) {
 	require.NoError(t, transform.Parse(path))
 	require.NoError(t, images.WriteCachedTransform(uid, transform.ETag(), params.Format, []byte("cached transform")))
 
-	missing, err := findMissingTransforms(db, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	missing, err := workers.FindMissingImageTargets(db, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	require.NoError(t, err)
 	require.Empty(t, missing)
 }

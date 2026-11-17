@@ -2907,47 +2907,86 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
 
-    /jobs/workers:
+    /jobs/types:
         get:
-            summary: List all workers
-            operationId: listAvailableWorkers
+            summary: List registered job types
+            operationId: listJobTypes
             security:
                 - BearerAuth: [jobs:read]
                 - CookieAuth: []
             responses:
                 "200":
-                    description: Workers list
+                    description: Registered job types
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/WorkersListResponse"
+                                $ref: "#/components/schemas/JobTypeListResponse"
                 "401":
                     description: Unauthorized
                     content:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
-        post:
-            summary: Register a new worker
-            operationId: registerWorker
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /jobs/types/{type}:
+        patch:
+            summary: Update configuration for a job type
+            description: Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+            operationId: updateJobType
             security:
-                - BearerAuth: [jobs:create]
+                - BearerAuth: [jobs:update]
                 - CookieAuth: []
+            parameters:
+                - in: path
+                  name: type
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/JobTypeName"
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/WorkerRegisterRequest"
+                            $ref: "#/components/schemas/JobTypeConfig"
             responses:
-                "201":
-                    description: Created
+                "200":
+                    description: Updated job type
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/WorkerInfo"
+                                $ref: "#/components/schemas/JobType"
                 "400":
                     description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Unknown job type
                     content:
                         application/json:
                             schema:
@@ -2961,7 +3000,7 @@ paths:
 
     /jobs:
         post:
-            summary: Create/enqueue a job
+            summary: Trigger a job run
             operationId: createJob
             security:
                 - BearerAuth: [jobs:create]
@@ -2971,22 +3010,28 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/WorkerJobCreateRequest"
+                            $ref: "#/components/schemas/JobCreateRequest"
             responses:
-                "200":
-                    description: Received job ID
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/WorkerJobEnqueueResponse"
                 "202":
-                    description: Accepted
+                    description: Run accepted
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/WorkerJobEnqueueResponse"
+                                $ref: "#/components/schemas/JobCreateResponse"
                 "400":
                     description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
                     content:
                         application/json:
                             schema:
@@ -2998,28 +3043,33 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
         get:
-            summary: List jobs with filtering and pagination
+            summary: List persisted worker jobs
             operationId: listJobs
             security:
                 - BearerAuth: [jobs:read]
                 - CookieAuth: []
             parameters:
                 - in: query
+                  name: type
+                  schema:
+                      $ref: "#/components/schemas/JobTypeName"
+                  description: Filter by job type
+                - in: query
                   name: status
                   schema:
-                      type: string
-                      enum: [queued, running, completed, failed, cancelled]
+                      $ref: "#/components/schemas/WorkerJobStatus"
                   description: Filter by job status
                 - in: query
-                  name: topic
+                  name: run_uid
                   schema:
                       type: string
-                  description: Filter by job topic
+                  description: Filter by trigger run
                 - in: query
                   name: limit
                   schema:
                       type: integer
                       default: 25
+                      maximum: 200
                   description: Number of jobs per page
                 - in: query
                   name: page
@@ -3034,7 +3084,286 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/WorkerJobsResponse"
+                                $ref: "#/components/schemas/JobListResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        delete:
+            summary: Request cancellation for jobs matching a filter
+            operationId: cancelJobs
+            security:
+                - BearerAuth: [jobs:delete]
+                - CookieAuth: []
+            parameters:
+                - in: query
+                  name: type
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/JobTypeName"
+                  description: Job type whose active jobs are cancelled
+                - in: query
+                  name: status
+                  schema:
+                      type: string
+                  description: Comma-separated statuses to cancel
+            responses:
+                "200":
+                    description: Cancellation requested
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/JobCancelResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /jobs/runs:
+        get:
+            summary: List manual trigger runs
+            operationId: listJobRuns
+            security:
+                - BearerAuth: [jobs:read]
+                - CookieAuth: []
+            parameters:
+                - in: query
+                  name: type
+                  schema:
+                      $ref: "#/components/schemas/JobTypeName"
+                  description: Filter by job type
+                - in: query
+                  name: status
+                  schema:
+                      $ref: "#/components/schemas/JobRunStatus"
+                  description: Filter by run status
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 25
+                      maximum: 200
+                  description: Number of runs per page
+                - in: query
+                  name: page
+                  schema:
+                      type: integer
+                      default: 0
+                      minimum: 0
+                  description: Page index (0-based)
+            responses:
+                "200":
+                    description: Runs list
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/JobRunsResponse"
+                "400":
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /jobs/runs/{uid}:
+        get:
+            summary: Get a trigger run
+            operationId: getJobRun
+            security:
+                - BearerAuth: [jobs:read]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Run detail
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/JobRun"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+        delete:
+            summary: Cancel a run and its non-terminal jobs
+            operationId: cancelJobRun
+            security:
+                - BearerAuth: [jobs:delete]
+                - CookieAuth: []
+            parameters:
+                - in: path
+                  name: uid
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "202":
+                    description: Cancellation requested
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/MessageResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "404":
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "409":
+                    description: Run is terminal
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /jobs/stats:
+        get:
+            summary: Get job counts by type and status
+            operationId: getJobStats
+            security:
+                - BearerAuth: [jobs:read]
+                - CookieAuth: []
+            responses:
+                "200":
+                    description: Job stats
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/JobStatsResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "500":
+                    description: Server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+
+    /jobs/snapshot:
+        get:
+            summary: Bootstrap payload for the jobs UI
+            operationId: getJobsSnapshot
+            security:
+                - BearerAuth: [jobs:read]
+                - CookieAuth: []
+            responses:
+                "200":
+                    description: Jobs snapshot
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/JobSnapshotResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
                 "500":
                     description: Server error
                     content:
@@ -3044,7 +3373,7 @@ paths:
 
     /jobs/{uid}:
         get:
-            summary: Get job detail
+            summary: Get one worker job
             operationId: getJob
             security:
                 - BearerAuth: [jobs:read]
@@ -3062,6 +3391,18 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/WorkerJob"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
                 "404":
                     description: Not found
                     content:
@@ -3069,7 +3410,7 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
         delete:
-            summary: Cancel job
+            summary: Cancel one active job
             operationId: cancelJob
             security:
                 - BearerAuth: [jobs:delete]
@@ -3081,52 +3422,36 @@ paths:
                   schema:
                       type: string
             responses:
-                "200":
-                    description: Cancelled
+                "202":
+                    description: Cancellation requested
                     content:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/MessageResponse"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
                 "404":
                     description: Not found
                     content:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
-        post:
-            summary: Retry job
-            operationId: retryJob
-            security:
-                - BearerAuth: [jobs:update]
-                - CookieAuth: []
-            parameters:
-                - in: path
-                  name: uid
-                  required: true
-                  schema:
-                      type: string
-            responses:
-                "501":
-                    description: Not implemented
+                "409":
+                    description: Job is terminal
                     content:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
-
-    /jobs/stats:
-        get:
-            summary: Get job stats by topic
-            operationId: getJobStats
-            security:
-                - BearerAuth: [jobs:read]
-                - CookieAuth: []
-            responses:
-                "200":
-                    description: Job stats (running and queued by topic)
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/WorkerJobStatsResponse"
 
     /events:
         get:
@@ -3833,154 +4158,321 @@ components:
                     description: "Number of active connections (Postgres only)"
             required: [user_count, image_count, collection_count]
 
-        WorkerRegisterRequest:
-            type: object
-            properties:
-                name:
-                    type: string
-                    description: "Job topic/worker name (e.g., exif_process, image_process)"
-                concurrency:
-                    type: integer
-                    description: "Number of concurrent jobs for this worker"
-            required: [name]
+        JobTypeName:
+            type: string
+            enum: [ImageProcess, ExifProcess, XmpGeneration]
+            description: Unique TitleCase identifier for a registered job type.
 
-        WorkerInfo:
+        JobSource:
+            type: string
+            enum: [manual, upload, update, schedule, system]
+            description: What caused this job or run to be created.
+
+        WorkerJobStatus:
+            type: string
+            enum: [queued, running, cancel_requested, completed, failed, cancelled, skipped]
+
+        JobRunStatus:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+
+        JobCreateRequest:
             type: object
             properties:
-                name:
+                type:
+                    $ref: "#/components/schemas/JobTypeName"
+                data:
+                    type: object
+                    additionalProperties: true
+                    description: Required input data shape defined and validated by the target worker type.
+            required: [type, data]
+
+        JobCreateResponse:
+            type: object
+            properties:
+                message:
                     type: string
-                    description: "Job topic/worker name (e.g., exif_process, image_process)"
-                display_name:
+                run:
+                    $ref: "#/components/schemas/JobRun"
+            required: [message, run]
+
+        JobCancelResponse:
+            type: object
+            properties:
+                message:
                     type: string
-                    description: "Human-readable worker name"
-                concurrency:
-                    type: integer
-                    description: "Number of concurrent jobs for this worker"
                 count:
                     type: integer
-                    description: "Number of active worker jobs with this name/topic"
-            required: [name, display_name, concurrency]
+                    description: Number of jobs for which cancellation was requested.
+            required: [message, count]
 
-        WorkersListResponse:
+        JobError:
+            type: object
+            properties:
+                code:
+                    type: string
+                    description: |-
+                        Machine-readable error code. Known values: `unknown_job_type`, `invalid_data`, `dispatch_failed`, `publish_failed`, `worker_error`.
+                message:
+                    type: string
+                retryable:
+                    type: boolean
+            required: [code, message]
+
+        JobRun:
+            x-entity: true
+            x-go-gorm-index:
+                - name: idx_job_runs_type_status
+                  fields: [type, status]
+            type: object
+            properties:
+                uid:
+                    type: string
+                type:
+                    $ref: "#/components/schemas/JobTypeName"
+                status:
+                    $ref: "#/components/schemas/JobRunStatus"
+                data:
+                    type: object
+                    additionalProperties: true
+                    nullable: true
+                    description: Input data supplied when creating the run.
+                error:
+                    $ref: "#/components/schemas/JobError"
+                    nullable: true
+                target_count:
+                    type: integer
+                queued_count:
+                    type: integer
+                skipped_count:
+                    type: integer
+                failed_count:
+                    type: integer
+                created_at:
+                    type: string
+                    format: date-time
+                started_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                finished_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+            required: [uid, type, status, created_at]
+
+        JobRunsResponse:
             type: object
             properties:
                 items:
                     type: array
                     items:
-                        $ref: "#/components/schemas/WorkerInfo"
-                    description: List of workers
-            required: [items]
-
-        WorkerJobCreateRequest:
-            type: object
-            properties:
-                type:
-                    type: string
-                    description: "Job topic (e.g., exif_process, image_process)"
-                command:
-                    type: string
-                    enum: [all, missing]
-                    description: "Command to execute (all=process all, missing=process missing)"
-                uids:
-                    type: array
-                    items:
-                        type: string
-                    description: "Image UIDs to process (optional, if omitted all images are considered)"
-            required: [type, command]
-
-        WorkerJobEnqueueResponse:
-            type: object
-            properties:
-                message:
-                    type: string
-                    description: Response message
-                count:
+                        $ref: "#/components/schemas/JobRun"
+                total:
                     type: integer
-                    description: Count of enqueued jobs
-            required: [message]
+                page:
+                    type: integer
+                limit:
+                    type: integer
+            required: [items, total, page, limit]
 
         WorkerJob:
             x-entity: true
+            x-go-gorm-index:
+                - name: idx_worker_jobs_type_status
+                  fields: [type, status]
+                - name: idx_worker_jobs_created_at
+                  fields: [created_at]
             type: object
             properties:
                 uid:
                     type: string
-                    description: Job UID
+                run_uid:
+                    type: string
+                    nullable: true
+                    description: Manual run that created this job, when applicable.
                 type:
-                    type: string
-                    description: Job type
-                topic:
-                    type: string
-                    description: Job topic
-                command:
-                    type: string
-                    nullable: true
-                    description: Job command
-                image_uid:
-                    type: string
-                    nullable: true
-                    description: Related image UID
+                    $ref: "#/components/schemas/JobTypeName"
                 status:
-                    type: string
-                    description: Job status
-                payload:
-                    type: string
+                    $ref: "#/components/schemas/WorkerJobStatus"
+                source:
+                    $ref: "#/components/schemas/JobSource"
+                data:
+                    type: object
+                    additionalProperties: true
                     nullable: true
-                    description: Job payload
-                error_code:
-                    type: string
+                    description: Worker task execution payload.
+                error:
+                    $ref: "#/components/schemas/JobError"
                     nullable: true
-                    description: Error code if failed
-                error_msg:
-                    type: string
-                    nullable: true
-                    description: Error message if failed
-                enqueued_at:
+                attempts:
+                    type: integer
+                    description: Number of attempts including the current one.
+                max_attempts:
+                    type: integer
+                created_at:
                     type: string
                     format: date-time
-                    description: Enqueued timestamp
                 started_at:
                     type: string
                     format: date-time
                     nullable: true
-                    description: Started timestamp
                 completed_at:
                     type: string
                     format: date-time
                     nullable: true
-                    description: Completed timestamp
-            required: [uid, type, topic, status, enqueued_at]
+            required: [uid, type, status, source, created_at]
 
-        WorkerJobsResponse:
+        JobListResponse:
             type: object
             properties:
                 items:
                     type: array
                     items:
                         $ref: "#/components/schemas/WorkerJob"
-                    description: List of jobs
                 total:
                     type: integer
-                    description: Total count of jobs
-            required: [items, total]
+                page:
+                    type: integer
+                limit:
+                    type: integer
+            required: [items, total, page, limit]
 
-        WorkerJobStatsResponse:
+        JobTypeConcurrency:
             type: object
             properties:
-                running:
+                current:
                     type: integer
-                    description: Total running jobs
-                running_by_topic:
+                    minimum: 1
+                    description: Active runtime worker concurrency.
+                max:
+                    type: integer
+                    minimum: 1
+                    description: Maximum concurrency ceiling allowed for this job type.
+                default:
+                    type: integer
+                    minimum: 1
+                    description: System baseline concurrency initialized from the definition.
+            required: [current, max, default]
+
+        JobTypeConfig:
+            x-entity: true
+            x-go-gorm-index:
+                - name: idx_job_type_configs_type
+                  unique: true
+                  fields: [type]
+            type: object
+            description: Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. Also accepted as the body of PATCH /jobs/types/{type}; any `type` field in the body is ignored in favour of the path parameter.
+            properties:
+                type:
+                    $ref: "#/components/schemas/JobTypeName"
+                    description: Unique TitleCase identifier for a registered job type.
+                enabled:
+                    type: boolean
+                    description: Whether dispatch and processing are active for this job type.
+                concurrency_current:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    description: Active runtime worker concurrency.
+                concurrency_max:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    description: Maximum concurrency ceiling for this job type.
+                batch_size:
+                    type: integer
+                    minimum: 1
+                    maximum: 1000
+                    description: Job creation and enqueue batch limit.
+                timeout_ms:
+                    type: integer
+                    minimum: 1
+                    description: Per-job execution timeout in milliseconds.
+                max_retries:
+                    type: integer
+                    minimum: 0
+                    maximum: 10
+                    description: Default maximum automatic retry attempts.
+            required: [type, enabled, concurrency_current, concurrency_max, batch_size, timeout_ms, max_retries]
+
+        JobType:
+            type: object
+            properties:
+                type:
+                    $ref: "#/components/schemas/JobTypeName"
+                display_name:
+                    type: string
+                description:
+                    type: string
+                enabled:
+                    type: boolean
+                    description: Whether dispatch and processing are active for this job type.
+                concurrency:
+                    $ref: "#/components/schemas/JobTypeConcurrency"
+                batch_size:
+                    type: integer
+                    description: Job creation and enqueue batch limit.
+                timeout_ms:
+                    type: integer
+                    description: Per-job execution timeout in milliseconds.
+                max_retries:
+                    type: integer
+                    description: Default maximum automatic retry attempts.
+                supports_retry:
+                    type: boolean
+                    description: Whether this worker supports automatic retries of transient failures.
+                supports_cancel:
+                    type: boolean
+            required: [type, display_name, description, enabled, concurrency]
+
+        JobTypeListResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/JobType"
+            required: [items]
+
+        JobStatusCounts:
+            type: object
+            properties:
+                queued: { type: integer }
+                running: { type: integer }
+                completed: { type: integer }
+                failed: { type: integer }
+                cancelled: { type: integer }
+                skipped: { type: integer }
+            required: [queued, running, completed, failed, cancelled, skipped]
+
+        JobStatsResponse:
+            type: object
+            properties:
+                type:
                     type: object
                     additionalProperties:
-                        type: integer
-                    description: Running jobs by topic
-                queued_by_topic:
-                    type: object
-                    additionalProperties:
-                        type: integer
-                    description: Queued jobs by topic
-            required: [running, running_by_topic, queued_by_topic]
+                        $ref: "#/components/schemas/JobStatusCounts"
+                active_runs:
+                    type: integer
+                generated_at:
+                    type: string
+                    format: date-time
+            required: [type, active_runs, generated_at]
+
+        JobSnapshotResponse:
+            type: object
+            properties:
+                active:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/WorkerJob"
+                stats:
+                    $ref: "#/components/schemas/JobStatsResponse"
+                next_event_cursor:
+                    type: integer
+                    format: uint64
+            required: [active, stats, next_event_cursor]
 
         # WebSocket-related schemas
         WSStatsResponse:

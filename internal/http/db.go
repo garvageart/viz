@@ -42,7 +42,7 @@ func (server Server) ConnectToDatabase(migrationFS fs.FS, dst ...any) *gorm.DB {
 		time.Sleep(2 * time.Second)
 	}
 
-	// Manual migrations before AutoMigrate
+	// Manual migration before AutoMigrate
 	db.MigrateUsersTable(client, logger)
 
 	dbError = client.AutoMigrate(dst...)

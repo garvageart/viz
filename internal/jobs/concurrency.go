@@ -3,8 +3,6 @@ package jobs
 import (
 	"runtime"
 	"sync"
-
-	"github.com/ThreeDotsLabs/watermill/message"
 )
 
 // ConcurrencyManager restricts the number of concurrent running jobs.
@@ -59,22 +57,6 @@ func (l *ConcurrencyManager) SetMaxConcurrent(max int) {
 	l.mu.Unlock()
 }
 
-// GetMaxConcurrent returns the configured maximum concurrency.
-func (l *ConcurrencyManager) GetMaxConcurrent() int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.maxConcurrent
-}
-
-// ConcurrencyMiddleware creates a middleware that limits the number of concurrent message handlers
-func (l *ConcurrencyManager) Middleware(h message.HandlerFunc) message.HandlerFunc {
-	return func(msg *message.Message) ([]*message.Message, error) {
-		l.Acquire()
-		defer l.Release()
-		return h(msg)
-	}
-}
-
 // Global per-topic concurrency managers registry
 var (
 	managersMu      sync.Mutex
@@ -83,12 +65,23 @@ var (
 
 // getOrCreateManager returns a per-topic concurrency manager.
 func getOrCreateManager(topic string) *ConcurrencyManager {
+	return ensureManager(topic, 0)
+}
+
+// ensureManager returns a per-topic manager, initializing it from the worker's
+// declared default concurrency the first time the topic is seen.
+func ensureManager(topic string, defaultConcurrency int) *ConcurrencyManager {
 	managersMu.Lock()
 	defer managersMu.Unlock()
 	if m, ok := managersByTopic[topic]; ok {
 		return m
 	}
+
 	m := NewConcurrencyManager()
+	if defaultConcurrency > 0 {
+		m.SetMaxConcurrent(defaultConcurrency)
+	}
+
 	managersByTopic[topic] = m
 	return m
 }
@@ -96,9 +89,4 @@ func getOrCreateManager(topic string) *ConcurrencyManager {
 // SetConcurrency sets the max concurrency for a given topic.
 func SetConcurrency(topic string, max int) {
 	getOrCreateManager(topic).SetMaxConcurrent(max)
-}
-
-// GetConcurrency returns the configured max concurrency for a given topic.
-func GetConcurrency(topic string) int {
-	return getOrCreateManager(topic).GetMaxConcurrent()
 }

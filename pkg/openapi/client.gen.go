@@ -688,63 +688,87 @@ type ClientInterface interface {
 	// Corresponds with GET /images/{uid}/file (the `GetImageFile` operationId).
 	GetImageFile(ctx context.Context, uid string, params *GetImageFileParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListJobs List jobs with filtering and pagination
+	// CancelJobs Request cancellation for jobs matching a filter
+	//
+	// Corresponds with DELETE /jobs (the `CancelJobs` operationId).
+	CancelJobs(ctx context.Context, params *CancelJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListJobs List persisted worker jobs
 	//
 	// Corresponds with GET /jobs (the `ListJobs` operationId).
 	ListJobs(ctx context.Context, params *ListJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateJobWithBody Create/enqueue a job
+	// CreateJobWithBody Trigger a job run
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /jobs (the `CreateJob` operationId).
 	CreateJobWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateJob Create/enqueue a job
+	// CreateJob Trigger a job run
 	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /jobs (the `CreateJob` operationId).
 	CreateJob(ctx context.Context, body CreateJobJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetJobStats Get job stats by topic
+	// ListJobRuns List manual trigger runs
+	//
+	// Corresponds with GET /jobs/runs (the `ListJobRuns` operationId).
+	ListJobRuns(ctx context.Context, params *ListJobRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelJobRun Cancel a run and its non-terminal jobs
+	//
+	// Corresponds with DELETE /jobs/runs/{uid} (the `CancelJobRun` operationId).
+	CancelJobRun(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetJobRun Get a trigger run
+	//
+	// Corresponds with GET /jobs/runs/{uid} (the `GetJobRun` operationId).
+	GetJobRun(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetJobsSnapshot Bootstrap payload for the jobs UI
+	//
+	// Corresponds with GET /jobs/snapshot (the `GetJobsSnapshot` operationId).
+	GetJobsSnapshot(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetJobStats Get job counts by type and status
 	//
 	// Corresponds with GET /jobs/stats (the `GetJobStats` operationId).
 	GetJobStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListAvailableWorkers List all workers
+	// ListJobTypes List registered job types
 	//
-	// Corresponds with GET /jobs/workers (the `ListAvailableWorkers` operationId).
-	ListAvailableWorkers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with GET /jobs/types (the `ListJobTypes` operationId).
+	ListJobTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RegisterWorkerWithBody Register a new worker
+	// UpdateJobTypeWithBody Update configuration for a job type
+	//
+	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 	//
 	// Takes any type of body and a specified content type.
 	//
-	// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-	RegisterWorkerWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+	UpdateJobTypeWithBody(ctx context.Context, pType JobTypeName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RegisterWorker Register a new worker
+	// UpdateJobType Update configuration for a job type
+	//
+	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 	//
 	// Takes a body of the `application/json` content type.
 	//
-	// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-	RegisterWorker(ctx context.Context, body RegisterWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+	UpdateJobType(ctx context.Context, pType JobTypeName, body UpdateJobTypeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CancelJob Cancel job
+	// CancelJob Cancel one active job
 	//
 	// Corresponds with DELETE /jobs/{uid} (the `CancelJob` operationId).
 	CancelJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetJob Get job detail
+	// GetJob Get one worker job
 	//
 	// Corresponds with GET /jobs/{uid} (the `GetJob` operationId).
 	GetJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// RetryJob Retry job
-	//
-	// Corresponds with POST /jobs/{uid} (the `RetryJob` operationId).
-	RetryJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListKeywords List all keywords
 	//
@@ -2419,7 +2443,22 @@ func (c *Client) GetImageFile(ctx context.Context, uid string, params *GetImageF
 	return c.Client.Do(req)
 }
 
-// ListJobs List jobs with filtering and pagination
+// CancelJobs Request cancellation for jobs matching a filter
+//
+// Corresponds with DELETE /jobs (the `CancelJobs` operationId).
+func (c *Client) CancelJobs(ctx context.Context, params *CancelJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelJobsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListJobs List persisted worker jobs
 //
 // Corresponds with GET /jobs (the `ListJobs` operationId).
 func (c *Client) ListJobs(ctx context.Context, params *ListJobsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -2434,7 +2473,7 @@ func (c *Client) ListJobs(ctx context.Context, params *ListJobsParams, reqEditor
 	return c.Client.Do(req)
 }
 
-// CreateJobWithBody Create/enqueue a job
+// CreateJobWithBody Trigger a job run
 //
 // Takes any type of body and a specified content type.
 //
@@ -2451,7 +2490,7 @@ func (c *Client) CreateJobWithBody(ctx context.Context, contentType string, body
 	return c.Client.Do(req)
 }
 
-// CreateJob Create/enqueue a job
+// CreateJob Trigger a job run
 //
 // Takes a body of the `application/json` content type.
 //
@@ -2468,7 +2507,67 @@ func (c *Client) CreateJob(ctx context.Context, body CreateJobJSONRequestBody, r
 	return c.Client.Do(req)
 }
 
-// GetJobStats Get job stats by topic
+// ListJobRuns List manual trigger runs
+//
+// Corresponds with GET /jobs/runs (the `ListJobRuns` operationId).
+func (c *Client) ListJobRuns(ctx context.Context, params *ListJobRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListJobRunsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CancelJobRun Cancel a run and its non-terminal jobs
+//
+// Corresponds with DELETE /jobs/runs/{uid} (the `CancelJobRun` operationId).
+func (c *Client) CancelJobRun(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelJobRunRequest(c.Server, uid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetJobRun Get a trigger run
+//
+// Corresponds with GET /jobs/runs/{uid} (the `GetJobRun` operationId).
+func (c *Client) GetJobRun(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetJobRunRequest(c.Server, uid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetJobsSnapshot Bootstrap payload for the jobs UI
+//
+// Corresponds with GET /jobs/snapshot (the `GetJobsSnapshot` operationId).
+func (c *Client) GetJobsSnapshot(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetJobsSnapshotRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetJobStats Get job counts by type and status
 //
 // Corresponds with GET /jobs/stats (the `GetJobStats` operationId).
 func (c *Client) GetJobStats(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -2483,11 +2582,11 @@ func (c *Client) GetJobStats(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
-// ListAvailableWorkers List all workers
+// ListJobTypes List registered job types
 //
-// Corresponds with GET /jobs/workers (the `ListAvailableWorkers` operationId).
-func (c *Client) ListAvailableWorkers(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListAvailableWorkersRequest(c.Server)
+// Corresponds with GET /jobs/types (the `ListJobTypes` operationId).
+func (c *Client) ListJobTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListJobTypesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -2498,13 +2597,15 @@ func (c *Client) ListAvailableWorkers(ctx context.Context, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
-// RegisterWorkerWithBody Register a new worker
+// UpdateJobTypeWithBody Update configuration for a job type
+//
+// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-func (c *Client) RegisterWorkerWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterWorkerRequestWithBody(c.Server, contentType, body)
+// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+func (c *Client) UpdateJobTypeWithBody(ctx context.Context, pType JobTypeName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateJobTypeRequestWithBody(c.Server, pType, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2515,13 +2616,15 @@ func (c *Client) RegisterWorkerWithBody(ctx context.Context, contentType string,
 	return c.Client.Do(req)
 }
 
-// RegisterWorker Register a new worker
+// UpdateJobType Update configuration for a job type
+//
+// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-func (c *Client) RegisterWorker(ctx context.Context, body RegisterWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRegisterWorkerRequest(c.Server, body)
+// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+func (c *Client) UpdateJobType(ctx context.Context, pType JobTypeName, body UpdateJobTypeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateJobTypeRequest(c.Server, pType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2532,7 +2635,7 @@ func (c *Client) RegisterWorker(ctx context.Context, body RegisterWorkerJSONRequ
 	return c.Client.Do(req)
 }
 
-// CancelJob Cancel job
+// CancelJob Cancel one active job
 //
 // Corresponds with DELETE /jobs/{uid} (the `CancelJob` operationId).
 func (c *Client) CancelJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -2547,26 +2650,11 @@ func (c *Client) CancelJob(ctx context.Context, uid string, reqEditors ...Reques
 	return c.Client.Do(req)
 }
 
-// GetJob Get job detail
+// GetJob Get one worker job
 //
 // Corresponds with GET /jobs/{uid} (the `GetJob` operationId).
 func (c *Client) GetJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetJobRequest(c.Server, uid)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// RetryJob Retry job
-//
-// Corresponds with POST /jobs/{uid} (the `RetryJob` operationId).
-func (c *Client) RetryJob(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRetryJobRequest(c.Server, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -5993,6 +6081,68 @@ func NewGetImageFileRequest(server string, uid string, params *GetImageFileParam
 	return req, nil
 }
 
+// NewCancelJobsRequest constructs an http.Request for the CancelJobs method
+func NewCancelJobsRequest(server string, params *CancelJobsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "type", params.Type, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListJobsRequest constructs an http.Request for the ListJobs method
 func NewListJobsRequest(server string, params *ListJobsParams) (*http.Request, error) {
 	var err error
@@ -6021,6 +6171,18 @@ func NewListJobsRequest(server string, params *ListJobsParams) (*http.Request, e
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.Type != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "type", *params.Type, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Status != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
@@ -6033,9 +6195,9 @@ func NewListJobsRequest(server string, params *ListJobsParams) (*http.Request, e
 
 		}
 
-		if params.Topic != nil {
+		if params.RunUid != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "topic", *params.Topic, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "run_uid", *params.RunUid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -6123,6 +6285,191 @@ func NewCreateJobRequestWithBody(server string, contentType string, body io.Read
 	return req, nil
 }
 
+// NewListJobRunsRequest constructs an http.Request for the ListJobRuns method
+func NewListJobRunsRequest(server string, params *ListJobRunsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobs/runs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Type != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "type", *params.Type, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page", *params.Page, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCancelJobRunRequest constructs an http.Request for the CancelJobRun method
+func NewCancelJobRunRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobs/runs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetJobRunRequest constructs an http.Request for the GetJobRun method
+func NewGetJobRunRequest(server string, uid string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobs/runs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetJobsSnapshotRequest constructs an http.Request for the GetJobsSnapshot method
+func NewGetJobsSnapshotRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/jobs/snapshot")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetJobStatsRequest constructs an http.Request for the GetJobStats method
 func NewGetJobStatsRequest(server string) (*http.Request, error) {
 	var err error
@@ -6150,8 +6497,8 @@ func NewGetJobStatsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListAvailableWorkersRequest constructs an http.Request for the ListAvailableWorkers method
-func NewListAvailableWorkersRequest(server string) (*http.Request, error) {
+// NewListJobTypesRequest constructs an http.Request for the ListJobTypes method
+func NewListJobTypesRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -6159,7 +6506,7 @@ func NewListAvailableWorkersRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/jobs/workers")
+	operationPath := fmt.Sprintf("/jobs/types")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -6177,27 +6524,34 @@ func NewListAvailableWorkersRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewRegisterWorkerRequest calls the generic RegisterWorker builder with application/json body
-func NewRegisterWorkerRequest(server string, body RegisterWorkerJSONRequestBody) (*http.Request, error) {
+// NewUpdateJobTypeRequest calls the generic UpdateJobType builder with application/json body
+func NewUpdateJobTypeRequest(server string, pType JobTypeName, body UpdateJobTypeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewRegisterWorkerRequestWithBody(server, "application/json", bodyReader)
+	return NewUpdateJobTypeRequestWithBody(server, pType, "application/json", bodyReader)
 }
 
-// NewRegisterWorkerRequestWithBody constructs an http.Request for the RegisterWorker method, with any body, and a specified content type
-func NewRegisterWorkerRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewUpdateJobTypeRequestWithBody constructs an http.Request for the UpdateJobType method, with any body, and a specified content type
+func NewUpdateJobTypeRequestWithBody(server string, pType JobTypeName, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "type", pType, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/jobs/workers")
+	operationPath := fmt.Sprintf("/jobs/types/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -6207,7 +6561,7 @@ func NewRegisterWorkerRequestWithBody(server string, contentType string, body io
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -6278,40 +6632,6 @@ func NewGetJobRequest(server string, uid string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewRetryJobRequest constructs an http.Request for the RetryJob method
-func NewRetryJobRequest(server string, uid string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "uid", uid, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/jobs/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -7977,75 +8297,107 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /images/{uid}/file (the `GetImageFile` operationId).
 	GetImageFileWithResponse(ctx context.Context, uid string, params *GetImageFileParams, reqEditors ...RequestEditorFn) (*GetImageFileResponse, error)
 
-	// ListJobsWithResponse List jobs with filtering and pagination
+	// CancelJobsWithResponse Request cancellation for jobs matching a filter
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /jobs (the `CancelJobs` operationId).
+	CancelJobsWithResponse(ctx context.Context, params *CancelJobsParams, reqEditors ...RequestEditorFn) (*CancelJobsResponse, error)
+
+	// ListJobsWithResponse List persisted worker jobs
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /jobs (the `ListJobs` operationId).
 	ListJobsWithResponse(ctx context.Context, params *ListJobsParams, reqEditors ...RequestEditorFn) (*ListJobsResponse, error)
 
-	// CreateJobWithBodyWithResponse Create/enqueue a job
+	// CreateJobWithBodyWithResponse Trigger a job run
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /jobs (the `CreateJob` operationId).
 	CreateJobWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateJobResponse, error)
 
-	// CreateJobWithResponse Create/enqueue a job
+	// CreateJobWithResponse Trigger a job run
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /jobs (the `CreateJob` operationId).
 	CreateJobWithResponse(ctx context.Context, body CreateJobJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateJobResponse, error)
 
-	// GetJobStatsWithResponse Get job stats by topic
+	// ListJobRunsWithResponse List manual trigger runs
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /jobs/runs (the `ListJobRuns` operationId).
+	ListJobRunsWithResponse(ctx context.Context, params *ListJobRunsParams, reqEditors ...RequestEditorFn) (*ListJobRunsResponse, error)
+
+	// CancelJobRunWithResponse Cancel a run and its non-terminal jobs
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /jobs/runs/{uid} (the `CancelJobRun` operationId).
+	CancelJobRunWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*CancelJobRunResponse, error)
+
+	// GetJobRunWithResponse Get a trigger run
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /jobs/runs/{uid} (the `GetJobRun` operationId).
+	GetJobRunWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetJobRunResponse, error)
+
+	// GetJobsSnapshotWithResponse Bootstrap payload for the jobs UI
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /jobs/snapshot (the `GetJobsSnapshot` operationId).
+	GetJobsSnapshotWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetJobsSnapshotResponse, error)
+
+	// GetJobStatsWithResponse Get job counts by type and status
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /jobs/stats (the `GetJobStats` operationId).
 	GetJobStatsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetJobStatsResponse, error)
 
-	// ListAvailableWorkersWithResponse List all workers
+	// ListJobTypesWithResponse List registered job types
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with GET /jobs/workers (the `ListAvailableWorkers` operationId).
-	ListAvailableWorkersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAvailableWorkersResponse, error)
+	// Corresponds with GET /jobs/types (the `ListJobTypes` operationId).
+	ListJobTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListJobTypesResponse, error)
 
-	// RegisterWorkerWithBodyWithResponse Register a new worker
+	// UpdateJobTypeWithBodyWithResponse Update configuration for a job type
+	//
+	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-	RegisterWorkerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterWorkerResponse, error)
+	// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+	UpdateJobTypeWithBodyWithResponse(ctx context.Context, pType JobTypeName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateJobTypeResponse, error)
 
-	// RegisterWorkerWithResponse Register a new worker
+	// UpdateJobTypeWithResponse Update configuration for a job type
+	//
+	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-	RegisterWorkerWithResponse(ctx context.Context, body RegisterWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterWorkerResponse, error)
+	// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+	UpdateJobTypeWithResponse(ctx context.Context, pType JobTypeName, body UpdateJobTypeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateJobTypeResponse, error)
 
-	// CancelJobWithResponse Cancel job
+	// CancelJobWithResponse Cancel one active job
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /jobs/{uid} (the `CancelJob` operationId).
 	CancelJobWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*CancelJobResponse, error)
 
-	// GetJobWithResponse Get job detail
+	// GetJobWithResponse Get one worker job
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /jobs/{uid} (the `GetJob` operationId).
 	GetJobWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetJobResponse, error)
-
-	// RetryJobWithResponse Retry job
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /jobs/{uid} (the `RetryJob` operationId).
-	RetryJobWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*RetryJobResponse, error)
 
 	// ListKeywordsWithResponse List all keywords
 	//
@@ -11831,18 +12183,108 @@ func (r GetImageFileResponse) ContentType() string {
 	return ""
 }
 
-type ListJobsResponse struct {
+type CancelJobsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkerJobsResponse
+	JSON200 *JobCancelResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
 	// JSON500 the response for an HTTP 500 `application/json` response
 	JSON500 *ErrorResponse
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListJobsResponse) GetJSON200() *WorkerJobsResponse {
+func (r CancelJobsResponse) GetJSON200() *JobCancelResponse {
 	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r CancelJobsResponse) GetJSON400() *ErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r CancelJobsResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r CancelJobsResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r CancelJobsResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CancelJobsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelJobsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *JobListResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListJobsResponse) GetJSON200() *JobListResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r ListJobsResponse) GetJSON400() *ErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r ListJobsResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r ListJobsResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
 }
 
 // GetJSON500 returns the response for an HTTP 500 `application/json` response
@@ -11882,29 +12324,36 @@ func (r ListJobsResponse) ContentType() string {
 type CreateJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkerJobEnqueueResponse
 	// JSON202 the response for an HTTP 202 `application/json` response
-	JSON202 *WorkerJobEnqueueResponse
+	JSON202 *JobCreateResponse
 	// JSON400 the response for an HTTP 400 `application/json` response
 	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
 	// JSON500 the response for an HTTP 500 `application/json` response
 	JSON500 *ErrorResponse
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateJobResponse) GetJSON200() *WorkerJobEnqueueResponse {
-	return r.JSON200
-}
-
 // GetJSON202 returns the response for an HTTP 202 `application/json` response
-func (r CreateJobResponse) GetJSON202() *WorkerJobEnqueueResponse {
+func (r CreateJobResponse) GetJSON202() *JobCreateResponse {
 	return r.JSON202
 }
 
 // GetJSON400 returns the response for an HTTP 400 `application/json` response
 func (r CreateJobResponse) GetJSON400() *ErrorResponse {
 	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r CreateJobResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r CreateJobResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
 }
 
 // GetJSON500 returns the response for an HTTP 500 `application/json` response
@@ -11941,16 +12390,299 @@ func (r CreateJobResponse) ContentType() string {
 	return ""
 }
 
+type ListJobRunsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *JobRunsResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListJobRunsResponse) GetJSON200() *JobRunsResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r ListJobRunsResponse) GetJSON400() *ErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r ListJobRunsResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r ListJobRunsResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r ListJobRunsResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListJobRunsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListJobRunsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListJobRunsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListJobRunsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CancelJobRunResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *MessageResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *ErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *ErrorResponse
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r CancelJobRunResponse) GetJSON202() *MessageResponse {
+	return r.JSON202
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r CancelJobRunResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r CancelJobRunResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r CancelJobRunResponse) GetJSON404() *ErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r CancelJobRunResponse) GetJSON409() *ErrorResponse {
+	return r.JSON409
+}
+
+// GetBody returns the raw response body bytes
+func (r CancelJobRunResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelJobRunResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelJobRunResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelJobRunResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetJobRunResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *JobRun
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetJobRunResponse) GetJSON200() *JobRun {
+	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetJobRunResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetJobRunResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r GetJobRunResponse) GetJSON404() *ErrorResponse {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r GetJobRunResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetJobRunResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetJobRunResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetJobRunResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetJobsSnapshotResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *JobSnapshotResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetJobsSnapshotResponse) GetJSON200() *JobSnapshotResponse {
+	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetJobsSnapshotResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetJobsSnapshotResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r GetJobsSnapshotResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetJobsSnapshotResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetJobsSnapshotResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetJobsSnapshotResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetJobsSnapshotResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetJobStatsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkerJobStatsResponse
+	JSON200 *JobStatsResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetJobStatsResponse) GetJSON200() *WorkerJobStatsResponse {
+func (r GetJobStatsResponse) GetJSON200() *JobStatsResponse {
 	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetJobStatsResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetJobStatsResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r GetJobStatsResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
 }
 
 // GetBody returns the raw response body bytes
@@ -11982,32 +12714,46 @@ func (r GetJobStatsResponse) ContentType() string {
 	return ""
 }
 
-type ListAvailableWorkersResponse struct {
+type ListJobTypesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkersListResponse
+	JSON200 *JobTypeListResponse
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *ErrorResponse
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListAvailableWorkersResponse) GetJSON200() *WorkersListResponse {
+func (r ListJobTypesResponse) GetJSON200() *JobTypeListResponse {
 	return r.JSON200
 }
 
 // GetJSON401 returns the response for an HTTP 401 `application/json` response
-func (r ListAvailableWorkersResponse) GetJSON401() *ErrorResponse {
+func (r ListJobTypesResponse) GetJSON401() *ErrorResponse {
 	return r.JSON401
 }
 
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r ListJobTypesResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r ListJobTypesResponse) GetJSON500() *ErrorResponse {
+	return r.JSON500
+}
+
 // GetBody returns the raw response body bytes
-func (r ListAvailableWorkersResponse) GetBody() []byte {
+func (r ListJobTypesResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r ListAvailableWorkersResponse) Status() string {
+func (r ListJobTypesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -12015,7 +12761,7 @@ func (r ListAvailableWorkersResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListAvailableWorkersResponse) StatusCode() int {
+func (r ListJobTypesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -12023,46 +12769,67 @@ func (r ListAvailableWorkersResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListAvailableWorkersResponse) ContentType() string {
+func (r ListJobTypesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
 	return ""
 }
 
-type RegisterWorkerResponse struct {
+type UpdateJobTypeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON201 the response for an HTTP 201 `application/json` response
-	JSON201 *WorkerInfo
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *JobType
 	// JSON400 the response for an HTTP 400 `application/json` response
 	JSON400 *ErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *ErrorResponse
 	// JSON500 the response for an HTTP 500 `application/json` response
 	JSON500 *ErrorResponse
 }
 
-// GetJSON201 returns the response for an HTTP 201 `application/json` response
-func (r RegisterWorkerResponse) GetJSON201() *WorkerInfo {
-	return r.JSON201
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateJobTypeResponse) GetJSON200() *JobType {
+	return r.JSON200
 }
 
 // GetJSON400 returns the response for an HTTP 400 `application/json` response
-func (r RegisterWorkerResponse) GetJSON400() *ErrorResponse {
+func (r UpdateJobTypeResponse) GetJSON400() *ErrorResponse {
 	return r.JSON400
 }
 
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UpdateJobTypeResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UpdateJobTypeResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UpdateJobTypeResponse) GetJSON404() *ErrorResponse {
+	return r.JSON404
+}
+
 // GetJSON500 returns the response for an HTTP 500 `application/json` response
-func (r RegisterWorkerResponse) GetJSON500() *ErrorResponse {
+func (r UpdateJobTypeResponse) GetJSON500() *ErrorResponse {
 	return r.JSON500
 }
 
 // GetBody returns the raw response body bytes
-func (r RegisterWorkerResponse) GetBody() []byte {
+func (r UpdateJobTypeResponse) GetBody() []byte {
 	return r.Body
 }
 
 // Status returns HTTPResponse.Status
-func (r RegisterWorkerResponse) Status() string {
+func (r UpdateJobTypeResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -12070,7 +12837,7 @@ func (r RegisterWorkerResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r RegisterWorkerResponse) StatusCode() int {
+func (r UpdateJobTypeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -12078,7 +12845,7 @@ func (r RegisterWorkerResponse) StatusCode() int {
 }
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RegisterWorkerResponse) ContentType() string {
+func (r UpdateJobTypeResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -12088,20 +12855,41 @@ func (r RegisterWorkerResponse) ContentType() string {
 type CancelJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *MessageResponse
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *MessageResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
 	// JSON404 the response for an HTTP 404 `application/json` response
 	JSON404 *ErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *ErrorResponse
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CancelJobResponse) GetJSON200() *MessageResponse {
-	return r.JSON200
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r CancelJobResponse) GetJSON202() *MessageResponse {
+	return r.JSON202
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r CancelJobResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r CancelJobResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
 }
 
 // GetJSON404 returns the response for an HTTP 404 `application/json` response
 func (r CancelJobResponse) GetJSON404() *ErrorResponse {
 	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r CancelJobResponse) GetJSON409() *ErrorResponse {
+	return r.JSON409
 }
 
 // GetBody returns the raw response body bytes
@@ -12138,6 +12926,10 @@ type GetJobResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *WorkerJob
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *ErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *ErrorResponse
 	// JSON404 the response for an HTTP 404 `application/json` response
 	JSON404 *ErrorResponse
 }
@@ -12145,6 +12937,16 @@ type GetJobResponse struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r GetJobResponse) GetJSON200() *WorkerJob {
 	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetJobResponse) GetJSON401() *ErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetJobResponse) GetJSON403() *ErrorResponse {
+	return r.JSON403
 }
 
 // GetJSON404 returns the response for an HTTP 404 `application/json` response
@@ -12175,47 +12977,6 @@ func (r GetJobResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetJobResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type RetryJobResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON501 the response for an HTTP 501 `application/json` response
-	JSON501 *ErrorResponse
-}
-
-// GetJSON501 returns the response for an HTTP 501 `application/json` response
-func (r RetryJobResponse) GetJSON501() *ErrorResponse {
-	return r.JSON501
-}
-
-// GetBody returns the raw response body bytes
-func (r RetryJobResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r RetryJobResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RetryJobResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RetryJobResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -14766,7 +15527,20 @@ func (c *ClientWithResponses) GetImageFileWithResponse(ctx context.Context, uid 
 	return ParseGetImageFileResponse(rsp)
 }
 
-// ListJobsWithResponse List jobs with filtering and pagination
+// CancelJobsWithResponse Request cancellation for jobs matching a filter
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /jobs (the `CancelJobs` operationId).
+func (c *ClientWithResponses) CancelJobsWithResponse(ctx context.Context, params *CancelJobsParams, reqEditors ...RequestEditorFn) (*CancelJobsResponse, error) {
+	rsp, err := c.CancelJobs(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelJobsResponse(rsp)
+}
+
+// ListJobsWithResponse List persisted worker jobs
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -14779,7 +15553,7 @@ func (c *ClientWithResponses) ListJobsWithResponse(ctx context.Context, params *
 	return ParseListJobsResponse(rsp)
 }
 
-// CreateJobWithBodyWithResponse Create/enqueue a job
+// CreateJobWithBodyWithResponse Trigger a job run
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -14792,7 +15566,7 @@ func (c *ClientWithResponses) CreateJobWithBodyWithResponse(ctx context.Context,
 	return ParseCreateJobResponse(rsp)
 }
 
-// CreateJobWithResponse Create/enqueue a job
+// CreateJobWithResponse Trigger a job run
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -14805,7 +15579,59 @@ func (c *ClientWithResponses) CreateJobWithResponse(ctx context.Context, body Cr
 	return ParseCreateJobResponse(rsp)
 }
 
-// GetJobStatsWithResponse Get job stats by topic
+// ListJobRunsWithResponse List manual trigger runs
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /jobs/runs (the `ListJobRuns` operationId).
+func (c *ClientWithResponses) ListJobRunsWithResponse(ctx context.Context, params *ListJobRunsParams, reqEditors ...RequestEditorFn) (*ListJobRunsResponse, error) {
+	rsp, err := c.ListJobRuns(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListJobRunsResponse(rsp)
+}
+
+// CancelJobRunWithResponse Cancel a run and its non-terminal jobs
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /jobs/runs/{uid} (the `CancelJobRun` operationId).
+func (c *ClientWithResponses) CancelJobRunWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*CancelJobRunResponse, error) {
+	rsp, err := c.CancelJobRun(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelJobRunResponse(rsp)
+}
+
+// GetJobRunWithResponse Get a trigger run
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /jobs/runs/{uid} (the `GetJobRun` operationId).
+func (c *ClientWithResponses) GetJobRunWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*GetJobRunResponse, error) {
+	rsp, err := c.GetJobRun(ctx, uid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetJobRunResponse(rsp)
+}
+
+// GetJobsSnapshotWithResponse Bootstrap payload for the jobs UI
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /jobs/snapshot (the `GetJobsSnapshot` operationId).
+func (c *ClientWithResponses) GetJobsSnapshotWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetJobsSnapshotResponse, error) {
+	rsp, err := c.GetJobsSnapshot(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetJobsSnapshotResponse(rsp)
+}
+
+// GetJobStatsWithResponse Get job counts by type and status
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -14818,46 +15644,50 @@ func (c *ClientWithResponses) GetJobStatsWithResponse(ctx context.Context, reqEd
 	return ParseGetJobStatsResponse(rsp)
 }
 
-// ListAvailableWorkersWithResponse List all workers
+// ListJobTypesWithResponse List registered job types
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with GET /jobs/workers (the `ListAvailableWorkers` operationId).
-func (c *ClientWithResponses) ListAvailableWorkersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListAvailableWorkersResponse, error) {
-	rsp, err := c.ListAvailableWorkers(ctx, reqEditors...)
+// Corresponds with GET /jobs/types (the `ListJobTypes` operationId).
+func (c *ClientWithResponses) ListJobTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListJobTypesResponse, error) {
+	rsp, err := c.ListJobTypes(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListAvailableWorkersResponse(rsp)
+	return ParseListJobTypesResponse(rsp)
 }
 
-// RegisterWorkerWithBodyWithResponse Register a new worker
+// UpdateJobTypeWithBodyWithResponse Update configuration for a job type
+//
+// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-func (c *ClientWithResponses) RegisterWorkerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterWorkerResponse, error) {
-	rsp, err := c.RegisterWorkerWithBody(ctx, contentType, body, reqEditors...)
+// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+func (c *ClientWithResponses) UpdateJobTypeWithBodyWithResponse(ctx context.Context, pType JobTypeName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateJobTypeResponse, error) {
+	rsp, err := c.UpdateJobTypeWithBody(ctx, pType, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRegisterWorkerResponse(rsp)
+	return ParseUpdateJobTypeResponse(rsp)
 }
 
-// RegisterWorkerWithResponse Register a new worker
+// UpdateJobTypeWithResponse Update configuration for a job type
+//
+// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /jobs/workers (the `RegisterWorker` operationId).
-func (c *ClientWithResponses) RegisterWorkerWithResponse(ctx context.Context, body RegisterWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterWorkerResponse, error) {
-	rsp, err := c.RegisterWorker(ctx, body, reqEditors...)
+// Corresponds with PATCH /jobs/types/{type} (the `UpdateJobType` operationId).
+func (c *ClientWithResponses) UpdateJobTypeWithResponse(ctx context.Context, pType JobTypeName, body UpdateJobTypeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateJobTypeResponse, error) {
+	rsp, err := c.UpdateJobType(ctx, pType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRegisterWorkerResponse(rsp)
+	return ParseUpdateJobTypeResponse(rsp)
 }
 
-// CancelJobWithResponse Cancel job
+// CancelJobWithResponse Cancel one active job
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -14870,7 +15700,7 @@ func (c *ClientWithResponses) CancelJobWithResponse(ctx context.Context, uid str
 	return ParseCancelJobResponse(rsp)
 }
 
-// GetJobWithResponse Get job detail
+// GetJobWithResponse Get one worker job
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -14881,19 +15711,6 @@ func (c *ClientWithResponses) GetJobWithResponse(ctx context.Context, uid string
 		return nil, err
 	}
 	return ParseGetJobResponse(rsp)
-}
-
-// RetryJobWithResponse Retry job
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /jobs/{uid} (the `RetryJob` operationId).
-func (c *ClientWithResponses) RetryJobWithResponse(ctx context.Context, uid string, reqEditors ...RequestEditorFn) (*RetryJobResponse, error) {
-	rsp, err := c.RetryJob(ctx, uid, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRetryJobResponse(rsp)
 }
 
 // ListKeywordsWithResponse List all keywords
@@ -17956,6 +18773,60 @@ func ParseGetImageFileResponse(rsp *http.Response) (*GetImageFileResponse, error
 	return response, nil
 }
 
+// ParseCancelJobsResponse parses an HTTP response from a CancelJobsWithResponse call
+func ParseCancelJobsResponse(rsp *http.Response) (*CancelJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobCancelResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListJobsResponse parses an HTTP response from a ListJobsWithResponse call
 func ParseListJobsResponse(rsp *http.Response) (*ListJobsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -17971,11 +18842,32 @@ func ParseListJobsResponse(rsp *http.Response) (*ListJobsResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkerJobsResponse
+		var dest JobListResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse
@@ -18003,15 +18895,8 @@ func ParseCreateJobResponse(rsp *http.Response) (*CreateJobResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkerJobEnqueueResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest WorkerJobEnqueueResponse
+		var dest JobCreateResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -18023,6 +18908,222 @@ func ParseCreateJobResponse(rsp *http.Response) (*CreateJobResponse, error) {
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListJobRunsResponse parses an HTTP response from a ListJobRunsWithResponse call
+func ParseListJobRunsResponse(rsp *http.Response) (*ListJobRunsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListJobRunsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobRunsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCancelJobRunResponse parses an HTTP response from a CancelJobRunWithResponse call
+func ParseCancelJobRunResponse(rsp *http.Response) (*CancelJobRunResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelJobRunResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest MessageResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetJobRunResponse parses an HTTP response from a GetJobRunWithResponse call
+func ParseGetJobRunResponse(rsp *http.Response) (*GetJobRunResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetJobRunResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetJobsSnapshotResponse parses an HTTP response from a GetJobsSnapshotWithResponse call
+func ParseGetJobsSnapshotResponse(rsp *http.Response) (*GetJobsSnapshotResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetJobsSnapshotResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobSnapshotResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse
@@ -18051,33 +19152,7 @@ func ParseGetJobStatsResponse(rsp *http.Response) (*GetJobStatsResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkerJobStatsResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListAvailableWorkersResponse parses an HTTP response from a ListAvailableWorkersWithResponse call
-func ParseListAvailableWorkersResponse(rsp *http.Response) (*ListAvailableWorkersResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListAvailableWorkersResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkersListResponse
+		var dest JobStatsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -18090,31 +19165,92 @@ func ParseListAvailableWorkersResponse(rsp *http.Response) (*ListAvailableWorker
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
 	}
 
 	return response, nil
 }
 
-// ParseRegisterWorkerResponse parses an HTTP response from a RegisterWorkerWithResponse call
-func ParseRegisterWorkerResponse(rsp *http.Response) (*RegisterWorkerResponse, error) {
+// ParseListJobTypesResponse parses an HTTP response from a ListJobTypesWithResponse call
+func ParseListJobTypesResponse(rsp *http.Response) (*ListJobTypesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RegisterWorkerResponse{
+	response := &ListJobTypesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest WorkerInfo
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobTypeListResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON201 = &dest
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateJobTypeResponse parses an HTTP response from a UpdateJobTypeWithResponse call
+func ParseUpdateJobTypeResponse(rsp *http.Response) (*UpdateJobTypeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateJobTypeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobType
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest ErrorResponse
@@ -18122,6 +19258,27 @@ func ParseRegisterWorkerResponse(rsp *http.Response) (*RegisterWorkerResponse, e
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorResponse
@@ -18149,12 +19306,26 @@ func ParseCancelJobResponse(rsp *http.Response) (*CancelJobResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
 		var dest MessageResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorResponse
@@ -18162,6 +19333,13 @@ func ParseCancelJobResponse(rsp *http.Response) (*CancelJobResponse, error) {
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	}
 
@@ -18189,38 +19367,26 @@ func ParseGetJobResponse(rsp *http.Response) (*GetJobResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON404 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseRetryJobResponse parses an HTTP response from a RetryJobWithResponse call
-func ParseRetryJobResponse(rsp *http.Response) (*RetryJobResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RetryJobResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
-		var dest ErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON501 = &dest
 
 	}
 

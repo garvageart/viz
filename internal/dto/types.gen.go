@@ -192,6 +192,81 @@ func (e ImageUploadStatus) Valid() bool {
 	}
 }
 
+// Defines values for JobRunStatus.
+const (
+	JobRunStatusCancelled JobRunStatus = "cancelled"
+	JobRunStatusCompleted JobRunStatus = "completed"
+	JobRunStatusFailed    JobRunStatus = "failed"
+	JobRunStatusPending   JobRunStatus = "pending"
+	JobRunStatusRunning   JobRunStatus = "running"
+)
+
+// Valid indicates whether the value is a known member of the JobRunStatus enum.
+func (e JobRunStatus) Valid() bool {
+	switch e {
+	case JobRunStatusCancelled:
+		return true
+	case JobRunStatusCompleted:
+		return true
+	case JobRunStatusFailed:
+		return true
+	case JobRunStatusPending:
+		return true
+	case JobRunStatusRunning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for JobSource.
+const (
+	Manual   JobSource = "manual"
+	Schedule JobSource = "schedule"
+	System   JobSource = "system"
+	Update   JobSource = "update"
+	Upload   JobSource = "upload"
+)
+
+// Valid indicates whether the value is a known member of the JobSource enum.
+func (e JobSource) Valid() bool {
+	switch e {
+	case Manual:
+		return true
+	case Schedule:
+		return true
+	case System:
+		return true
+	case Update:
+		return true
+	case Upload:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for JobTypeName.
+const (
+	ExifProcess   JobTypeName = "ExifProcess"
+	ImageProcess  JobTypeName = "ImageProcess"
+	XmpGeneration JobTypeName = "XmpGeneration"
+)
+
+// Valid indicates whether the value is a known member of the JobTypeName enum.
+func (e JobTypeName) Valid() bool {
+	switch e {
+	case ExifProcess:
+		return true
+	case ImageProcess:
+		return true
+	case XmpGeneration:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Label.
 const (
 	Blue   Label = "Blue"
@@ -276,18 +351,33 @@ func (e UserRole) Valid() bool {
 	}
 }
 
-// Defines values for WorkerJobCreateRequestCommand.
+// Defines values for WorkerJobStatus.
 const (
-	All     WorkerJobCreateRequestCommand = "all"
-	Missing WorkerJobCreateRequestCommand = "missing"
+	WorkerJobStatusCancelRequested WorkerJobStatus = "cancel_requested"
+	WorkerJobStatusCancelled       WorkerJobStatus = "cancelled"
+	WorkerJobStatusCompleted       WorkerJobStatus = "completed"
+	WorkerJobStatusFailed          WorkerJobStatus = "failed"
+	WorkerJobStatusQueued          WorkerJobStatus = "queued"
+	WorkerJobStatusRunning         WorkerJobStatus = "running"
+	WorkerJobStatusSkipped         WorkerJobStatus = "skipped"
 )
 
-// Valid indicates whether the value is a known member of the WorkerJobCreateRequestCommand enum.
-func (e WorkerJobCreateRequestCommand) Valid() bool {
+// Valid indicates whether the value is a known member of the WorkerJobStatus enum.
+func (e WorkerJobStatus) Valid() bool {
 	switch e {
-	case All:
+	case WorkerJobStatusCancelRequested:
 		return true
-	case Missing:
+	case WorkerJobStatusCancelled:
+		return true
+	case WorkerJobStatusCompleted:
+		return true
+	case WorkerJobStatusFailed:
+		return true
+	case WorkerJobStatusQueued:
+		return true
+	case WorkerJobStatusRunning:
+		return true
+	case WorkerJobStatusSkipped:
 		return true
 	default:
 		return false
@@ -486,33 +576,6 @@ const (
 func (e GetImageFileParamsDownload) Valid() bool {
 	switch e {
 	case N1:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListJobsParamsStatus.
-const (
-	ListJobsParamsStatusCancelled ListJobsParamsStatus = "cancelled"
-	ListJobsParamsStatusCompleted ListJobsParamsStatus = "completed"
-	ListJobsParamsStatusFailed    ListJobsParamsStatus = "failed"
-	ListJobsParamsStatusQueued    ListJobsParamsStatus = "queued"
-	ListJobsParamsStatusRunning   ListJobsParamsStatus = "running"
-)
-
-// Valid indicates whether the value is a known member of the ListJobsParamsStatus enum.
-func (e ListJobsParamsStatus) Valid() bool {
-	switch e {
-	case ListJobsParamsStatusCancelled:
-		return true
-	case ListJobsParamsStatusCompleted:
-		return true
-	case ListJobsParamsStatusFailed:
-		return true
-	case ListJobsParamsStatusQueued:
-		return true
-	case ListJobsParamsStatusRunning:
 		return true
 	default:
 		return false
@@ -1396,6 +1459,171 @@ type ImagesResponse struct {
 	Image   ImageAsset `json:"image"`
 }
 
+// JobCancelResponse defines model for JobCancelResponse.
+type JobCancelResponse struct {
+	// Count Number of jobs for which cancellation was requested.
+	Count   int    `json:"count"`
+	Message string `json:"message"`
+}
+
+// JobCreateRequest defines model for JobCreateRequest.
+type JobCreateRequest struct {
+	// Data Required input data shape defined and validated by the target worker type.
+	Data map[string]interface{} `json:"data"`
+
+	// Type Unique TitleCase identifier for a registered job type.
+	Type JobTypeName `json:"type"`
+}
+
+// JobCreateResponse defines model for JobCreateResponse.
+type JobCreateResponse struct {
+	Message string `json:"message"`
+	Run     JobRun `json:"run"`
+}
+
+// JobError defines model for JobError.
+type JobError struct {
+	// Code Machine-readable error code. Known values: `unknown_job_type`, `invalid_data`, `dispatch_failed`, `publish_failed`, `worker_error`.
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	Retryable *bool  `json:"retryable,omitempty"`
+}
+
+// JobListResponse defines model for JobListResponse.
+type JobListResponse struct {
+	Items []WorkerJob `json:"items"`
+	Limit int         `json:"limit"`
+	Page  int         `json:"page"`
+	Total int         `json:"total"`
+}
+
+// JobRun defines model for JobRun.
+type JobRun struct {
+	CreatedAt time.Time `json:"created_at"`
+
+	// Data Input data supplied when creating the run.
+	Data         *map[string]interface{} `json:"data,omitempty"`
+	Error        *JobError               `json:"error,omitempty"`
+	FailedCount  *int                    `json:"failed_count,omitempty"`
+	FinishedAt   *time.Time              `json:"finished_at,omitempty"`
+	QueuedCount  *int                    `json:"queued_count,omitempty"`
+	SkippedCount *int                    `json:"skipped_count,omitempty"`
+	StartedAt    *time.Time              `json:"started_at,omitempty"`
+	Status       JobRunStatus            `json:"status"`
+	TargetCount  *int                    `json:"target_count,omitempty"`
+
+	// Type Unique TitleCase identifier for a registered job type.
+	Type JobTypeName `json:"type"`
+	Uid  string      `json:"uid"`
+}
+
+// JobRunStatus defines model for JobRunStatus.
+type JobRunStatus string
+
+// JobRunsResponse defines model for JobRunsResponse.
+type JobRunsResponse struct {
+	Items []JobRun `json:"items"`
+	Limit int      `json:"limit"`
+	Page  int      `json:"page"`
+	Total int      `json:"total"`
+}
+
+// JobSnapshotResponse defines model for JobSnapshotResponse.
+type JobSnapshotResponse struct {
+	Active          []WorkerJob      `json:"active"`
+	NextEventCursor uint64           `json:"next_event_cursor"`
+	Stats           JobStatsResponse `json:"stats"`
+}
+
+// JobSource What caused this job or run to be created.
+type JobSource string
+
+// JobStatsResponse defines model for JobStatsResponse.
+type JobStatsResponse struct {
+	ActiveRuns  int                        `json:"active_runs"`
+	GeneratedAt time.Time                  `json:"generated_at"`
+	Type        map[string]JobStatusCounts `json:"type"`
+}
+
+// JobStatusCounts defines model for JobStatusCounts.
+type JobStatusCounts struct {
+	Cancelled int `json:"cancelled"`
+	Completed int `json:"completed"`
+	Failed    int `json:"failed"`
+	Queued    int `json:"queued"`
+	Running   int `json:"running"`
+	Skipped   int `json:"skipped"`
+}
+
+// JobType defines model for JobType.
+type JobType struct {
+	// BatchSize Job creation and enqueue batch limit.
+	BatchSize   *int               `json:"batch_size,omitempty"`
+	Concurrency JobTypeConcurrency `json:"concurrency"`
+	Description string             `json:"description"`
+	DisplayName string             `json:"display_name"`
+
+	// Enabled Whether dispatch and processing are active for this job type.
+	Enabled bool `json:"enabled"`
+
+	// MaxRetries Default maximum automatic retry attempts.
+	MaxRetries     *int  `json:"max_retries,omitempty"`
+	SupportsCancel *bool `json:"supports_cancel,omitempty"`
+
+	// SupportsRetry Whether this worker supports automatic retries of transient failures.
+	SupportsRetry *bool `json:"supports_retry,omitempty"`
+
+	// TimeoutMs Per-job execution timeout in milliseconds.
+	TimeoutMs *int `json:"timeout_ms,omitempty"`
+
+	// Type Unique TitleCase identifier for a registered job type.
+	Type JobTypeName `json:"type"`
+}
+
+// JobTypeConcurrency defines model for JobTypeConcurrency.
+type JobTypeConcurrency struct {
+	// Current Active runtime worker concurrency.
+	Current int `json:"current"`
+
+	// Default System baseline concurrency initialized from the definition.
+	Default int `json:"default"`
+
+	// Max Maximum concurrency ceiling allowed for this job type.
+	Max int `json:"max"`
+}
+
+// JobTypeConfig Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. Also accepted as the body of PATCH /jobs/types/{type}; any `type` field in the body is ignored in favour of the path parameter.
+type JobTypeConfig struct {
+	// BatchSize Job creation and enqueue batch limit.
+	BatchSize int `json:"batch_size"`
+
+	// ConcurrencyCurrent Active runtime worker concurrency.
+	ConcurrencyCurrent int `json:"concurrency_current"`
+
+	// ConcurrencyMax Maximum concurrency ceiling for this job type.
+	ConcurrencyMax int `json:"concurrency_max"`
+
+	// Enabled Whether dispatch and processing are active for this job type.
+	Enabled bool `json:"enabled"`
+
+	// MaxRetries Default maximum automatic retry attempts.
+	MaxRetries int `json:"max_retries"`
+
+	// TimeoutMs Per-job execution timeout in milliseconds.
+	TimeoutMs int `json:"timeout_ms"`
+
+	// Type Unique TitleCase identifier for a registered job type.
+	Type JobTypeName `json:"type"`
+}
+
+// JobTypeListResponse defines model for JobTypeListResponse.
+type JobTypeListResponse struct {
+	Items []JobType `json:"items"`
+}
+
+// JobTypeName Unique TitleCase identifier for a registered job type.
+type JobTypeName string
+
 // Keyword defines model for Keyword.
 type Keyword struct {
 	// Colour Hex color code for the keyword
@@ -2081,119 +2309,33 @@ type WSStatsResponse struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// WorkerInfo defines model for WorkerInfo.
-type WorkerInfo struct {
-	// Concurrency Number of concurrent jobs for this worker
-	Concurrency int `json:"concurrency"`
-
-	// Count Number of active worker jobs with this name/topic
-	Count *int `json:"count,omitempty"`
-
-	// DisplayName Human-readable worker name
-	DisplayName string `json:"display_name"`
-
-	// Name Job topic/worker name (e.g., exif_process, image_process)
-	Name string `json:"name"`
-}
-
 // WorkerJob defines model for WorkerJob.
 type WorkerJob struct {
-	// Command Job command
-	Command *string `json:"command,omitempty"`
-
-	// CompletedAt Completed timestamp
+	// Attempts Number of attempts including the current one.
+	Attempts    *int       `json:"attempts,omitempty"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
 
-	// EnqueuedAt Enqueued timestamp
-	EnqueuedAt time.Time `json:"enqueued_at"`
+	// Data Worker task execution payload.
+	Data        *map[string]interface{} `json:"data,omitempty"`
+	Error       *JobError               `json:"error,omitempty"`
+	MaxAttempts *int                    `json:"max_attempts,omitempty"`
 
-	// ErrorCode Error code if failed
-	ErrorCode *string `json:"error_code,omitempty"`
+	// RunUid Manual run that created this job, when applicable.
+	RunUid *string `json:"run_uid,omitempty"`
 
-	// ErrorMsg Error message if failed
-	ErrorMsg *string `json:"error_msg,omitempty"`
+	// Source What caused this job or run to be created.
+	Source    JobSource       `json:"source"`
+	StartedAt *time.Time      `json:"started_at,omitempty"`
+	Status    WorkerJobStatus `json:"status"`
 
-	// ImageUid Related image UID
-	ImageUid *string `json:"image_uid,omitempty"`
-
-	// Payload Job payload
-	Payload *string `json:"payload,omitempty"`
-
-	// StartedAt Started timestamp
-	StartedAt *time.Time `json:"started_at,omitempty"`
-
-	// Status Job status
-	Status string `json:"status"`
-
-	// Topic Job topic
-	Topic string `json:"topic"`
-
-	// Type Job type
-	Type string `json:"type"`
-
-	// Uid Job UID
-	Uid string `json:"uid"`
+	// Type Unique TitleCase identifier for a registered job type.
+	Type JobTypeName `json:"type"`
+	Uid  string      `json:"uid"`
 }
 
-// WorkerJobCreateRequest defines model for WorkerJobCreateRequest.
-type WorkerJobCreateRequest struct {
-	// Command Command to execute (all=process all, missing=process missing)
-	Command WorkerJobCreateRequestCommand `json:"command"`
-
-	// Type Job topic (e.g., exif_process, image_process)
-	Type string `json:"type"`
-
-	// Uids Image UIDs to process (optional, if omitted all images are considered)
-	Uids *[]string `json:"uids,omitempty"`
-}
-
-// WorkerJobCreateRequestCommand Command to execute (all=process all, missing=process missing)
-type WorkerJobCreateRequestCommand string
-
-// WorkerJobEnqueueResponse defines model for WorkerJobEnqueueResponse.
-type WorkerJobEnqueueResponse struct {
-	// Count Count of enqueued jobs
-	Count *int `json:"count,omitempty"`
-
-	// Message Response message
-	Message string `json:"message"`
-}
-
-// WorkerJobStatsResponse defines model for WorkerJobStatsResponse.
-type WorkerJobStatsResponse struct {
-	// QueuedByTopic Queued jobs by topic
-	QueuedByTopic map[string]int `json:"queued_by_topic"`
-
-	// Running Total running jobs
-	Running int `json:"running"`
-
-	// RunningByTopic Running jobs by topic
-	RunningByTopic map[string]int `json:"running_by_topic"`
-}
-
-// WorkerJobsResponse defines model for WorkerJobsResponse.
-type WorkerJobsResponse struct {
-	// Items List of jobs
-	Items []WorkerJob `json:"items"`
-
-	// Total Total count of jobs
-	Total int `json:"total"`
-}
-
-// WorkerRegisterRequest defines model for WorkerRegisterRequest.
-type WorkerRegisterRequest struct {
-	// Concurrency Number of concurrent jobs for this worker
-	Concurrency *int `json:"concurrency,omitempty"`
-
-	// Name Job topic/worker name (e.g., exif_process, image_process)
-	Name string `json:"name"`
-}
-
-// WorkersListResponse defines model for WorkersListResponse.
-type WorkersListResponse struct {
-	// Items List of workers
-	Items []WorkerInfo `json:"items"`
-}
+// WorkerJobStatus defines model for WorkerJobStatus.
+type WorkerJobStatus string
 
 // ResetUserSettingParams defines parameters for ResetUserSetting.
 type ResetUserSettingParams struct {
@@ -2430,13 +2572,25 @@ type GetImageFileParams struct {
 // GetImageFileParamsDownload defines parameters for GetImageFile.
 type GetImageFileParamsDownload string
 
+// CancelJobsParams defines parameters for CancelJobs.
+type CancelJobsParams struct {
+	// Type Job type whose active jobs are cancelled
+	Type JobTypeName `form:"type" json:"type"`
+
+	// Status Comma-separated statuses to cancel
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+}
+
 // ListJobsParams defines parameters for ListJobs.
 type ListJobsParams struct {
-	// Status Filter by job status
-	Status *ListJobsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	// Type Filter by job type
+	Type *JobTypeName `form:"type,omitempty" json:"type,omitempty"`
 
-	// Topic Filter by job topic
-	Topic *string `form:"topic,omitempty" json:"topic,omitempty"`
+	// Status Filter by job status
+	Status *WorkerJobStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// RunUid Filter by trigger run
+	RunUid *string `form:"run_uid,omitempty" json:"run_uid,omitempty"`
 
 	// Limit Number of jobs per page
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -2445,8 +2599,20 @@ type ListJobsParams struct {
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
 }
 
-// ListJobsParamsStatus defines parameters for ListJobs.
-type ListJobsParamsStatus string
+// ListJobRunsParams defines parameters for ListJobRuns.
+type ListJobRunsParams struct {
+	// Type Filter by job type
+	Type *JobTypeName `form:"type,omitempty" json:"type,omitempty"`
+
+	// Status Filter by run status
+	Status *JobRunStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// Limit Number of runs per page
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Page Page index (0-based)
+	Page *int `form:"page,omitempty" json:"page,omitempty"`
+}
 
 // ExecuteSearchParams defines parameters for ExecuteSearch.
 type ExecuteSearchParams struct {
@@ -2557,10 +2723,10 @@ type UploadImageByUrlTextRequestBody = UploadImageByUrlTextBody
 type UpdateImageJSONRequestBody = ImageUpdate
 
 // CreateJobJSONRequestBody defines body for CreateJob for application/json ContentType.
-type CreateJobJSONRequestBody = WorkerJobCreateRequest
+type CreateJobJSONRequestBody = JobCreateRequest
 
-// RegisterWorkerJSONRequestBody defines body for RegisterWorker for application/json ContentType.
-type RegisterWorkerJSONRequestBody = WorkerRegisterRequest
+// UpdateJobTypeJSONRequestBody defines body for UpdateJobType for application/json ContentType.
+type UpdateJobTypeJSONRequestBody = JobTypeConfig
 
 // CreateKeywordJSONRequestBody defines body for CreateKeyword for application/json ContentType.
 type CreateKeywordJSONRequestBody = KeywordCreate

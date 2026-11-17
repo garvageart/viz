@@ -63,7 +63,7 @@ func TestGenerateXMPSidecar(t *testing.T) {
 		},
 	}
 
-	if err := generateXMPSidecar(img, nil); err != nil {
+	if err := generateXMPSidecar(img); err != nil {
 		t.Fatalf("generateXMPSidecar: %v", err)
 	}
 
