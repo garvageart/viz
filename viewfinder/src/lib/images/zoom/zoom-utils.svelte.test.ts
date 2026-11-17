@@ -294,7 +294,7 @@ describe("calculateZoomTo", () => {
         expect(result.posY).toBe(-100);
     });
 
-    it("clamps minimum zoom to 0.1", () => {
+    it("clamps minimum zoom to 0.4", () => {
         const result = calculateZoomTo({
             value: 0.2,
             posX: 0,
@@ -307,7 +307,7 @@ describe("calculateZoomTo", () => {
             image
         });
 
-        expect(result.value).toBe(0.1);
+        expect(result.value).toBe(0.4);
         expect(result.posX).toBe(0);
         expect(result.posY).toBe(0);
     });
