@@ -344,7 +344,7 @@
         lightboxManager.open(
             ImageLightbox,
             {
-                lightboxImage: asset,
+                image: asset,
                 images: getDisplayArray()
             },
             {

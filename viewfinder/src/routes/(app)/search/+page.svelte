@@ -254,16 +254,10 @@
             return;
         }
 
-        const openItem = lightboxManager.find(ImageLightbox);
-        if (openItem) {
-            openItem.props.lightboxImage = target;
-            return;
-        }
-
         lightboxManager.open(
             ImageLightbox,
             {
-                lightboxImage: target,
+                image: target,
                 images: allImagesFlat,
                 onImageUpdated: (image) => {
                     images = images.map((i) => {
