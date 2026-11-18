@@ -55,16 +55,16 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 			return
 		}
 
-		run, err := service.Dispatch(req.Context(), body.Type, body.Data)
+		jobs_created, err := service.CreateJob(req.Context(), body.Type, body.Data)
 		if err != nil {
 			renderJobError(res, req, err)
 			return
 		}
 
-		render.Status(req, http.StatusAccepted)
+		render.Status(req, http.StatusCreated)
 		render.JSON(res, req, dto.JobCreateResponse{
-			Message: "Job run accepted",
-			Run:     run.DTO(),
+			Message: "Job created",
+			Jobs:    jobDTOs(jobs_created),
 		})
 	})
 
@@ -76,9 +76,8 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		}
 
 		filter := jobs.JobListFilter{
-			Limit:  limit,
-			Page:   page,
-			RunUID: req.URL.Query().Get("run_uid"),
+			Limit: limit,
+			Page:  page,
 		}
 
 		if raw := req.URL.Query().Get("type"); raw != "" {
@@ -143,68 +142,6 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		})
 	})
 
-	router.With(scope(auth.JobsReadScope)).Get("/runs", func(res http.ResponseWriter, req *http.Request) {
-		limit, page, err := parsePagination(req)
-		if err != nil {
-			renderBadRequest(res, req, err.Error())
-			return
-		}
-
-		filter := jobs.RunListFilter{
-			Limit: limit,
-			Page:  page,
-		}
-
-		if raw := req.URL.Query().Get("type"); raw != "" {
-			filter.Type, err = parseJobType(raw)
-			if err != nil {
-				renderBadRequest(res, req, err.Error())
-				return
-			}
-		}
-
-		if raw := req.URL.Query().Get("status"); raw != "" {
-			filter.Status, err = parseRunStatus(raw)
-			if err != nil {
-				renderBadRequest(res, req, err.Error())
-				return
-			}
-		}
-
-		items, total, err := service.ListRuns(req.Context(), filter)
-		if err != nil {
-			renderJobError(res, req, err)
-			return
-		}
-
-		render.JSON(res, req, dto.JobRunsResponse{
-			Items: runDTOs(items),
-			Limit: limit,
-			Page:  page,
-			Total: int(total),
-		})
-	})
-
-	router.With(scope(auth.JobsReadScope)).Get("/runs/{uid}", func(res http.ResponseWriter, req *http.Request) {
-		run, err := service.GetRun(req.Context(), chi.URLParam(req, "uid"))
-		if err != nil {
-			renderJobError(res, req, err)
-			return
-		}
-
-		render.JSON(res, req, run.DTO())
-	})
-
-	router.With(scope(auth.JobsDeleteScope)).Delete("/runs/{uid}", func(res http.ResponseWriter, req *http.Request) {
-		if err := service.CancelRun(req.Context(), chi.URLParam(req, "uid")); err != nil {
-			renderJobError(res, req, err)
-			return
-		}
-
-		render.Status(req, http.StatusAccepted)
-		render.JSON(res, req, dto.MessageResponse{Message: "Run cancellation requested"})
-	})
-
 	router.With(scope(auth.JobsReadScope)).Get("/stats", func(res http.ResponseWriter, req *http.Request) {
 		stats, err := service.Stats(req.Context())
 		if err != nil {
@@ -213,16 +150,6 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		}
 
 		render.JSON(res, req, stats)
-	})
-
-	router.With(scope(auth.JobsReadScope)).Get("/snapshot", func(res http.ResponseWriter, req *http.Request) {
-		snapshot, err := service.Snapshot(req.Context())
-		if err != nil {
-			renderJobError(res, req, err)
-			return
-		}
-
-		render.JSON(res, req, snapshot)
 	})
 
 	router.With(scope(auth.JobsReadScope)).Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
@@ -261,15 +188,6 @@ func jobDTOs(items []entities.WorkerJob) []dto.WorkerJob {
 	return result
 }
 
-func runDTOs(items []entities.JobRun) []dto.JobRun {
-	result := make([]dto.JobRun, 0, len(items))
-	for _, item := range items {
-		result = append(result, item.DTO())
-	}
-
-	return result
-}
-
 func parseJobType(raw string) (dto.JobTypeName, error) {
 	jobType := dto.JobTypeName(raw)
 	if jobType == "" || !jobType.Valid() {
@@ -283,15 +201,6 @@ func parseJobStatus(raw string) (dto.WorkerJobStatus, error) {
 	status := dto.WorkerJobStatus(raw)
 	if status == "" || !status.Valid() {
 		return "", errors.New("invalid job status")
-	}
-
-	return status, nil
-}
-
-func parseRunStatus(raw string) (dto.JobRunStatus, error) {
-	status := dto.JobRunStatus(raw)
-	if status == "" || !status.Valid() {
-		return "", errors.New("invalid run status")
 	}
 
 	return status, nil

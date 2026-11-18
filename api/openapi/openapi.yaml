@@ -3000,7 +3000,7 @@ paths:
 
     /jobs:
         post:
-            summary: Trigger a job run
+            summary: Create a job
             operationId: createJob
             security:
                 - BearerAuth: [jobs:create]
@@ -3012,8 +3012,8 @@ paths:
                         schema:
                             $ref: "#/components/schemas/JobCreateRequest"
             responses:
-                "202":
-                    description: Run accepted
+                "201":
+                    description: Job created
                     content:
                         application/json:
                             schema:
@@ -3059,11 +3059,6 @@ paths:
                   schema:
                       $ref: "#/components/schemas/WorkerJobStatus"
                   description: Filter by job status
-                - in: query
-                  name: run_uid
-                  schema:
-                      type: string
-                  description: Filter by trigger run
                 - in: query
                   name: limit
                   schema:
@@ -3159,152 +3154,6 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
 
-    /jobs/runs:
-        get:
-            summary: List manual trigger runs
-            operationId: listJobRuns
-            security:
-                - BearerAuth: [jobs:read]
-                - CookieAuth: []
-            parameters:
-                - in: query
-                  name: type
-                  schema:
-                      $ref: "#/components/schemas/JobTypeName"
-                  description: Filter by job type
-                - in: query
-                  name: status
-                  schema:
-                      $ref: "#/components/schemas/JobRunStatus"
-                  description: Filter by run status
-                - in: query
-                  name: limit
-                  schema:
-                      type: integer
-                      default: 25
-                      maximum: 200
-                  description: Number of runs per page
-                - in: query
-                  name: page
-                  schema:
-                      type: integer
-                      default: 0
-                      minimum: 0
-                  description: Page index (0-based)
-            responses:
-                "200":
-                    description: Runs list
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/JobRunsResponse"
-                "400":
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "500":
-                    description: Server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-
-    /jobs/runs/{uid}:
-        get:
-            summary: Get a trigger run
-            operationId: getJobRun
-            security:
-                - BearerAuth: [jobs:read]
-                - CookieAuth: []
-            parameters:
-                - in: path
-                  name: uid
-                  required: true
-                  schema:
-                      type: string
-            responses:
-                "200":
-                    description: Run detail
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/JobRun"
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "404":
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-        delete:
-            summary: Cancel a run and its non-terminal jobs
-            operationId: cancelJobRun
-            security:
-                - BearerAuth: [jobs:delete]
-                - CookieAuth: []
-            parameters:
-                - in: path
-                  name: uid
-                  required: true
-                  schema:
-                      type: string
-            responses:
-                "202":
-                    description: Cancellation requested
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/MessageResponse"
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "404":
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "409":
-                    description: Run is terminal
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-
     /jobs/stats:
         get:
             summary: Get job counts by type and status
@@ -3319,39 +3168,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/JobStatsResponse"
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "403":
-                    description: Forbidden
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                "500":
-                    description: Server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-
-    /jobs/snapshot:
-        get:
-            summary: Bootstrap payload for the jobs UI
-            operationId: getJobsSnapshot
-            security:
-                - BearerAuth: [jobs:read]
-                - CookieAuth: []
-            responses:
-                "200":
-                    description: Jobs snapshot
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/JobSnapshotResponse"
                 "401":
                     description: Unauthorized
                     content:
@@ -4172,10 +3988,6 @@ components:
             type: string
             enum: [queued, running, cancel_requested, completed, failed, cancelled, skipped]
 
-        JobRunStatus:
-            type: string
-            enum: [pending, running, completed, failed, cancelled]
-
         JobCreateRequest:
             type: object
             properties:
@@ -4192,9 +4004,11 @@ components:
             properties:
                 message:
                     type: string
-                run:
-                    $ref: "#/components/schemas/JobRun"
-            required: [message, run]
+                jobs:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/WorkerJob"
+            required: [message, jobs]
 
         JobCancelResponse:
             type: object
@@ -4219,63 +4033,6 @@ components:
                     type: boolean
             required: [code, message]
 
-        JobRun:
-            x-entity: true
-            x-go-gorm-index:
-                - name: idx_job_runs_type_status
-                  fields: [type, status]
-            type: object
-            properties:
-                uid:
-                    type: string
-                type:
-                    $ref: "#/components/schemas/JobTypeName"
-                status:
-                    $ref: "#/components/schemas/JobRunStatus"
-                data:
-                    type: object
-                    additionalProperties: true
-                    nullable: true
-                    description: Input data supplied when creating the run.
-                error:
-                    $ref: "#/components/schemas/JobError"
-                    nullable: true
-                target_count:
-                    type: integer
-                queued_count:
-                    type: integer
-                skipped_count:
-                    type: integer
-                failed_count:
-                    type: integer
-                created_at:
-                    type: string
-                    format: date-time
-                started_at:
-                    type: string
-                    format: date-time
-                    nullable: true
-                finished_at:
-                    type: string
-                    format: date-time
-                    nullable: true
-            required: [uid, type, status, created_at]
-
-        JobRunsResponse:
-            type: object
-            properties:
-                items:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/JobRun"
-                total:
-                    type: integer
-                page:
-                    type: integer
-                limit:
-                    type: integer
-            required: [items, total, page, limit]
-
         WorkerJob:
             x-entity: true
             x-go-gorm-index:
@@ -4287,10 +4044,6 @@ components:
             properties:
                 uid:
                     type: string
-                run_uid:
-                    type: string
-                    nullable: true
-                    description: Manual run that created this job, when applicable.
                 type:
                     $ref: "#/components/schemas/JobTypeName"
                 status:
@@ -4453,26 +4206,21 @@ components:
                     type: object
                     additionalProperties:
                         $ref: "#/components/schemas/JobStatusCounts"
-                active_runs:
-                    type: integer
+                live:
+                    type: object
+                    additionalProperties:
+                        $ref: "#/components/schemas/LiveJobCounts"
                 generated_at:
                     type: string
                     format: date-time
-            required: [type, active_runs, generated_at]
+            required: [type, live, generated_at]
 
-        JobSnapshotResponse:
+        LiveJobCounts:
             type: object
             properties:
-                active:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/WorkerJob"
-                stats:
-                    $ref: "#/components/schemas/JobStatsResponse"
-                next_event_cursor:
-                    type: integer
-                    format: uint64
-            required: [active, stats, next_event_cursor]
+                running: { type: integer }
+                queued: { type: integer }
+            required: [running, queued]
 
         # WebSocket-related schemas
         WSStatsResponse:

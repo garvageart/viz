@@ -192,33 +192,6 @@ func (e ImageUploadStatus) Valid() bool {
 	}
 }
 
-// Defines values for JobRunStatus.
-const (
-	JobRunStatusCancelled JobRunStatus = "cancelled"
-	JobRunStatusCompleted JobRunStatus = "completed"
-	JobRunStatusFailed    JobRunStatus = "failed"
-	JobRunStatusPending   JobRunStatus = "pending"
-	JobRunStatusRunning   JobRunStatus = "running"
-)
-
-// Valid indicates whether the value is a known member of the JobRunStatus enum.
-func (e JobRunStatus) Valid() bool {
-	switch e {
-	case JobRunStatusCancelled:
-		return true
-	case JobRunStatusCompleted:
-		return true
-	case JobRunStatusFailed:
-		return true
-	case JobRunStatusPending:
-		return true
-	case JobRunStatusRunning:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for JobSource.
 const (
 	Manual   JobSource = "manual"
@@ -1477,8 +1450,8 @@ type JobCreateRequest struct {
 
 // JobCreateResponse defines model for JobCreateResponse.
 type JobCreateResponse struct {
-	Message string `json:"message"`
-	Run     JobRun `json:"run"`
+	Jobs    []WorkerJob `json:"jobs"`
+	Message string      `json:"message"`
 }
 
 // JobError defines model for JobError.
@@ -1497,51 +1470,13 @@ type JobListResponse struct {
 	Total int         `json:"total"`
 }
 
-// JobRun defines model for JobRun.
-type JobRun struct {
-	CreatedAt time.Time `json:"created_at"`
-
-	// Data Input data supplied when creating the run.
-	Data         *map[string]interface{} `json:"data,omitempty"`
-	Error        *JobError               `json:"error,omitempty"`
-	FailedCount  *int                    `json:"failed_count,omitempty"`
-	FinishedAt   *time.Time              `json:"finished_at,omitempty"`
-	QueuedCount  *int                    `json:"queued_count,omitempty"`
-	SkippedCount *int                    `json:"skipped_count,omitempty"`
-	StartedAt    *time.Time              `json:"started_at,omitempty"`
-	Status       JobRunStatus            `json:"status"`
-	TargetCount  *int                    `json:"target_count,omitempty"`
-
-	// Type Unique TitleCase identifier for a registered job type.
-	Type JobTypeName `json:"type"`
-	Uid  string      `json:"uid"`
-}
-
-// JobRunStatus defines model for JobRunStatus.
-type JobRunStatus string
-
-// JobRunsResponse defines model for JobRunsResponse.
-type JobRunsResponse struct {
-	Items []JobRun `json:"items"`
-	Limit int      `json:"limit"`
-	Page  int      `json:"page"`
-	Total int      `json:"total"`
-}
-
-// JobSnapshotResponse defines model for JobSnapshotResponse.
-type JobSnapshotResponse struct {
-	Active          []WorkerJob      `json:"active"`
-	NextEventCursor uint64           `json:"next_event_cursor"`
-	Stats           JobStatsResponse `json:"stats"`
-}
-
 // JobSource What caused this job or run to be created.
 type JobSource string
 
 // JobStatsResponse defines model for JobStatsResponse.
 type JobStatsResponse struct {
-	ActiveRuns  int                        `json:"active_runs"`
 	GeneratedAt time.Time                  `json:"generated_at"`
+	Live        map[string]LiveJobCounts   `json:"live"`
 	Type        map[string]JobStatusCounts `json:"type"`
 }
 
@@ -1718,6 +1653,12 @@ type LibvipsConfig struct {
 
 	// VectorEnabled Vector enabled
 	VectorEnabled bool `json:"vector_enabled"`
+}
+
+// LiveJobCounts defines model for LiveJobCounts.
+type LiveJobCounts struct {
+	Queued  int `json:"queued"`
+	Running int `json:"running"`
 }
 
 // LoggingConfig defines model for LoggingConfig.
@@ -2321,9 +2262,6 @@ type WorkerJob struct {
 	Error       *JobError               `json:"error,omitempty"`
 	MaxAttempts *int                    `json:"max_attempts,omitempty"`
 
-	// RunUid Manual run that created this job, when applicable.
-	RunUid *string `json:"run_uid,omitempty"`
-
 	// Source What caused this job or run to be created.
 	Source    JobSource       `json:"source"`
 	StartedAt *time.Time      `json:"started_at,omitempty"`
@@ -2589,25 +2527,7 @@ type ListJobsParams struct {
 	// Status Filter by job status
 	Status *WorkerJobStatus `form:"status,omitempty" json:"status,omitempty"`
 
-	// RunUid Filter by trigger run
-	RunUid *string `form:"run_uid,omitempty" json:"run_uid,omitempty"`
-
 	// Limit Number of jobs per page
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
-
-	// Page Page index (0-based)
-	Page *int `form:"page,omitempty" json:"page,omitempty"`
-}
-
-// ListJobRunsParams defines parameters for ListJobRuns.
-type ListJobRunsParams struct {
-	// Type Filter by job type
-	Type *JobTypeName `form:"type,omitempty" json:"type,omitempty"`
-
-	// Status Filter by run status
-	Status *JobRunStatus `form:"status,omitempty" json:"status,omitempty"`
-
-	// Limit Number of runs per page
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Page Page index (0-based)

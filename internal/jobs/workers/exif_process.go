@@ -324,31 +324,5 @@ func ExifProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Definit
 
 			return nil
 		},
-		CreateJobs: func(ctx context.Context, db *gorm.DB, raw json.RawMessage, runUID string) (jobs.JobCreationResult, error) {
-			var input ExifProcessPayload
-			if err := json.Unmarshal(raw, &input); err != nil {
-				return jobs.JobCreationResult{}, fmt.Errorf("decode exif process payload: %w", err)
-			}
-
-			if input.Image.Uid == "" {
-				return jobs.JobCreationResult{}, fmt.Errorf("image uid is required")
-			}
-
-			var runUIDPtr *string
-			if runUID != "" {
-				runUIDPtr = &runUID
-			}
-
-			_, err := jobs.Enqueue(db, dto.ExifProcess, &input, jobs.EnqueueOptions{
-				RunUID:      runUIDPtr,
-				Data:        raw,
-				MaxAttempts: 4,
-			})
-			if err != nil {
-				return jobs.JobCreationResult{}, err
-			}
-
-			return jobs.JobCreationResult{TargetCount: 1, QueuedCount: 1}, nil
-		},
 	}
 }

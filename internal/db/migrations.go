@@ -223,7 +223,7 @@ func MigrateLegacyWorkerJobs(tx *gorm.DB, logger *slog.Logger) error {
 	// created_at it is the correct value: the moment the job was enqueued is
 	// the job's creation time. The original created_at (row insert time) is
 	// superseded intentionally. Must run before enqueued_at is dropped.
-	// 
+	//
 	// This code reads terribly. Don't mind it pls.
 	if err := runBackfillBatch("enqueued_at to created_at",
 		`enqueued_at IS NOT NULL AND created_at IS DISTINCT FROM enqueued_at`,

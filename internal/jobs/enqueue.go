@@ -71,7 +71,6 @@ func Enqueue(db *gorm.DB, jobType dto.JobTypeName, payload Payload, opts Enqueue
 		Type:        jobType,
 		Status:      dto.WorkerJobStatusQueued,
 		Source:      source,
-		RunUid:      opts.RunUID,
 		Data:        data,
 		Attempts:    &attempts,
 		MaxAttempts: &maxAttempts,
@@ -158,16 +157,6 @@ func IsTerminalJobStatus(status dto.WorkerJobStatus) bool {
 	switch status {
 	case dto.WorkerJobStatusCompleted, dto.WorkerJobStatusFailed,
 		dto.WorkerJobStatusCancelled, dto.WorkerJobStatusSkipped:
-		return true
-	default:
-		return false
-	}
-}
-
-// IsTerminalRunStatus reports whether a run can no longer be cancelled.
-func IsTerminalRunStatus(status dto.JobRunStatus) bool {
-	switch status {
-	case dto.JobRunStatusCompleted, dto.JobRunStatusFailed, dto.JobRunStatusCancelled:
 		return true
 	default:
 		return false

@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"maps"
 	"sync"
 	"time"
 
@@ -27,12 +26,19 @@ import (
 // status values come from the generated DTO enum.
 type JobStatus = dto.WorkerJobStatus
 
-var (
-	allJobs        = make(map[string]*Job)
-	allJobsMu      sync.RWMutex
-	queuedCounts   = make(map[string]int)
-	queuedCountsMu sync.RWMutex
-)
+// liveState combines the in-process realtime job state into one value,
+// guarded by a single mutex. The two maps always describe the same world:
+// running jobs (allJobs) and publish-counted queued jobs (queued).
+type liveState struct {
+	mu      sync.RWMutex
+	allJobs map[string]*Job
+	queued  map[string]int
+}
+
+var liveJobs = liveState{
+	allJobs: make(map[string]*Job),
+	queued:  make(map[string]int),
+}
 
 var (
 	Publisher  message.Publisher
@@ -41,66 +47,17 @@ var (
 	Logger     watermill.LoggerAdapter
 )
 
-// GetRunningJobs returns the current number of running jobs.
-func GetRunningJobs() int {
-	allJobsMu.RLock()
-	defer allJobsMu.RUnlock()
-	return len(allJobs)
-}
-
-func GetAllJobs() map[string]*Job {
-	// Return a shallow copy to avoid callers mutating the internal map and
-	// to prevent races when iterating without a lock.
-	allJobsMu.RLock()
-	defer allJobsMu.RUnlock()
-	copy := make(map[string]*Job, len(allJobs))
-	maps.Copy(copy, allJobs)
-	return copy
-}
-
 // Publish is a wrapper around Publisher.Publish which tracks queued counts per topic.
 func Publish(topic string, msg *message.Message) error {
 	if Publisher == nil {
 		return fmt.Errorf("publisher not initialized")
 	}
 
-	queuedCountsMu.Lock()
-	queuedCounts[topic] = queuedCounts[topic] + 1
-	queuedCountsMu.Unlock()
+	liveJobs.mu.Lock()
+	liveJobs.queued[topic] = liveJobs.queued[topic] + 1
+	liveJobs.mu.Unlock()
 
 	return Publisher.Publish(topic, msg)
-}
-
-// JobCounts describes running and queued counts by topic.
-type JobCounts struct {
-	Running        int64          `json:"running"`
-	RunningByTopic map[string]int `json:"running_by_topic"`
-	QueuedByTopic  map[string]int `json:"queued_by_topic"`
-}
-
-// GetCounts returns a snapshot of running and queued counts.
-func GetCounts() JobCounts {
-	jc := JobCounts{
-		RunningByTopic: make(map[string]int),
-		QueuedByTopic:  make(map[string]int),
-	}
-
-	// running
-	allJobsMu.RLock()
-	for _, j := range allJobs {
-		jc.RunningByTopic[j.Topic()]++
-	}
-	jc.Running = int64(len(allJobs))
-	allJobsMu.RUnlock()
-
-	// queued
-	queuedCountsMu.RLock()
-	for k, v := range queuedCounts {
-		jc.QueuedByTopic[k] = v
-	}
-	queuedCountsMu.RUnlock()
-
-	return jc
 }
 
 // RegisterWorkers registers every worker definition with the router.
@@ -145,29 +102,27 @@ func RegisterWorkers(db *gorm.DB, defs ...Definition) {
 					job.ID = watermill.NewUUID()
 				}
 
-				// Transition from queued -> running: decrement queued count for topic.
-				queuedCountsMu.Lock()
-				// When count reaches zero, the entry is deleted from the map
-				// instead of leaving zero-value entries
-				if v, ok := queuedCounts[topic]; ok && v > 0 {
+				// Transition from queued -> running: decrement queued count
+				// for the topic, then register the running job. One lock for
+				// both maps so the counter pair stays consistent. When a count
+				// reaches zero the entry is deleted instead of leaving
+				// zero-value entries.
+				liveJobs.mu.Lock()
+				if v, ok := liveJobs.queued[topic]; ok && v > 0 {
 					if v == 1 {
-						delete(queuedCounts, topic)
+						delete(liveJobs.queued, topic)
 					} else {
-						queuedCounts[topic] = v - 1
+						liveJobs.queued[topic] = v - 1
 					}
 				}
-				queuedCountsMu.Unlock()
-
-				// Register running job in a thread-safe way.
-				allJobsMu.Lock()
-				allJobs[job.ID] = job
-				allJobsMu.Unlock()
+				liveJobs.allJobs[job.ID] = job
+				liveJobs.mu.Unlock()
 
 				defer func() {
 					job.SetStatus(JobStatusSuccess)
-					allJobsMu.Lock()
-					delete(allJobs, job.ID)
-					allJobsMu.Unlock()
+					liveJobs.mu.Lock()
+					delete(liveJobs.allJobs, job.ID)
+					liveJobs.mu.Unlock()
 				}()
 
 				return handler(msg)

@@ -1,7 +1,6 @@
 package workers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -145,32 +144,6 @@ func XMPGenerationDefinition(db *gorm.DB, ws *libhttp.WSBroker) jobs.Definition 
 			_ = jobs.SetJobCompleted(db, msg.UUID, completedAt)
 
 			return nil
-		},
-		CreateJobs: func(ctx context.Context, db *gorm.DB, raw json.RawMessage, runUID string) (jobs.JobCreationResult, error) {
-			var input XMPGenerationPayload
-			if err := json.Unmarshal(raw, &input); err != nil {
-				return jobs.JobCreationResult{}, fmt.Errorf("decode xmp generation payload: %w", err)
-			}
-
-			if input.Image.Uid == "" {
-				return jobs.JobCreationResult{}, fmt.Errorf("image uid is required")
-			}
-
-			var runUIDPtr *string
-			if runUID != "" {
-				runUIDPtr = &runUID
-			}
-
-			_, err := jobs.Enqueue(db, dto.XmpGeneration, &input, jobs.EnqueueOptions{
-				RunUID:      runUIDPtr,
-				Data:        raw,
-				MaxAttempts: 4,
-			})
-			if err != nil {
-				return jobs.JobCreationResult{}, err
-			}
-
-			return jobs.JobCreationResult{TargetCount: 1, QueuedCount: 1}, nil
 		},
 	}
 }

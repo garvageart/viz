@@ -6,7 +6,6 @@ import {
     type ImageAsset,
     type ImagePaths,
     type ImageUploadResponse,
-    type WorkerJob,
     defaults
 } from "./client.gen";
 
@@ -181,25 +180,6 @@ export function getAssetImagePath(
         params.set("v", checksum);
     }
     return `${pathname}?${params.toString()}`;
-}
-
-export type JobSnapshotResponse = {
-    running_by_topic: Record<string, number>;
-    queued_by_topic: Record<string, number>;
-    active: WorkerJob[];
-};
-
-export async function getJobsSnapshot(): Promise<{
-    data: JobSnapshotResponse;
-    status: number;
-}> {
-    const base = defaults.baseUrl || "";
-    // TODO: Document in OpenAPI yaml
-    const res = await fetch(`${base}/jobs/snapshot`, {
-        credentials: "include"
-    });
-    const data = await res.json().catch(() => ({}));
-    return { data, status: res.status };
 }
 
 /**

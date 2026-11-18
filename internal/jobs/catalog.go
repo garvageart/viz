@@ -35,10 +35,6 @@ func NewCatalog(defs ...Definition) (*Catalog, error) {
 			return nil, fmt.Errorf("job type %q has an invalid payload type: %w", def.Name, err)
 		}
 
-		if def.CreateJobs == nil {
-			return nil, fmt.Errorf("job type %q has no job creation handler", def.Name)
-		}
-
 		if def.Handle == nil {
 			return nil, fmt.Errorf("job type %q has no queue handler", def.Name)
 		}
@@ -87,12 +83,13 @@ func (c *Catalog) List() []Definition {
 	return defs
 }
 
-// ValidateRaw decodes data into the worker's declared payload struct. JSON
-// decoding is the validation boundary; workers apply their own field checks.
-func (c *Catalog) ValidateRaw(name dto.JobTypeName, raw json.RawMessage) error {
+// DecodeRaw decodes data into the worker's declared payload struct and
+// validates it. This is the single entry point for turning request JSON into
+// a typed, validated payload that Enqueue can consume.
+func (c *Catalog) DecodeRaw(name dto.JobTypeName, raw json.RawMessage) (Payload, error) {
 	def, ok := c.Get(name)
 	if !ok {
-		return fmt.Errorf("unknown job type %q", name)
+		return nil, fmt.Errorf("unknown job type %q", name)
 	}
 
 	if len(raw) == 0 {
@@ -102,14 +99,17 @@ func (c *Catalog) ValidateRaw(name dto.JobTypeName, raw json.RawMessage) error {
 	payloadType := reflect.TypeOf(def.Payload).Elem()
 	payload := reflect.New(payloadType).Interface()
 	if err := json.Unmarshal(raw, payload); err != nil {
-		return fmt.Errorf("invalid payload for %q: %w", name, err)
+		return nil, fmt.Errorf("invalid payload for %q: %w", name, err)
 	}
 
-	if typedPayload, ok := payload.(Payload); ok {
-		if err := typedPayload.Validate(); err != nil {
-			return fmt.Errorf("payload validation failed for %q: %w", name, err)
-		}
+	typedPayload, ok := payload.(Payload)
+	if !ok {
+		return nil, fmt.Errorf("payload for %q does not implement Payload", name)
 	}
 
-	return nil
+	if err := typedPayload.Validate(); err != nil {
+		return nil, fmt.Errorf("payload validation failed for %q: %w", name, err)
+	}
+
+	return typedPayload, nil
 }

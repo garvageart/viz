@@ -16,15 +16,6 @@ import (
 type JobListFilter struct {
 	Type   dto.JobTypeName
 	Status dto.WorkerJobStatus
-	RunUID string
-	Limit  int
-	Page   int
-}
-
-// RunListFilter describes the manual-run history query.
-type RunListFilter struct {
-	Type   dto.JobTypeName
-	Status dto.JobRunStatus
 	Limit  int
 	Page   int
 }
@@ -57,7 +48,10 @@ func (s *Service) GetJob(ctx context.Context, jobUID string) (entities.WorkerJob
 	return job, nil
 }
 
-// ListJobs returns a page of persisted worker jobs.
+// ListJobs returns a page of persisted worker jobs. Running jobs are
+// filtered against the in-process registry (liveJobs): with the in-memory
+// broker as the source of truth, "running" means this process is holding
+// the job. Persisted stale "running" rows are history, not activity.
 func (s *Service) ListJobs(ctx context.Context, filter JobListFilter) ([]entities.WorkerJob, int64, error) {
 	limit, page := normalizePagination(filter.Limit, filter.Page)
 	query := s.db.WithContext(ctx).Model(&entities.WorkerJob{})
@@ -70,8 +64,19 @@ func (s *Service) ListJobs(ctx context.Context, filter JobListFilter) ([]entitie
 		query = query.Where("status = ?", filter.Status)
 	}
 
-	if filter.RunUID != "" {
-		query = query.Where("run_uid = ?", filter.RunUID)
+	if filter.Status == dto.WorkerJobStatusRunning {
+		liveJobs.mu.RLock()
+		liveUIDs := make([]string, 0, len(liveJobs.allJobs))
+		for uid := range liveJobs.allJobs {
+			liveUIDs = append(liveUIDs, uid)
+		}
+		liveJobs.mu.RUnlock()
+
+		if len(liveUIDs) == 0 {
+			return []entities.WorkerJob{}, 0, nil
+		}
+
+		query = query.Where("uid IN ?", liveUIDs)
 	}
 
 	var total int64
@@ -85,46 +90,6 @@ func (s *Service) ListJobs(ctx context.Context, filter JobListFilter) ([]entitie
 	}
 
 	return jobs, total, nil
-}
-
-// GetRun returns one manual trigger run.
-func (s *Service) GetRun(ctx context.Context, runUID string) (entities.JobRun, error) {
-	var run entities.JobRun
-	if err := s.db.WithContext(ctx).Where("uid = ?", runUID).First(&run).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entities.JobRun{}, ErrJobNotFound
-		}
-
-		return entities.JobRun{}, fmt.Errorf("load job run: %w", err)
-	}
-
-	return run, nil
-}
-
-// ListRuns returns a page of manual trigger runs.
-func (s *Service) ListRuns(ctx context.Context, filter RunListFilter) ([]entities.JobRun, int64, error) {
-	limit, page := normalizePagination(filter.Limit, filter.Page)
-	query := s.db.WithContext(ctx).Model(&entities.JobRun{})
-
-	if filter.Type != "" {
-		query = query.Where("type = ?", filter.Type)
-	}
-
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
-	}
-
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("count job runs: %w", err)
-	}
-
-	var runs []entities.JobRun
-	if err := query.Order("created_at desc").Limit(limit).Offset(page * limit).Find(&runs).Error; err != nil {
-		return nil, 0, fmt.Errorf("list job runs: %w", err)
-	}
-
-	return runs, total, nil
 }
 
 type statusRow struct {
@@ -168,51 +133,40 @@ func (s *Service) Stats(ctx context.Context) (dto.JobStatsResponse, error) {
 		countsByType[string(row.Type)] = counts
 	}
 
-	var activeRuns int64
-	if err := s.db.WithContext(ctx).Model(&entities.JobRun{}).
-		Where("status IN ?", []dto.JobRunStatus{dto.JobRunStatusPending, dto.JobRunStatusRunning}).
-		Count(&activeRuns).Error; err != nil {
-		return dto.JobStatsResponse{}, fmt.Errorf("count active runs: %w", err)
-	}
-
 	return dto.JobStatsResponse{
 		Type:        countsByType,
-		ActiveRuns:  int(activeRuns),
+		Live:        s.liveCounts(),
 		GeneratedAt: time.Now().UTC(),
 	}, nil
 }
 
-// Snapshot is the single bootstrap payload used by the admin UI.
-func (s *Service) Snapshot(ctx context.Context) (dto.JobSnapshotResponse, error) {
-	var active []entities.WorkerJob
-	if err := s.db.WithContext(ctx).
-		Where("status = ?", dto.WorkerJobStatusRunning).
-		Order("started_at desc").
-		Limit(50).
-		Find(&active).Error; err != nil {
-		return dto.JobSnapshotResponse{}, fmt.Errorf("load active jobs: %w", err)
+// liveCounts returns realtime running/queued counts for every registered job
+// type, sourced from the in-memory broker state (liveJobs).
+// Every registered type is guaranteed an entry, so nothing running/queued
+// yields zero rather than an absent key.
+func (s *Service) liveCounts() map[string]dto.LiveJobCounts {
+	live := make(map[string]dto.LiveJobCounts, len(s.catalog.List()))
+	for _, def := range s.catalog.List() {
+		live[string(def.Name)] = dto.LiveJobCounts{Running: 0, Queued: 0}
 	}
 
-	stats, err := s.Stats(ctx)
-	if err != nil {
-		return dto.JobSnapshotResponse{}, err
+	// one lock for both maps so the pair is read consistently.
+	liveJobs.mu.RLock()
+	for _, j := range liveJobs.allJobs {
+		c := live[j.Topic()]
+		c.Running++
+		live[j.Topic()] = c
 	}
 
-	items := make([]dto.WorkerJob, 0, len(active))
-	for _, job := range active {
-		items = append(items, job.DTO())
+	for k, v := range liveJobs.queued {
+		c := live[k]
+		c.Queued = v
+		live[k] = c
 	}
 
-	var cursor uint64
-	if s.broker != nil {
-		cursor = s.broker.LastID()
-	}
+	liveJobs.mu.RUnlock()
 
-	return dto.JobSnapshotResponse{
-		Active:          items,
-		Stats:           stats,
-		NextEventCursor: cursor,
-	}, nil
+	return live
 }
 
 // CancelJob requests cancellation of one active job.
@@ -241,7 +195,7 @@ func (s *Service) CancelJob(ctx context.Context, jobUID string) error {
 }
 
 // CancelJobs requests cancellation for all non-terminal jobs matching the
-// filter and stops dispatchers for the selected job type.
+// filter.
 func (s *Service) CancelJobs(ctx context.Context, jobType dto.JobTypeName, statuses []dto.WorkerJobStatus) (int64, error) {
 	activeStatuses := []dto.WorkerJobStatus{
 		dto.WorkerJobStatusQueued,
@@ -264,51 +218,5 @@ func (s *Service) CancelJobs(ctx context.Context, jobType dto.JobTypeName, statu
 		return 0, fmt.Errorf("cancel jobs: %w", result.Error)
 	}
 
-	s.mu.Lock()
-	for runUID, state := range s.dispatch {
-		if jobType == "" || state.jobType == jobType {
-			state.cancel()
-			delete(s.dispatch, runUID)
-		}
-	}
-	s.mu.Unlock()
-
 	return result.RowsAffected, nil
-}
-
-// CancelRun stops a dispatcher and requests cancellation for its child jobs.
-func (s *Service) CancelRun(ctx context.Context, runUID string) error {
-	run, err := s.GetRun(ctx, runUID)
-	if err != nil {
-		return err
-	}
-
-	if IsTerminalRunStatus(run.Status) {
-		return ErrJobConflict
-	}
-
-	s.mu.Lock()
-	if state, ok := s.dispatch[runUID]; ok {
-		state.cancel()
-		delete(s.dispatch, runUID)
-	}
-	s.mu.Unlock()
-
-	finishedAt := time.Now().UTC()
-	if err := s.db.WithContext(ctx).Model(&entities.JobRun{}).Where("uid = ?", runUID).Updates(entities.JobRun{
-		Status:     dto.JobRunStatusCancelled,
-		FinishedAt: &finishedAt,
-	}).Error; err != nil {
-		return fmt.Errorf("cancel job run: %w", err)
-	}
-
-	if err := s.db.WithContext(ctx).Model(&entities.WorkerJob{}).
-		Where("run_uid = ?", runUID).
-		Where("status IN ?", []dto.WorkerJobStatus{dto.WorkerJobStatusQueued, dto.WorkerJobStatusRunning, dto.WorkerJobStatusCancelRequested}).
-		Update("status", gorm.Expr("CASE WHEN status = ? THEN ? ELSE ? END",
-			dto.WorkerJobStatusQueued, dto.WorkerJobStatusCancelled, dto.WorkerJobStatusCancelRequested)).Error; err != nil {
-		return fmt.Errorf("cancel run jobs: %w", err)
-	}
-
-	return nil
 }
