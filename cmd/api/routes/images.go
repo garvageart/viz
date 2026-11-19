@@ -626,7 +626,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 	router.Patch("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		uid := chi.URLParam(req, "uid")
-		var update dto.ImageUpdate
+		var update dto.ImageAssetUpdate
 
 		if err := render.DecodeJSON(req.Body, &update); err != nil {
 			render.Status(req, http.StatusBadRequest)
@@ -1492,7 +1492,7 @@ func validateDownloadRequest(res http.ResponseWriter, req *http.Request, db *gor
 
 // isOwnerReassignmentAttempt checks if the PATCH update contains an owner_uid change.
 // Owner reassignment is admin-only; non-admin callers have this field silently stripped.
-func isOwnerReassignmentAttempt(update dto.ImageUpdate) bool {
+func isOwnerReassignmentAttempt(update dto.ImageAssetUpdate) bool {
 	return update.OwnerUid != nil
 }
 

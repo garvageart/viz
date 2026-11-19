@@ -6,8 +6,8 @@ import (
 	"viz/internal/utils"
 )
 
-// ApplyUpdate updates ImageAsset fields from an ImageUpdate DTO.
-func (image *ImageAsset) ApplyUpdate(update dto.ImageUpdate) {
+// ApplyUpdate updates ImageAsset fields from an ImageAssetUpdate DTO.
+func (image *ImageAsset) ApplyUpdate(update dto.ImageAssetUpdate) {
 	utils.AssignIf(&image.Name, update.Name)
 	utils.AssignIf(&image.Private, update.Private)
 	utils.AssignIf(&image.TakenAt, update.TakenAt)
@@ -55,11 +55,11 @@ func (image *ImageAsset) ApplyUpdate(update dto.ImageUpdate) {
 	}
 }
 
-// ApplyUpdate updates JobTypeConfig fields from a JobTypeConfigPatch. Only
+// ApplyUpdate updates JobTypeConfig fields from a JobTypeConfigUpdate. Only
 // the fields present in the patch are applied; the concurrency object is
 // merged field-by-field. The caller is responsible for validating the
 // merged configuration before persisting.
-func (config *JobTypeConfig) ApplyUpdate(patch dto.JobTypeConfigPatch) {
+func (config *JobTypeConfig) ApplyUpdate(patch dto.JobTypeConfigUpdate) {
 	utils.AssignIf(&config.Enabled, patch.Enabled)
 	utils.AssignIf(&config.BatchSize, patch.BatchSize)
 	utils.AssignIf(&config.TimeoutMs, patch.TimeoutMs)
@@ -77,6 +77,6 @@ func (collection *Collection) ApplyUpdate(update dto.CollectionUpdate) {
 	utils.AssignPtrIf(&collection.Private, update.Private)
 	utils.AssignPtrIf(&collection.Favourited, update.Favourited)
 	utils.AssignPtrIf(&collection.Archived, update.Archived)
-	utils.AssignFK(&collection.ThumbnailID, update.ThumbnailUID)
-	utils.AssignFK(&collection.OwnerID, update.OwnerUID)
+	utils.AssignFK(&collection.ThumbnailID, update.ThumbnailUid)
+	utils.AssignFK(&collection.OwnerID, update.OwnerUid)
 }

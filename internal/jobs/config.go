@@ -84,13 +84,13 @@ func (s *Service) ListTypes() []dto.JobType {
 }
 
 // patchIsEmpty reports whether the patch sets no fields at all.
-func patchIsEmpty(req dto.JobTypeConfigPatch) bool {
+func patchIsEmpty(req dto.JobTypeConfigUpdate) bool {
 	return req.Enabled == nil && req.Concurrency == nil && req.BatchSize == nil && req.TimeoutMs == nil && req.MaxRetries == nil
 }
 
 // concurrencyPatchIsEmpty reports whether a present concurrency patch sets
 // neither of its fields.
-func concurrencyPatchIsEmpty(patch *dto.JobTypeConcurrencyPatch) bool {
+func concurrencyPatchIsEmpty(patch *dto.JobTypeConcurrencyUpdate) bool {
 	return patch.Current == nil && patch.Max == nil
 }
 
@@ -123,7 +123,7 @@ func validateConfig(config dto.JobTypeConfig) error {
 // the fields present in the patch are applied, and the concurrency object
 // is merged field-by-field. The merged result is validated, then persisted
 // as the concrete stored row.
-func (s *Service) PatchType(ctx context.Context, name dto.JobTypeName, req dto.JobTypeConfigPatch) (dto.JobType, error) {
+func (s *Service) PatchType(ctx context.Context, name dto.JobTypeName, req dto.JobTypeConfigUpdate) (dto.JobType, error) {
 	def, ok := s.catalog.Get(name)
 	if !ok {
 		return dto.JobType{}, fmt.Errorf("%w: %q", ErrUnknownJobType, name)

@@ -60,7 +60,7 @@ func TestUpdateImage_Keywords_Success(t *testing.T) {
 
 	// Update payload with 1 existing keyword ("night") and 1 brand-new keyword ("Parktown")
 	desc := "Updated night street photo"
-	payload := dto.ImageUpdate{
+	payload := dto.ImageAssetUpdate{
 		Description: &desc,
 		Keywords: &[]dto.KeywordUpdate{
 			{Name: new("night")},
@@ -121,7 +121,7 @@ func TestUpdateImage_Keywords_EdgeCases(t *testing.T) {
 	require.NoError(t, db.Create(&img).Error)
 
 	// Payload with case-mismatched "  ENVIRONMENT  ", duplicate "environment", and blank "   "
-	payload := dto.ImageUpdate{
+	payload := dto.ImageAssetUpdate{
 		Keywords: &[]dto.KeywordUpdate{
 			{Name: new("  ENVIRONMENT  ")},
 			{Name: new("   ")},
@@ -176,7 +176,7 @@ func TestUpdateImage_Keywords_RemoveAll(t *testing.T) {
 	assert.Equal(t, int64(1), initialCount)
 
 	// Update with empty keywords array
-	payload := dto.ImageUpdate{
+	payload := dto.ImageAssetUpdate{
 		Keywords: &[]dto.KeywordUpdate{},
 	}
 
@@ -221,7 +221,7 @@ func TestUpdateImage_Keywords_Omitted(t *testing.T) {
 	require.NoError(t, db.Create(&img).Error)
 
 	newDesc := "Updated description"
-	payload := dto.ImageUpdate{
+	payload := dto.ImageAssetUpdate{
 		Description: &newDesc,
 		// Keywords omitted (nil)
 	}
@@ -263,7 +263,7 @@ func TestUpdateImage_Keywords_NewDuplicates(t *testing.T) {
 	}
 	require.NoError(t, db.Create(&img).Error)
 
-	payload := dto.ImageUpdate{
+	payload := dto.ImageAssetUpdate{
 		Keywords: &[]dto.KeywordUpdate{
 			{Name: new("brandnew")},
 			{Name: new("BRANDNEW")},
@@ -308,7 +308,7 @@ func TestBatchUpdateImages_Keywords(t *testing.T) {
 
 	batchPayload := dto.BatchImageUpdateRequest{
 		Uids: []string{img1.Uid, img2.Uid},
-		Update: dto.ImageUpdate{
+		Update: dto.ImageAssetUpdate{
 			Keywords: &[]dto.KeywordUpdate{
 				{Name: new("nature")},
 				{Name: new("sunset")},
@@ -363,7 +363,7 @@ func TestUpdateImage_FailureModes(t *testing.T) {
 
 	// 1. 404 on non-existent image
 	{
-		payload := dto.ImageUpdate{
+		payload := dto.ImageAssetUpdate{
 			Keywords: &[]dto.KeywordUpdate{{Name: new("test")}},
 		}
 		body, _ := json.Marshal(payload)
@@ -378,7 +378,7 @@ func TestUpdateImage_FailureModes(t *testing.T) {
 
 	// 2. 403 on updating another user's image without admin role
 	{
-		payload := dto.ImageUpdate{
+		payload := dto.ImageAssetUpdate{
 			Keywords: &[]dto.KeywordUpdate{{Name: new("test")}},
 		}
 		body, _ := json.Marshal(payload)

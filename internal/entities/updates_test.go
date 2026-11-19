@@ -26,17 +26,14 @@ func TestImageAsset_ApplyUpdate(t *testing.T) {
 	}
 
 	// 1. Basic field updates
-	update := dto.ImageUpdate{
+	update := dto.ImageAssetUpdate{
 		Name:        &name,
 		Description: &desc,
 		Private:     &priv,
 		Favourited:  &fav,
 		OwnerUid:    &owner,
 		TakenAt:     &taken,
-		ImageMetadata: &struct {
-			Label  *dto.Label `json:"label,omitempty"`
-			Rating *int       `json:"rating,omitempty"`
-		}{
+		ImageMetadata: &dto.ImageMetadataUpdate{
 			Label:  &labelRed,
 			Rating: &ratingHigh,
 		},
@@ -68,12 +65,9 @@ func TestImageAsset_ApplyUpdate(t *testing.T) {
 
 	// 2. Rating 0 clears rating; empty owner clears owner
 	emptyOwner := ""
-	update2 := dto.ImageUpdate{
+	update2 := dto.ImageAssetUpdate{
 		OwnerUid: &emptyOwner,
-		ImageMetadata: &struct {
-			Label  *dto.Label `json:"label,omitempty"`
-			Rating *int       `json:"rating,omitempty"`
-		}{
+		ImageMetadata: &dto.ImageMetadataUpdate{
 			Label:  nil,
 			Rating: &ratingZero,
 		},
@@ -104,8 +98,8 @@ func TestCollection_ApplyUpdate(t *testing.T) {
 		Private:      &priv,
 		Favourited:   &fav,
 		Archived:     &archived,
-		ThumbnailUID: &thumb,
-		OwnerUID:     &owner,
+		ThumbnailUid: &thumb,
+		OwnerUid:     &owner,
 	}
 
 	col.ApplyUpdate(update)
@@ -121,8 +115,8 @@ func TestCollection_ApplyUpdate(t *testing.T) {
 	// Empty string clears thumbnail and owner
 	emptyStr := ""
 	updateClear := dto.CollectionUpdate{
-		ThumbnailUID: &emptyStr,
-		OwnerUID:     &emptyStr,
+		ThumbnailUid: &emptyStr,
+		OwnerUid:     &emptyStr,
 	}
 
 	col.ApplyUpdate(updateClear)
