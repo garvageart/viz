@@ -1,4 +1,4 @@
-import { type ImageAsset, type ImageUpdate, updateImage } from "@viz/api";
+import { type ImageAsset, type ImageAssetUpdate, updateImage } from "@viz/api";
 
 export async function setRating(image: ImageAsset, prevRating: number | null, newRating: number | null) {
     if (prevRating === newRating) {
@@ -6,7 +6,7 @@ export async function setRating(image: ImageAsset, prevRating: number | null, ne
     }
 
     const uid = image.uid;
-    const dateToUpdate: ImageUpdate = {
+    const dateToUpdate: ImageAssetUpdate = {
         image_metadata: { rating: newRating }
     };
 

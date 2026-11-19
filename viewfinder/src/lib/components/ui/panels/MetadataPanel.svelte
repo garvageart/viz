@@ -299,7 +299,7 @@
         return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
     }
 
-    // TODO(backend): Add taken_at / file_created_at to ImageUpdate so the
+    // TODO(backend): Add taken_at / file_created_at to ImageAssetUpdate so the
     // calendar date+time picker can persist changes to the server.
     function handleDateChange(newDate: Date) {
         if (!currentAsset) {

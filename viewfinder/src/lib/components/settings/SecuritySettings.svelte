@@ -171,7 +171,7 @@
             initialName: session.client_name || "",
             onRename: async (newName) => {
                 const res = await updateSession(session.uid, {
-                    clientName: newName
+                    client_name: newName
                 });
 
                 if (res.status === 200) {

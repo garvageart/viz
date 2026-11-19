@@ -353,7 +353,7 @@ export async function removeImagesFromKeyword(
 export async function setCollectionThumbnail(collection: Collection | CollectionDetailResponse, asset: ImageAsset) {
     try {
         const res = await updateCollection(collection.uid, {
-            thumbnailUID: asset.uid
+            thumbnail_uid: asset.uid
         });
         if (res.status === 200) {
             toasts.add({
