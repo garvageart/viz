@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { type WorkerInfo } from "@viz/api";
-    import { onMount } from "svelte";
+    import { type JobType } from "@viz/api";
     import AdminRouteShell from "#lib/components/admin/AdminRouteShell.svelte";
     import Badge from "#lib/components/ui/Badge.svelte";
     import Banner from "#lib/components/ui/Banner.svelte";
@@ -9,30 +8,30 @@
     import MaterialIcon from "#lib/components/ui/MaterialIcon.svelte";
     import SearchInput from "#lib/components/ui/SearchInput.svelte";
     import Table, { type TableColumn } from "#lib/components/ui/Table.svelte";
-    import { jobsState } from "#lib/states/jobs.svelte.js";
+    import { jobsService } from "#lib/services/jobs.svelte.js";
     import type { MaterialSymbol } from "#lib/types/MaterialSymbol.js";
 
     let activeTab = $state<"all" | "success" | "failed">("all");
     let searchQuery = $state("");
-    let workerTypes = $derived(jobsState.workers.types.toSorted((a, b) => a.name.localeCompare(b.name)));
+    let workerTypes = $derived(jobsService.jobTypes.toSorted((a, b) => a.type.localeCompare(b.type)));
 
     function getEndTimeDate(job: any): Date {
-        if (!job.endTime) {
-            return job.startTime ? new Date(job.startTime) : new Date();
+        if (!job.completed_at) {
+            return job.started_at ? new Date(job.started_at) : new Date(job.created_at);
         }
-        return job.endTime instanceof Date ? job.endTime : new Date(job.endTime);
+        return new Date(job.completed_at);
     }
 
     function getStartTimeDate(job: any): Date {
-        if (!job.startTime) {
-            return new Date();
+        if (!job.started_at) {
+            return new Date(job.created_at);
         }
-        return job.startTime instanceof Date ? job.startTime : new Date(job.startTime);
+        return new Date(job.started_at);
     }
 
     let unifiedHistory = $derived.by(() => {
-        const completed = jobsState.completedJobs;
-        const failed = jobsState.failedJobs;
+        const completed = jobsService.completedJobs;
+        const failed = jobsService.failedJobs;
         const all = [...completed, ...failed];
         all.sort((a, b) => {
             const timeA = getEndTimeDate(a).getTime();
@@ -58,18 +57,8 @@
         const query = searchQuery.trim().toLowerCase();
         if (query) {
             list = list.filter((j) => {
-                const filename = (j.filename || "").toLowerCase();
-                const imageUid = (j.image_uid || "").toLowerCase();
                 const uid = (j.uid || "").toLowerCase();
-                const error = (j.error || "").toLowerCase();
-                const type = (j.type || j.topic || "").toLowerCase();
-                return (
-                    filename.includes(query) ||
-                    imageUid.includes(query) ||
-                    uid.includes(query) ||
-                    error.includes(query) ||
-                    type.includes(query)
-                );
+                return uid.includes(query);
             });
         }
 
@@ -94,10 +83,6 @@
         { key: "duration", header: "Duration", cell: durationCell, mono: true, sortable: true },
         { key: "endTime", header: "Completed At", cell: endTimeCell, mono: true, sortable: true }
     ];
-
-    onMount(() => {
-        void jobsState.init();
-    });
 </script>
 
 {#snippet statCard({
@@ -122,23 +107,23 @@
     </div>
 {/snippet}
 
-{#snippet workerCard(job: WorkerInfo)}
+{#snippet workerCard(job: JobType)}
     <div class="worker-card">
         <div class="worker-header">
             <div class="worker-id">
-                <span class="worker-name">{jobsState.getTopicForJobType(job.name)}</span>
+                <span class="worker-name">{jobsService.getTopicForJobType(job.type)}</span>
                 <span
-                    class="worker-dot {(jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0) > 0
+                    class="worker-dot {(jobsService.liveRunning(job.type)) > 0
                         ? 'active'
                         : 'idle'}"
                 ></span>
             </div>
             <div class="worker-stats">
                 <span class="stat-badge running" title="Active">
-                    {jobsState.runningByTopic[jobsState.getTopicForJobType(job.name)] || 0}
+                    {jobsService.liveRunning(job.type)}
                 </span>
                 <span class="stat-badge queued" title="Queued">
-                    {jobsState.queuedByTopic[jobsState.getTopicForJobType(job.name)] || 0}
+                    {jobsService.liveQueued(job.type)}
                 </span>
             </div>
         </div>
@@ -149,7 +134,7 @@
                 size="small"
                 class="worker-icon-btn"
                 onclick={() => {
-                    jobsState.rescanAll(job.name);
+                    jobsService.rescanAll(job.type);
                 }}
                 title="Rescan All"
             ></Button>
@@ -158,7 +143,7 @@
                 size="small"
                 class="worker-icon-btn"
                 onclick={() => {
-                    jobsState.rescanMissing(job.name);
+                    jobsService.rescanMissing(job.type);
                 }}
                 title="Rescan Missing"
             ></Button>
@@ -170,19 +155,19 @@
                 <Button
                     class="step-btn"
                     onclick={() => {
-                        jobsState.setWorkerConcurrency(
-                            job.name,
-                            Math.max(1, (jobsState.workers.concurrency[job.name] || 5) - 1)
+                        jobsService.saveConcurrency(
+                            job,
+                            Math.max(1, job.concurrency.current - 1)
                         );
                     }}>-</Button
                 >
-                <span class="step-value">{jobsState.workers.concurrency[job.name] || 5}</span>
+                <span class="step-value">{job.concurrency.current}</span>
                 <Button
                     class="step-btn"
                     onclick={() => {
-                        jobsState.setWorkerConcurrency(
-                            job.name,
-                            Math.min(50, (jobsState.workers.concurrency[job.name] || 5) + 1)
+                        jobsService.saveConcurrency(
+                            job,
+                            Math.min(job.concurrency.max, job.concurrency.current + 1)
                         );
                     }}>+</Button
                 >
@@ -202,13 +187,13 @@
 {/snippet}
 
 {#snippet targetCell(job: any)}
-    <span class="job-title-text" title={job.filename || job.image_uid || job.uid}>
-        {job.filename || job.image_uid || job.uid}
+    <span class="job-title-text" title={job.uid}>
+        {job.uid}
     </span>
 {/snippet}
 
 {#snippet typeCell(job: any)}
-    <Badge variant="neutral" size="standard">{(job.type || job.topic).toUpperCase()}</Badge>
+    <Badge variant="neutral" size="standard">{(job.type).toUpperCase()}</Badge>
 {/snippet}
 
 {#snippet durationCell(job: any)}
@@ -226,20 +211,12 @@
 {#snippet jobExpandedRow(job: any)}
     <div class="job-expanded-details">
         {#if job.error}
-            <Banner variant="error" title="Execution Error" message={job.error} />
+            <Banner variant="error" title="Execution Error" message={job.error?.message ?? "Unknown error"} />
         {/if}
         <div class="job-meta-grid">
             <div class="meta-item">
                 <span class="meta-label">ID</span>
                 <span class="meta-value font-mono">{job.uid || "N/A"}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Image UID</span>
-                <span class="meta-value font-mono">{job.image_uid || "N/A"}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Filename</span>
-                <span class="meta-value font-mono">{job.filename || "N/A"}</span>
             </div>
             <div class="meta-item">
                 <span class="meta-label">Start Time</span>
@@ -260,7 +237,7 @@
                     activeTab = "all";
                 }}
             >
-                All <span class="tab-badge">{jobsState.completedJobs.length + jobsState.failedJobs.length}</span>
+                All <span class="tab-badge">{jobsService.completedJobs.length + jobsService.failedJobs.length}</span>
             </button>
             <button
                 type="button"
@@ -270,7 +247,7 @@
                     activeTab = "success";
                 }}
             >
-                Success <span class="tab-badge">{jobsState.completedJobs.length}</span>
+                Success <span class="tab-badge">{jobsService.completedJobs.length}</span>
             </button>
             <button
                 type="button"
@@ -280,7 +257,7 @@
                     activeTab = "failed";
                 }}
             >
-                Failed <span class="tab-badge">{jobsState.failedJobs.length}</span>
+                Failed <span class="tab-badge">{jobsService.failedJobs.length}</span>
             </button>
         </div>
 
@@ -295,10 +272,10 @@
 
 <AdminRouteShell heading="Job Manager" description="Monitor and manage background jobs">
     {#snippet actions()}
-        <div class="connection-status" class:connected={jobsState.connected}>
+        <div class="connection-status" class:connected={jobsService.connected}>
             <span class="status-dot"></span>
             <span class="status-text">
-                {jobsState.connected ? "WebSocket Connected" : "WebSocket Disconnected"}
+                {jobsService.connected ? "WebSocket Connected" : "WebSocket Disconnected"}
             </span>
         </div>
     {/snippet}
@@ -309,28 +286,28 @@
             <div class="stats-grid">
                 {@render statCard({
                     iconName: "pending",
-                    value: jobsState.stats.activeCount,
+                    value: jobsService.stats.active,
                     label: "Active Jobs",
                     cardClass: "active"
                 })}
 
                 {@render statCard({
                     iconName: "check_circle",
-                    value: jobsState.stats.completedCount,
+                    value: jobsService.stats.completed,
                     label: "Completed",
                     cardClass: "completed"
                 })}
 
                 {@render statCard({
                     iconName: "error",
-                    value: jobsState.stats.failedCount,
+                    value: jobsService.stats.failed,
                     label: "Failed",
                     cardClass: "failed"
                 })}
 
                 {@render statCard({
                     iconName: "analytics",
-                    value: jobsState.stats.totalProcessed,
+                    value: jobsService.stats.total,
                     label: "Total Processed",
                     cardClass: "total"
                 })}
@@ -347,11 +324,11 @@
                             <MaterialIcon iconName="bolt" class="title-icon highlight" />
                             <h2>Realtime Processing</h2>
                         </div>
-                        <Badge variant="info">{jobsState.activeJobs.length}</Badge>
+                        <Badge variant="info">{jobsService.activeJobs.length}</Badge>
                     </div>
 
                     <div class="jobs-list active-list">
-                        {#each jobsState.activeJobs as job (job.uid)}
+                        {#each jobsService.activeJobs as job (job.uid)}
                             <div class="job-card active">
                                 <div class="job-card-main">
                                     <div class="job-info">
@@ -359,15 +336,15 @@
                                             <MaterialIcon iconName="image" />
                                         </div>
                                         <div class="job-details">
-                                            <div class="job-title" title={job.filename || job.image_uid || job.uid}>
-                                                {job.filename || job.image_uid || job.uid}
+                                            <div class="job-title" title={job.uid}>
+                                                {job.uid}
                                             </div>
                                             <div class="job-meta">
-                                                <span class="job-type-tag">{job.type || job.topic}</span>
+                                                <span class="job-type-tag">{job.type}</span>
                                                 <span class="separator">•</span>
                                                 <span class="job-time">
-                                                    Started {job.startTime
-                                                        ? job.startTime.toLocaleTimeString()
+                                                    Started {job.started_at
+                                                        ? new Date(job.started_at).toLocaleTimeString()
                                                         : "just now"}
                                                 </span>
                                             </div>
@@ -375,18 +352,18 @@
                                     </div>
                                     <div class="job-progress-section">
                                         <div class="progress-info">
-                                            <span class="job-step">{job.step || "Initializing..."}</span>
-                                            <span class="progress-value">{job.progress || 0}%</span>
+                                            <span class="job-step">Processing</span>
+                                            <span class="progress-value">{jobsService.progressByJob.get(job.uid) ?? 0}%</span>
                                         </div>
                                         <div class="progress-bar-container">
-                                            <div class="progress-bar-fill" style="width: {job.progress || 0}%"></div>
+                                            <div class="progress-bar-fill" style="width: {jobsService.progressByJob.get(job.uid) ?? 0}%"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         {/each}
 
-                        {#if jobsState.activeJobs.length === 0}
+                        {#if jobsService.activeJobs.length === 0}
                             <div class="empty-state-placeholder">
                                 <MaterialIcon iconName="work_history" class="empty-icon" />
                                 <p>No active jobs at the moment</p>
@@ -430,13 +407,13 @@
                             size="small"
                             class="worker-icon-btn"
                             onclick={() => {
-                                jobsState.fetchJobTypes();
+                                void jobsService.fetchJobTypes();
                             }}
-                            disabled={jobsState.workers.loading}
+                            disabled={jobsService.jobTypesLoading}
                         ></Button>
                     </div>
 
-                    {#if jobsState.workers.loading}
+                    {#if jobsService.jobTypesLoading}
                         <div class="side-loading">
                             <div class="spinner-small"></div>
                             <span>Updating registry...</span>
