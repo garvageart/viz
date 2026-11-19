@@ -65,7 +65,7 @@ func Transform(img *libvips.Image, profile Profile) (resultErr error) {
 
 	if err := img.IccTransform(profilePath, &libvips.IccTransformOptions{
 		Embedded: true,
-		Intent:   libvips.IntentPerceptual,
+		Intent:   libvips.Ptr(libvips.IntentPerceptual),
 	}); err != nil {
 		return fmt.Errorf("failed to transform to ICC profile %q: %w", profileName, err)
 	}
@@ -103,7 +103,7 @@ func NormalizeToSRGB(img *libvips.Image) error {
 		// Embedded: true tells it to use the profile found in the image as the input profile.
 		err := img.IccTransform("srgb", &libvips.IccTransformOptions{
 			Embedded: true,
-			Intent:   libvips.IntentPerceptual, // Perceptual is usually best for photographic content
+			Intent:   libvips.Ptr(libvips.IntentPerceptual), // Perceptual is usually best for photographic content
 		})
 		if err != nil {
 			return err

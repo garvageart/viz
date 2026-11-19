@@ -360,7 +360,7 @@ func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult,
 			scale = float64(height) / imgH
 		}
 
-		if err := libvipsImg.Resize(scale, &libvips.ResizeOptions{Kernel: kernel}); err != nil {
+		if err := libvipsImg.Resize(scale, &libvips.ResizeOptions{Kernel: libvips.Ptr(kernel)}); err != nil {
 			return nil, fmt.Errorf("failed to resize image: %w", err)
 		}
 	}
@@ -385,15 +385,15 @@ func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult,
 	var imageData []byte
 	switch strings.ToLower(ext) {
 	case "webp":
-		opts := &libvips.WebpsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Effort: 2}
+		opts := &libvips.WebpsaveBufferOptions{Q: libvips.Ptr(t.normalizedQuality(params.Quality)), Effort: libvips.Ptr(2)}
 
-		opts.Keep = t.metadataKeep(params.Metadata)
+		opts.Keep = libvips.Ptr(t.metadataKeep(params.Metadata))
 
 		imageData, err = libvipsImg.WebpsaveBuffer(opts)
 		if err != nil {
 			// WebP buffer encoding failed on ultra-high resolution image; fallback gracefully to JPEG
 			var jpegErr error
-			jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: t.metadataKeep(params.Metadata)}
+			jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: libvips.Ptr(t.metadataKeep(params.Metadata))}
 
 			imageData, jpegErr = libvipsImg.JpegsaveBuffer(jpegOpts)
 			if jpegErr == nil {
@@ -406,18 +406,18 @@ func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult,
 			Filter:      libvips.PngFilterNone,
 			Interlace:   false,
 			Palette:     false,
-			Compression: t.pngCompression(params.Quality),
+			Compression: libvips.Ptr(t.pngCompression(params.Quality)),
 		}
 
 		if params.BitDepth > 0 {
 			pngOpts.Bitdepth = params.BitDepth
 		}
 
-		pngOpts.Keep = t.metadataKeep(params.Metadata)
+		pngOpts.Keep = libvips.Ptr(t.metadataKeep(params.Metadata))
 
 		imageData, err = libvipsImg.PngsaveBuffer(pngOpts)
 	case "jpg", "jpeg":
-		jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: t.metadataKeep(params.Metadata)}
+		jpegOpts := &libvips.JpegsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Interlace: true, Keep: libvips.Ptr(t.metadataKeep(params.Metadata))}
 
 		imageData, err = libvipsImg.JpegsaveBuffer(jpegOpts)
 	case "avif", "heif":
@@ -426,7 +426,7 @@ func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult,
 			heifBitDepth = params.BitDepth
 		}
 
-		heifOpts := &libvips.HeifsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Bitdepth: heifBitDepth, Effort: 5, Lossless: false, Keep: t.metadataKeep(params.Metadata)}
+		heifOpts := &libvips.HeifsaveBufferOptions{Q: t.normalizedQuality(params.Quality), Bitdepth: heifBitDepth, Effort: libvips.Ptr(5), Lossless: false, Keep: libvips.Ptr(t.metadataKeep(params.Metadata))}
 
 		imageData, err = libvipsImg.HeifsaveBuffer(heifOpts)
 	case "tiff":
@@ -436,7 +436,7 @@ func (t *ImageTransform) Generate(originalData []byte) (result *TransformResult,
 			tiffOpts.Bitdepth = params.BitDepth
 		}
 
-		tiffOpts.Keep = t.metadataKeep(params.Metadata)
+		tiffOpts.Keep = libvips.Ptr(t.metadataKeep(params.Metadata))
 
 		imageData, err = libvipsImg.TiffsaveBuffer(tiffOpts)
 	default:
