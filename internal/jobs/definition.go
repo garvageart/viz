@@ -2,10 +2,13 @@ package jobs
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"gorm.io/gorm"
 
 	"viz/internal/dto"
+	"viz/internal/entities"
 )
 
 // EnqueueOptions carries the metadata persisted alongside a WorkerJob.
@@ -30,6 +33,10 @@ type Payload interface {
 // Definition is the single registration point for a worker. It carries the
 // catalog metadata, the payload contract, and the queue handler. It
 // deliberately contains no HTTP routing concerns.
+//
+// Asset-class definitions additionally carry the pieces the selection
+// fan-out needs. They are required for the asset class and must be nil for
+// the system class; the catalog enforces the combination at startup.
 type Definition struct {
 	Name               dto.JobTypeName
 	DisplayName        string
@@ -43,4 +50,14 @@ type Definition struct {
 	SupportsRetry      bool
 	SupportsCancel     bool
 	Handle             JobHandler
+	// Class is the kind of work the definition performs. The zero value
+	// resolves to system.
+	Class DefinitionClass
+	// NewPayload builds a concrete (runnable) payload for one asset. Asset
+	// class only. It is what the selection fan-out enqueues per target.
+	NewPayload func(image entities.ImageAsset) Payload
+	// FindMissing returns the uids of the assets that lack this worker's
+	// required output. Asset class only. The scan itself is worker-owned;
+	// the service only stores the result for counting and fan-out.
+	FindMissing func(db *gorm.DB, logger *slog.Logger) ([]string, error)
 }

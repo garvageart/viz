@@ -27,6 +27,12 @@ func Enqueue(db *gorm.DB, jobType dto.JobTypeName, payload Payload, opts Enqueue
 		return "", fmt.Errorf("job payload is required")
 	}
 
+	// Asset selection requests are expanded by the service before reaching
+	// here; a selection-only payload is never a runnable job.
+	if asset, ok := payload.(AssetPayload); ok && asset.AssetSelection() != nil {
+		return "", fmt.Errorf("job payload is an asset selection request, not a runnable job")
+	}
+
 	if err := payload.Validate(); err != nil {
 		return "", fmt.Errorf("invalid job payload: %w", err)
 	}
@@ -55,7 +61,7 @@ func Enqueue(db *gorm.DB, jobType dto.JobTypeName, payload Payload, opts Enqueue
 
 	source := opts.Source
 	if source == "" {
-		source = dto.Manual
+		source = dto.JobSourceManual
 	}
 
 	attempts := max(opts.Attempts, 1)

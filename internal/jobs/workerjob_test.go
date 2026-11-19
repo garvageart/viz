@@ -22,7 +22,7 @@ func TestWorkerJobCreate(t *testing.T) {
 		Uid:       workerUid,
 		Type:      dto.ImageProcess,
 		Status:    dto.WorkerJobStatusQueued,
-		Source:    dto.Manual,
+		Source:    dto.JobSourceManual,
 		Data:      &data,
 		CreatedAt: time.Now(),
 	}

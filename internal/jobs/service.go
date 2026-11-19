@@ -81,45 +81,48 @@ func (s *Service) loadConfigs() error {
 	return nil
 }
 
-// CreateJob validates the request and creates the resulting singular jobs in
-// one synchronous call: jobs are validated, persisted and published before
-// returning. There is no run ledger — the created jobs are the result.
-func (s *Service) CreateJob(ctx context.Context, jobType dto.JobTypeName, data map[string]any) ([]entities.WorkerJob, error) {
+// CreateJob validates the request and creates the resulting job(s). A plain
+// request creates exactly one job synchronously. An asset-class definition
+// carrying a selection expands into one concrete single-asset job per target:
+// the targets are resolved now (so the response can report the real count),
+// and the concrete jobs are enqueued in the background. There is no run
+// ledger — the created jobs are the result.
+func (s *Service) CreateJob(ctx context.Context, jobType dto.JobTypeName, data map[string]any) (dto.JobCreateResponse, error) {
 	def, ok := s.catalog.Get(jobType)
 	if !ok {
-		return nil, fmt.Errorf("%w: %q", ErrUnknownJobType, jobType)
+		return dto.JobCreateResponse{}, fmt.Errorf("%w: %q", ErrUnknownJobType, jobType)
 	}
 
 	marshalled, err := json.Marshal(data)
 	if err != nil {
-		return nil, fmt.Errorf("%w: marshal data: %v", ErrInvalidData, err)
+		return dto.JobCreateResponse{}, fmt.Errorf("%w: marshal data: %v", ErrInvalidData, err)
 	}
 
 	payload, err := s.catalog.DecodeRaw(jobType, marshalled)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidData, err)
+		return dto.JobCreateResponse{}, fmt.Errorf("%w: %v", ErrInvalidData, err)
 	}
 
 	if !s.isEnabled(jobType) {
-		return nil, fmt.Errorf("%w: job type %q is disabled", ErrInvalidData, jobType)
+		return dto.JobCreateResponse{}, fmt.Errorf("%w: job type %q is disabled", ErrInvalidData, jobType)
 	}
 
 	maxAttempts := def.MaxRetries + 1 // attempts include the first try
-	uid, err := Enqueue(s.db, jobType, payload, EnqueueOptions{
-		Source:      dto.Manual,
+
+	if response, handled, err := s.createAssetSelectionJobs(def, payload, maxAttempts); handled {
+		return response, err
+	}
+
+	_, err = Enqueue(s.db, jobType, payload, EnqueueOptions{
+		Source:      dto.JobSourceManual,
 		Data:        marshalled,
 		MaxAttempts: maxAttempts,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDispatchFailed, err)
+		return dto.JobCreateResponse{}, fmt.Errorf("%w: %v", ErrDispatchFailed, err)
 	}
 
-	createdJob, err := s.GetJob(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-
-	return []entities.WorkerJob{createdJob}, nil
+	return dto.JobCreateResponse{Message: "Job created", Count: 1, Skipped: 0}, nil
 }
 
 func (s *Service) broadcast(event string, data any) {

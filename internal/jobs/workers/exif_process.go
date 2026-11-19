@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"viz/internal/dto"
 	imageops "viz/internal/images/ops"
@@ -31,16 +32,37 @@ import (
 
 // ExifProcessPayload is the payload accepted by POST /jobs and sent to the queue.
 // The published JSON Schema is reflected from this struct.
+//
+// It carries either a concrete image (a runnable job) or a selection (a
+// request to fan out into one job per target asset) — never both, never
+// neither.
 type ExifProcessPayload struct {
-	Image entities.ImageAsset `json:"image"`
+	Image     *entities.ImageAsset `json:"image,omitempty"`
+	Selection *jobs.AssetSelection `json:"selection,omitempty"`
 }
 
-// Validate checks that the payload contains the required fields.
+// Validate checks that the payload contains exactly one of the two shapes.
 func (j *ExifProcessPayload) Validate() error {
-	if j.Image.Uid == "" {
+	switch {
+	case j.Image == nil && j.Selection == nil:
 		return fmt.Errorf("image uid is required")
+	case j.Image != nil && j.Selection != nil:
+		return fmt.Errorf("image and selection are mutually exclusive")
+	case j.Image != nil:
+		if j.Image.Uid == "" {
+			return fmt.Errorf("image uid is required")
+		}
+
+		return nil
+	default:
+		return jobs.ValidateAssetSelection(*j.Selection)
 	}
-	return nil
+}
+
+// AssetSelection reports the payload's selection block, or nil for a
+// concrete runnable job.
+func (j *ExifProcessPayload) AssetSelection() *jobs.AssetSelection {
+	return j.Selection
 }
 
 // ExifProcess extracts EXIF and updates the DB (exif + taken_at + optional metadata)
@@ -267,11 +289,20 @@ func ExifProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Definit
 		MaxRetries:         3,
 		SupportsRetry:      true,
 		SupportsCancel:     true,
+		Class:              jobs.ClassAsset,
+		NewPayload: func(image entities.ImageAsset) jobs.Payload {
+			return &ExifProcessPayload{Image: &image}
+		},
+		FindMissing: FindMissingExifTargets,
 		Handle: func(msg *message.Message) error {
 			var job ExifProcessPayload
 			err := json.Unmarshal(msg.Payload, &job)
 			if err != nil {
 				return fmt.Errorf("%s: %w", dto.ExifProcess, err)
+			}
+
+			if job.Image == nil {
+				return fmt.Errorf("%s: payload carries no image", dto.ExifProcess)
 			}
 
 			if wsBroker != nil {
@@ -290,7 +321,7 @@ func ExifProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Definit
 			startedAt := time.Now().UTC()
 			_ = jobs.SetJobRunning(db, msg.UUID, startedAt)
 
-			err = ExifProcess(msg.Context(), db, job.Image)
+			err = ExifProcess(msg.Context(), db, *job.Image)
 
 			if err != nil {
 				if wsBroker != nil {
@@ -325,4 +356,20 @@ func ExifProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Definit
 			return nil
 		},
 	}
+}
+
+// missingExifQuery matches images whose EXIF payload is absent, or whose
+// EXIF payload is missing any of the extracted fields the EXIF processor
+// fills in. The query itself is worker-owned heuristics; the service only
+// stores and counts the resulting uids.
+const missingExifQuery = "exif IS NULL OR (exif IS NOT NULL AND (exif->>'aperture' IS NULL OR exif->>'date_time' IS NULL OR exif->>'date_time_original' IS NULL OR exif->>'exif_version' IS NULL OR exif->>'exposure_time' IS NULL OR exif->>'exposure_value' IS NULL OR exif->>'f_number' IS NULL OR exif->>'flash' IS NULL OR exif->>'focal_length' IS NULL OR exif->>'iso' IS NULL OR exif->>'latitude' IS NULL OR exif->>'lens_model' IS NULL OR exif->>'longitude' IS NULL OR exif->>'make' IS NULL OR exif->>'model' IS NULL OR exif->>'modify_date' IS NULL OR exif->>'orientation' IS NULL OR exif->>'rating' IS NULL OR exif->>'resolution' IS NULL OR exif->>'software' IS NULL OR exif->>'white_balance' IS NULL))"
+
+// FindMissingExifTargets returns the uids of images whose extracted EXIF is absent.
+func FindMissingExifTargets(db *gorm.DB, logger *slog.Logger) ([]string, error) {
+	var uids []string
+	if err := db.Model(&entities.ImageAsset{}).Where(missingExifQuery).Pluck("uid", &uids).Error; err != nil {
+		return nil, fmt.Errorf("find images missing exif: %w", err)
+	}
+
+	return uids, nil
 }

@@ -39,6 +39,28 @@ func NewCatalog(defs ...Definition) (*Catalog, error) {
 			return nil, fmt.Errorf("job type %q has no queue handler", def.Name)
 		}
 
+		switch class := def.ClassOrSystem(); class {
+		case ClassSystem:
+			if _, ok := def.Payload.(AssetPayload); ok {
+				return nil, fmt.Errorf("job type %q is system class but its payload implements AssetPayload", def.Name)
+			}
+			if def.NewPayload != nil || def.FindMissing != nil {
+				return nil, fmt.Errorf("job type %q is system class but registers asset fan-out fields", def.Name)
+			}
+		case ClassAsset:
+			if _, ok := def.Payload.(AssetPayload); !ok {
+				return nil, fmt.Errorf("job type %q is asset class but its payload does not implement AssetPayload", def.Name)
+			}
+			if def.NewPayload == nil {
+				return nil, fmt.Errorf("job type %q is asset class but has no NewPayload", def.Name)
+			}
+			if def.FindMissing == nil {
+				return nil, fmt.Errorf("job type %q is asset class but has no FindMissing", def.Name)
+			}
+		default:
+			return nil, fmt.Errorf("job type %q has unknown class %q", def.Name, class)
+		}
+
 		if _, exists := catalog.definitions[def.Name]; exists {
 			return nil, fmt.Errorf("duplicate job definition %q", def.Name)
 		}

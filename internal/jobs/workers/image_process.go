@@ -22,16 +22,37 @@ import (
 
 // ImageProcessJob is the payload accepted by POST /jobs and sent to the queue.
 // The published JSON Schema is reflected from this struct.
+//
+// It carries either a concrete image (a runnable job) or a selection (a
+// request to fan out into one job per target asset) — never both, never
+// neither.
 type ImageProcessJob struct {
-	Image entities.ImageAsset `json:"image"`
+	Image     *entities.ImageAsset `json:"image,omitempty"`
+	Selection *jobs.AssetSelection `json:"selection,omitempty"`
 }
 
-// Validate checks that the payload contains the required fields.
+// Validate checks that the payload contains exactly one of the two shapes.
 func (j *ImageProcessJob) Validate() error {
-	if j.Image.Uid == "" {
+	switch {
+	case j.Image == nil && j.Selection == nil:
 		return fmt.Errorf("image uid is required")
+	case j.Image != nil && j.Selection != nil:
+		return fmt.Errorf("image and selection are mutually exclusive")
+	case j.Image != nil:
+		if j.Image.Uid == "" {
+			return fmt.Errorf("image uid is required")
+		}
+
+		return nil
+	default:
+		return jobs.ValidateAssetSelection(*j.Selection)
 	}
-	return nil
+}
+
+// AssetSelection reports the payload's selection block, or nil for a
+// concrete runnable job.
+func (j *ImageProcessJob) AssetSelection() *jobs.AssetSelection {
+	return j.Selection
 }
 
 func ImageProcess(ctx context.Context, db *gorm.DB, imgEnt entities.ImageAsset) error {
@@ -209,11 +230,20 @@ func ImageProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Defini
 		MaxRetries:         3,
 		SupportsRetry:      true,
 		SupportsCancel:     true,
+		Class:              jobs.ClassAsset,
+		NewPayload: func(image entities.ImageAsset) jobs.Payload {
+			return &ImageProcessJob{Image: &image}
+		},
+		FindMissing: FindMissingImageTargets,
 		Handle: func(msg *message.Message) error {
 			var job ImageProcessJob
 			err := json.Unmarshal(msg.Payload, &job)
 			if err != nil {
 				return fmt.Errorf("%s: %w", dto.ImageProcess, err)
+			}
+
+			if job.Image == nil {
+				return fmt.Errorf("%s: payload carries no image", dto.ImageProcess)
 			}
 
 			if wsBroker != nil {
@@ -232,7 +262,7 @@ func ImageProcessDefinition(db *gorm.DB, wsBroker *libhttp.WSBroker) jobs.Defini
 			startedAt := time.Now().UTC()
 			_ = jobs.SetJobRunning(db, msg.UUID, startedAt)
 
-			err = ImageProcess(msg.Context(), db, job.Image)
+			err = ImageProcess(msg.Context(), db, *job.Image)
 
 			if err != nil {
 				if wsBroker != nil {

@@ -41,10 +41,16 @@ func toJobType(def Definition, config entities.JobTypeConfig) dto.JobType {
 	supportsRetry := def.SupportsRetry
 	supportsCancel := def.SupportsCancel
 
+	class := dto.JobTypeClassSystem
+	if def.ClassOrSystem() == ClassAsset {
+		class = dto.JobTypeClassAsset
+	}
+
 	return dto.JobType{
 		Type:           def.Name,
 		DisplayName:    def.DisplayName,
 		Description:    def.Description,
+		Class:          class,
 		Enabled:        config.Enabled,
 		BatchSize:      &config.BatchSize,
 		TimeoutMs:      &config.TimeoutMs,
