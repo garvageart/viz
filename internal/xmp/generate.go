@@ -6,10 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/trimmer-io/go-xmp/models/dc"
 	"github.com/trimmer-io/go-xmp/models/exif"
-	"github.com/trimmer-io/go-xmp/models/ps"
-	"github.com/trimmer-io/go-xmp/models/tiff"
 	xmpbase "github.com/trimmer-io/go-xmp/models/xmp_base"
 	"github.com/trimmer-io/go-xmp/xmp"
 
@@ -20,28 +17,45 @@ import (
 // BuildXMPDocument creates an xmp.Document containing all available metadata from img.
 // The caller is responsible for calling doc.Close() when finished with the document.
 func BuildXMPDocument(img entities.ImageAsset) (*xmp.Document, error) {
-	doc := xmp.NewDocument()
-	xmpBase := &xmpbase.XmpBase{
-		CreatorTool: "Viz Image Management System",
+	doc, models, err := parsePacket(nil)
+	if err != nil {
+		return nil, err
 	}
 
-	dcModel := &dc.DublinCore{}
-	exifModel := &exif.ExifInfo{}
-	tiffModel := &tiff.TiffInfo{}
-	psModel := &ps.PhotoshopInfo{}
+	if err := populateModels(models, img); err != nil {
+		doc.Close()
+		return nil, err
+	}
+
+	return doc, nil
+}
+
+// populateModels fills the models of an (optionally pre-populated) packet
+// with the database values of img. Values already present in the packet
+// (e.g. embedded XMP) are overwritten where the library carries a value —
+// the database is the source of truth for everything it carries.
+func populateModels(models *modelSet, img entities.ImageAsset) error {
+	xmpBase := models.base
+	xmpBase.CreatorTool = "Viz Image Management System"
+	dcModel := models.dc
+	exifModel := models.exif
+	tiffModel := models.tiff
+	psModel := models.ps
 
 	rawFileName := filepath.Base(img.ImageMetadata.FileName)
 	if rawFileName == "." || rawFileName == "/" || rawFileName == "" {
 		rawFileName = img.Uid
 	}
 
-	crsSettings := &CameraRawSettings{
-		RawFileName:    rawFileName,
-		Version:        "16.0",
-		ProcessVersion: "15.0",
-		HasSettings:    xmp.Bool(false),
+	crsSettings := models.crs
+	crsNode := models.crsNode
+	if crsSettings.RawFileName == "" {
+		crsSettings.RawFileName = rawFileName
+		crsSettings.Version = "16.0"
+		crsSettings.ProcessVersion = "15.0"
+		crsSettings.HasSettings = xmp.Bool(false)
 	}
-	lrModel := &LrInfo{}
+	lrModel := models.lr
 
 	// Set SidecarForExtension to match original file extension (uppercase, without dot)
 	if img.ImageMetadata.FileName != "" {
@@ -56,7 +70,13 @@ func BuildXMPDocument(img entities.ImageAsset) (*xmp.Document, error) {
 	if img.ImageMetadata.Rating != nil {
 		ratingVal := *img.ImageMetadata.Rating
 		xmpBase.Rating = xmpbase.Rating(ratingVal)
-		crsSettings.Rating = &ratingVal
+		// crs:Rating is not part of the registry's crs model — set it as an
+		// unmodeled child of the crs block.
+		if crsNode != nil {
+			if err := crsNode.SetPath("crs:Rating", strconv.Itoa(ratingVal), xmp.CREATE|xmp.REPLACE); err != nil {
+				return fmt.Errorf("set crs:Rating: %w", err)
+			}
+		}
 	}
 
 	if img.ImageMetadata.Label != nil {
@@ -64,7 +84,11 @@ func BuildXMPDocument(img entities.ImageAsset) (*xmp.Document, error) {
 		normalizedLabel := utils.Capitalize(strings.ToLower(rawLabel))
 
 		xmpBase.Label = normalizedLabel
-		crsSettings.Label = &normalizedLabel
+		if crsNode != nil {
+			if err := crsNode.SetPath("crs:Label", normalizedLabel, xmp.CREATE|xmp.REPLACE); err != nil {
+				return fmt.Errorf("set crs:Label: %w", err)
+			}
+		}
 
 		// Map standard color labels to Photoshop Urgency for broader compatibility
 		// (e.g. Capture One older versions, Photo Mechanic, etc.)
@@ -268,16 +292,7 @@ func BuildXMPDocument(img entities.ImageAsset) (*xmp.Document, error) {
 		}
 	}
 
-	// 4. Register Models
-	doc.AddModel(xmpBase)
-	doc.AddModel(dcModel)
-	doc.AddModel(exifModel)
-	doc.AddModel(tiffModel)
-	doc.AddModel(psModel)
-	doc.AddModel(crsSettings)
-	doc.AddModel(lrModel)
-
-	return doc, nil
+	return nil
 }
 
 // GenerateXMP serializes the image metadata into standard XMP XML bytes.
