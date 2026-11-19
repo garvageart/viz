@@ -1554,7 +1554,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/ImageUpdate"
+                            $ref: "#/components/schemas/ImageAssetUpdate"
             responses:
                 "200":
                     description: Updated image resource
@@ -2959,7 +2959,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/JobTypeConfigPatch"
+                            $ref: "#/components/schemas/JobTypeConfigUpdate"
             responses:
                 "200":
                     description: Updated job type
@@ -3770,19 +3770,6 @@ components:
                     description: Hex color code for the keyword
             required: [name]
 
-        KeywordUpdate:
-            type: object
-            properties:
-                name:
-                    type: string
-                    description: The name of the keyword
-                parent:
-                    type: string
-                    description: The UID of the parent keyword, if any
-                colour:
-                    type: string
-                    description: Hex color code for the keyword
-
         Keyword:
             x-entity: true
             x-go-gorm-index:
@@ -3796,12 +3783,15 @@ components:
                     description: Unique identifier for the keyword
                 name:
                     type: string
+                    x-updatable: true
                     description: The name of the keyword
                 parent:
                     type: string
+                    x-updatable: true
                     description: The UID of the parent keyword, if any
                 colour:
                     type: string
+                    x-updatable: true
                     description: Hex color code for the keyword
                 created_at:
                     type: string
@@ -4125,56 +4115,20 @@ components:
                 current:
                     type: integer
                     minimum: 1
+                    maximum: 100
+                    x-updatable: true
                     description: Active runtime worker concurrency.
                 max:
                     type: integer
                     minimum: 1
+                    maximum: 100
+                    x-updatable: true
                     description: Maximum concurrency ceiling allowed for this job type.
                 default:
                     type: integer
                     minimum: 1
                     description: System baseline concurrency initialized from the definition.
             required: [current, max, default]
-
-        JobTypeConcurrencyPatch:
-            type: object
-            description: Partial runtime concurrency override for a registered job type. Only the fields present are applied.
-            properties:
-                current:
-                    type: integer
-                    minimum: 1
-                    maximum: 100
-                    description: Active runtime worker concurrency.
-                max:
-                    type: integer
-                    minimum: 1
-                    maximum: 100
-                    description: Maximum concurrency ceiling allowed for this job type.
-
-        JobTypeConfigPatch:
-            type: object
-            description: Partial administrative override for a registered job type. Only the fields present in the body are applied to the stored configuration; omitted fields keep their stored values, and the concurrency object is merged field-by-field. At least one field must be present. The type is taken from the path parameter.
-            properties:
-                enabled:
-                    type: boolean
-                    description: Whether dispatch and processing are active for this job type.
-                concurrency:
-                    $ref: "#/components/schemas/JobTypeConcurrencyPatch"
-                    description: Partial concurrency override, merged field-by-field onto the stored concurrency.
-                batch_size:
-                    type: integer
-                    minimum: 1
-                    maximum: 1000
-                    description: Job creation and enqueue batch limit.
-                timeout_ms:
-                    type: integer
-                    minimum: 1
-                    description: Per-job execution timeout in milliseconds.
-                max_retries:
-                    type: integer
-                    minimum: 0
-                    maximum: 10
-                    description: Default maximum automatic retry attempts.
 
         JobTypeConfig:
             x-entity: true
@@ -4183,30 +4137,35 @@ components:
                   unique: true
                   fields: [type]
             type: object
-            description: Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. The stored entity backing PATCH /jobs/types/{type}.
+            description: Administrative override for a registered job type. The stored entity backing PATCH /jobs/types/{type}; patch updates apply only the properties present in the body.
             properties:
                 type:
                     $ref: "#/components/schemas/JobTypeName"
                     description: Unique TitleCase identifier for a registered job type.
                 enabled:
                     type: boolean
+                    x-updatable: true
                     description: Whether dispatch and processing are active for this job type.
                 concurrency:
                     $ref: "#/components/schemas/JobTypeConcurrency"
+                    x-updatable: patch
                     description: Active runtime worker concurrency for this job type and its ceiling.
                 batch_size:
                     type: integer
                     minimum: 1
                     maximum: 1000
+                    x-updatable: true
                     description: Job creation and enqueue batch limit.
                 timeout_ms:
                     type: integer
                     minimum: 1
+                    x-updatable: true
                     description: Per-job execution timeout in milliseconds.
                 max_retries:
                     type: integer
                     minimum: 0
                     maximum: 10
+                    x-updatable: true
                     description: Default maximum automatic retry attempts.
             required: [type, enabled, concurrency, batch_size, timeout_ms, max_retries]
 
@@ -4764,6 +4723,7 @@ components:
                         minimum: 0,
                         maximum: 5,
                         nullable: true,
+                        x-updatable: true,
                         description: "User-assigned rating (0-5). Null = unrated"
                     }
                 color_space: { type: string, description: Color space }
@@ -4775,6 +4735,7 @@ components:
                     allOf:
                         - $ref: "#/components/schemas/Label"
                     nullable: true
+                    x-updatable: true
                     description: "User-assigned label for the image. Null = unlabeled"
 
                 checksum: { type: string, description: File checksum }
@@ -4785,7 +4746,7 @@ components:
             type: object
             properties:
                 uid: { type: string, description: Image UID }
-                name: { type: string, description: Image name }
+                name: { type: string, x-updatable: true, description: Image name }
                 original_file_name:
                     type: string
                     x-gorm-tag: "<-:create"
@@ -4794,16 +4755,19 @@ components:
                     $ref: "#/components/schemas/User"
                 owner:
                     $ref: "#/components/schemas/User"
-                description: { type: string, description: Image description }
+                    x-updatable: true
+                description: { type: string, x-updatable: true, description: Image description }
                 exif:
                     $ref: "#/components/schemas/ImageEXIF"
-                private: { type: boolean, description: Is private }
-                favourited: { type: boolean, description: Is favourited }
+                    x-updatable: true
+                private: { type: boolean, x-updatable: true, description: Is private }
+                favourited: { type: boolean, x-updatable: true, description: Is favourited }
                 width: { type: integer, format: int32, description: Image width }
                 height: { type: integer, format: int32, description: Image height }
                 processed: { type: boolean, description: Is processed }
                 image_metadata:
                     $ref: "#/components/schemas/ImageMetadata"
+                    x-updatable: patch
                 image_paths:
                     $ref: "#/components/schemas/ImagePaths"
                 keywords:
@@ -4811,12 +4775,14 @@ components:
                     items:
                         $ref: "#/components/schemas/Keyword"
                     x-gorm-tag: "many2many:image_keywords;"
+                    x-updatable: patch
                     description: Keywords linked to this image
                 created_at: { type: string, format: date-time, description: Creation time }
                 updated_at: { type: string, format: date-time, description: Update time }
                 taken_at:
                     type: string
                     format: date-time
+                    x-updatable: true
                     description: "The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
 
             required:
@@ -4854,11 +4820,11 @@ components:
             type: object
             properties:
                 uid: { type: string, description: Collection UID }
-                name: { type: string, description: Collection name }
+                name: { type: string, x-updatable: true, description: Collection name }
                 image_count: { type: integer, description: Number of images }
-                private: { type: boolean, description: Is private }
-                archived: { type: boolean, description: Is archived }
-                favourited: { type: boolean, description: Is favourited }
+                private: { type: boolean, x-updatable: true, description: Is private }
+                archived: { type: boolean, x-updatable: true, description: Is archived }
+                favourited: { type: boolean, x-updatable: true, description: Is favourited }
                 images:
                     type: array
                     items:
@@ -4868,9 +4834,11 @@ components:
                     $ref: "#/components/schemas/User"
                 owner:
                     $ref: "#/components/schemas/User"
-                description: { type: string, description: Collection description }
+                    x-updatable: true
+                description: { type: string, x-updatable: true, description: Collection description }
                 thumbnail:
                     $ref: "#/components/schemas/ImageAsset"
+                    x-updatable: true
                 created_at: { type: string, format: date-time, description: Creation time }
                 updated_at: { type: string, format: date-time, description: Update time }
             required: [uid, name, image_count, created_at, updated_at]
@@ -4882,17 +4850,6 @@ components:
                 private: { type: boolean, default: false, description: Is private }
                 description: { type: string, description: Collection description }
             required: [name]
-
-        CollectionUpdate:
-            type: object
-            properties:
-                name: { type: string, description: Collection name }
-                thumbnailUID: { type: string, description: Thumbnail image UID }
-                description: { type: string, description: Collection description }
-                private: { type: boolean, description: Is private }
-                archived: { type: boolean, description: Is archived }
-                favourited: { type: boolean, description: Is favourited }
-                ownerUID: { type: string, description: Owner UID }
 
         ImagesResponse:
             type: object
@@ -4962,10 +4919,10 @@ components:
             type: object
             properties:
                 uid: { type: string, description: User UID }
-                first_name: { type: string, description: First name }
-                last_name: { type: string, description: Last name }
-                name: { type: string, description: Name }
-                email: { type: string, description: Email }
+                first_name: { type: string, x-updatable: true, description: First name }
+                last_name: { type: string, x-updatable: true, description: Last name }
+                name: { type: string, x-updatable: true, description: Name }
+                email: { type: string, x-updatable: true, description: Email }
                 role:
                     type: string
                     enum: [user, admin, superadmin, guest]
@@ -4981,27 +4938,6 @@ components:
                 email: { type: string, format: email, description: Email address }
                 password: { type: string, description: Password }
             required: [name, email, password]
-
-        UserUpdate:
-            type: object
-            properties:
-                first_name:
-                    type: string
-                    nullable: true
-                    description: First name
-                last_name:
-                    type: string
-                    nullable: true
-                    description: Last name
-                name:
-                    type: string
-                    nullable: true
-                    description: Name
-                email:
-                    type: string
-                    format: email
-                    nullable: true
-                    description: Email address
 
         AdminUserUpdate:
             type: object
@@ -5050,7 +4986,7 @@ components:
                 user:
                     $ref: "#/components/schemas/User"
                 client_id: { type: string, description: Client ID }
-                client_name: { type: string, description: Client name }
+                client_name: { type: string, x-updatable: true, description: Client name }
                 client_ip: { type: string, description: Client IP }
                 last_active: { type: string, format: date-time, description: Last active time }
                 expires_at: { type: string, format: date-time, description: Expiry time }
@@ -5059,21 +4995,10 @@ components:
                 ref_id: { type: string, description: Reference ID }
                 login_ip: { type: string, description: Login IP }
                 login_at: { type: string, format: date-time, description: Login time }
-                status: { type: integer, description: Session status }
+                status: { type: integer, x-updatable: true, description: Session status }
                 created_at: { type: string, format: date-time, description: Creation time }
                 updated_at: { type: string, format: date-time, description: Update time }
             required: [uid, token, user_uid, created_at, updated_at]
-        SessionUpdate:
-            type: object
-            properties:
-                clientName:
-                    type: string
-                    nullable: true
-                    description: New client name
-                status:
-                    type: integer
-                    nullable: true
-                    description: New status
         APIKey:
             x-entity: true
             type: object
@@ -5239,52 +5164,6 @@ components:
                         $ref: "#/components/schemas/Setting"
             required: [first_name, last_name, settings]
 
-        ImageUpdate:
-            type: object
-            properties:
-                name:
-                    type: string
-                    description: Image name
-                owner_uid:
-                    type: string
-                    nullable: true
-                    description: Owner UID
-                description:
-                    type: string
-                    nullable: true
-                    description: Image description
-                private:
-                    type: boolean
-                    description: Is private
-                keywords:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/KeywordUpdate"
-                taken_at:
-                    type: string
-                    format: date-time
-                    nullable: true
-                    description: "The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at"
-                favourited:
-                    type: boolean
-                    description: Is favourited
-                exif:
-                    $ref: "#/components/schemas/ImageEXIF"
-                image_metadata:
-                    type: object
-                    properties:
-                        label:
-                            allOf:
-                                - $ref: "#/components/schemas/Label"
-                            nullable: true
-                            description: "User-assigned label for the image. Null = unlabeled"
-                        rating:
-                            type: integer
-                            minimum: 0
-                            maximum: 5
-                            nullable: true
-                            description: "User-assigned rating (0-5). Null = unrated"
-
         BatchImageUpdateRequest:
             type: object
             required:
@@ -5297,7 +5176,7 @@ components:
                         type: string
                     description: List of target image UIDs
                 update:
-                    $ref: "#/components/schemas/ImageUpdate"
+                    $ref: "#/components/schemas/ImageAssetUpdate"
 
         BatchImageUpdateResponse:
             type: object
@@ -5639,3 +5518,165 @@ components:
                     type: integer
                     description: Number of assets in this bucket
             required: [id, count]
+
+        # ==== Generated partial update schemas (DO NOT EDIT) ====
+        # Derived by scripts/js/gen-api.ts from x-updatable properties on the
+        # base schemas above. Run make generate-types to re-derive; do not edit.
+
+        KeywordUpdate:
+            type: object
+            description: Partial update of Keyword. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: Keyword
+            properties:
+                name:
+                    type: string
+                    description: The name of the keyword
+                parent:
+                    type: string
+                    description: The UID of the parent keyword, if any
+                colour:
+                    type: string
+                    description: Hex color code for the keyword
+        JobTypeConcurrencyUpdate:
+            type: object
+            description: Partial update of JobTypeConcurrency. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: JobTypeConcurrency
+            properties:
+                current:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    description: Active runtime worker concurrency.
+                max:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    description: Maximum concurrency ceiling allowed for this job type.
+        JobTypeConfigUpdate:
+            type: object
+            description: Partial update of JobTypeConfig. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: JobTypeConfig
+            properties:
+                enabled:
+                    type: boolean
+                    description: Whether dispatch and processing are active for this job type.
+                concurrency:
+                    $ref: '#/components/schemas/JobTypeConcurrencyUpdate'
+                    description: Active runtime worker concurrency for this job type and its ceiling.
+                batch_size:
+                    type: integer
+                    minimum: 1
+                    maximum: 1000
+                    description: Job creation and enqueue batch limit.
+                timeout_ms:
+                    type: integer
+                    minimum: 1
+                    description: Per-job execution timeout in milliseconds.
+                max_retries:
+                    type: integer
+                    minimum: 0
+                    maximum: 10
+                    description: Default maximum automatic retry attempts.
+        ImageMetadataUpdate:
+            type: object
+            description: Partial update of ImageMetadata. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: ImageMetadata
+            properties:
+                rating:
+                    type: integer
+                    minimum: 0
+                    maximum: 5
+                    nullable: true
+                    description: User-assigned rating (0-5). Null = unrated
+                label:
+                    allOf:
+                        -   $ref: '#/components/schemas/Label'
+                    nullable: true
+                    description: User-assigned label for the image. Null = unlabeled
+        ImageAssetUpdate:
+            type: object
+            description: Partial update of ImageAsset. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: ImageAsset
+            properties:
+                name:
+                    type: string
+                    description: Image name
+                owner_uid:
+                    type: string
+                    description: The UID of the referenced User entity. Empty string clears the reference.
+                description:
+                    type: string
+                    description: Image description
+                exif:
+                    $ref: '#/components/schemas/ImageEXIF'
+                private:
+                    type: boolean
+                    description: Is private
+                favourited:
+                    type: boolean
+                    description: Is favourited
+                image_metadata:
+                    $ref: '#/components/schemas/ImageMetadataUpdate'
+                keywords:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/KeywordUpdate'
+                    description: Keywords linked to this image
+                taken_at:
+                    type: string
+                    format: date-time
+                    description: 'The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at'
+        CollectionUpdate:
+            type: object
+            description: Partial update of Collection. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: Collection
+            properties:
+                name:
+                    type: string
+                    description: Collection name
+                private:
+                    type: boolean
+                    description: Is private
+                archived:
+                    type: boolean
+                    description: Is archived
+                favourited:
+                    type: boolean
+                    description: Is favourited
+                owner_uid:
+                    type: string
+                    description: The UID of the referenced User entity. Empty string clears the reference.
+                description:
+                    type: string
+                    description: Collection description
+                thumbnail_uid:
+                    type: string
+                    description: The UID of the referenced ImageAsset entity. Empty string clears the reference.
+        UserUpdate:
+            type: object
+            description: Partial update of User. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: User
+            properties:
+                first_name:
+                    type: string
+                    description: First name
+                last_name:
+                    type: string
+                    description: Last name
+                name:
+                    type: string
+                    description: Name
+                email:
+                    type: string
+                    description: Email
+        SessionUpdate:
+            type: object
+            description: Partial update of Session. Every property is optional; an omitted property keeps its stored value.
+            x-generated-partial-of: Session
+            properties:
+                client_name:
+                    type: string
+                    description: Client name
+                status:
+                    type: integer
+                    description: Session status

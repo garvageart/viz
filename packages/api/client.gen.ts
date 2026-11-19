@@ -175,13 +175,13 @@ export type Session = {
 };
 export type UserUpdate = {
     /** First name */
-    first_name?: string | null;
+    first_name?: string;
     /** Last name */
-    last_name?: string | null;
+    last_name?: string;
     /** Name */
-    name?: string | null;
-    /** Email address */
-    email?: string | null;
+    name?: string;
+    /** Email */
+    email?: string;
 };
 export type Setting = {
     /** Setting unique name */
@@ -220,10 +220,10 @@ export type UserPasswordUpdate = {
     "new": string;
 };
 export type SessionUpdate = {
-    /** New client name */
-    clientName?: string | null;
-    /** New status */
-    status?: number | null;
+    /** Client name */
+    client_name?: string;
+    /** Session status */
+    status?: number;
 };
 export type UserSettingUpdateRequest = {
     /** List of settings to update */
@@ -524,6 +524,12 @@ export type DeleteAssetsResponse = {
     /** Summary message of the operation */
     message?: string;
 };
+export type ImageMetadataUpdate = {
+    /** User-assigned rating (0-5). Null = unrated */
+    rating?: number | null;
+    /** User-assigned label for the image. Null = unlabeled */
+    label?: (Label) | null;
+};
 export type KeywordUpdate = {
     /** The name of the keyword */
     name?: string;
@@ -532,32 +538,28 @@ export type KeywordUpdate = {
     /** Hex color code for the keyword */
     colour?: string;
 };
-export type ImageUpdate = {
+export type ImageAssetUpdate = {
     /** Image name */
     name?: string;
-    /** Owner UID */
-    owner_uid?: string | null;
+    /** The UID of the referenced User entity. Empty string clears the reference. */
+    owner_uid?: string;
     /** Image description */
-    description?: string | null;
+    description?: string;
+    exif?: ImageExif;
     /** Is private */
     "private"?: boolean;
-    keywords?: KeywordUpdate[];
-    /** The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
-    taken_at?: string | null;
     /** Is favourited */
     favourited?: boolean;
-    exif?: ImageExif;
-    image_metadata?: {
-        /** User-assigned label for the image. Null = unlabeled */
-        label?: (Label) | null;
-        /** User-assigned rating (0-5). Null = unrated */
-        rating?: number | null;
-    };
+    image_metadata?: ImageMetadataUpdate;
+    /** Keywords linked to this image */
+    keywords?: KeywordUpdate[];
+    /** The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at */
+    taken_at?: string;
 };
 export type BatchImageUpdateRequest = {
     /** List of target image UIDs */
     uids: string[];
-    update: ImageUpdate;
+    update: ImageAssetUpdate;
 };
 export type BatchImageUpdateResponse = {
     /** Total number of successfully updated images */
@@ -631,18 +633,18 @@ export type CollectionDetailResponse = {
 export type CollectionUpdate = {
     /** Collection name */
     name?: string;
-    /** Thumbnail image UID */
-    thumbnailUID?: string;
-    /** Collection description */
-    description?: string;
     /** Is private */
     "private"?: boolean;
     /** Is archived */
     archived?: boolean;
     /** Is favourited */
     favourited?: boolean;
-    /** Owner UID */
-    ownerUID?: string;
+    /** The UID of the referenced User entity. Empty string clears the reference. */
+    owner_uid?: string;
+    /** Collection description */
+    description?: string;
+    /** The UID of the referenced ImageAsset entity. Empty string clears the reference. */
+    thumbnail_uid?: string;
 };
 export type AddImagesResponse = {
     /** Whether images were added */
@@ -925,17 +927,17 @@ export type JobType = {
 export type JobTypeListResponse = {
     items: JobType[];
 };
-export type JobTypeConcurrencyPatch = {
+export type JobTypeConcurrencyUpdate = {
     /** Active runtime worker concurrency. */
     current?: number;
     /** Maximum concurrency ceiling allowed for this job type. */
     max?: number;
 };
-export type JobTypeConfigPatch = {
+export type JobTypeConfigUpdate = {
     /** Whether dispatch and processing are active for this job type. */
     enabled?: boolean;
-    /** Partial concurrency override, merged field-by-field onto the stored concurrency. */
-    concurrency?: JobTypeConcurrencyPatch;
+    /** Active runtime worker concurrency for this job type and its ceiling. */
+    concurrency?: JobTypeConcurrencyUpdate;
     /** Job creation and enqueue batch limit. */
     batch_size?: number;
     /** Per-job execution timeout in milliseconds. */
@@ -1962,7 +1964,7 @@ export function getImage(uid: string, opts?: Oazapfts.RequestOpts) {
 /**
  * Update image metadata
  */
-export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapfts.RequestOpts) {
+export function updateImage(uid: string, imageAssetUpdate: ImageAssetUpdate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: ImageAsset;
@@ -1978,7 +1980,7 @@ export function updateImage(uid: string, imageUpdate: ImageUpdate, opts?: Oazapf
     }>(`/images/${encodeURIComponent(uid)}`, oazapfts.json({
         ...opts,
         method: "PATCH",
-        body: imageUpdate
+        body: imageAssetUpdate
     }));
 }
 /**
@@ -2724,7 +2726,7 @@ export function listJobTypes(opts?: Oazapfts.RequestOpts) {
 /**
  * Update configuration for a job type
  */
-export function updateJobType($type: JobTypeName, jobTypeConfigPatch: JobTypeConfigPatch, opts?: Oazapfts.RequestOpts) {
+export function updateJobType($type: JobTypeName, jobTypeConfigUpdate: JobTypeConfigUpdate, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: JobType;
@@ -2746,7 +2748,7 @@ export function updateJobType($type: JobTypeName, jobTypeConfigPatch: JobTypeCon
     }>(`/jobs/types/${encodeURIComponent($type)}`, oazapfts.json({
         ...opts,
         method: "PATCH",
-        body: jobTypeConfigPatch
+        body: jobTypeConfigUpdate
     }));
 }
 /**

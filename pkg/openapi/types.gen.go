@@ -715,8 +715,10 @@ type AdminUserUpdateRole string
 // BatchImageUpdateRequest defines model for BatchImageUpdateRequest.
 type BatchImageUpdateRequest struct {
 	// Uids List of target image UIDs
-	Uids   []string    `json:"uids"`
-	Update ImageUpdate `json:"update"`
+	Uids []string `json:"uids"`
+
+	// Update Partial update of ImageAsset. Every property is optional; an omitted property keeps its stored value.
+	Update ImageAssetUpdate `json:"update"`
 }
 
 // BatchImageUpdateResponse defines model for BatchImageUpdateResponse.
@@ -874,7 +876,7 @@ type CollectionListResponse struct {
 	Prev *string `json:"prev,omitempty"`
 }
 
-// CollectionUpdate defines model for CollectionUpdate.
+// CollectionUpdate Partial update of Collection. Every property is optional; an omitted property keeps its stored value.
 type CollectionUpdate struct {
 	// Archived Is archived
 	Archived *bool `json:"archived,omitempty"`
@@ -888,14 +890,14 @@ type CollectionUpdate struct {
 	// Name Collection name
 	Name *string `json:"name,omitempty"`
 
-	// OwnerUID Owner UID
-	OwnerUID *string `json:"ownerUID,omitempty"`
+	// OwnerUid The UID of the referenced User entity. Empty string clears the reference.
+	OwnerUid *string `json:"owner_uid,omitempty"`
 
 	// Private Is private
 	Private *bool `json:"private,omitempty"`
 
-	// ThumbnailUID Thumbnail image UID
-	ThumbnailUID *string `json:"thumbnailUID,omitempty"`
+	// ThumbnailUid The UID of the referenced ImageAsset entity. Empty string clears the reference.
+	ThumbnailUid *string `json:"thumbnail_uid,omitempty"`
 }
 
 // DatabaseConfig defines model for DatabaseConfig.
@@ -1107,6 +1109,34 @@ type ImageAsset struct {
 	Width int32 `json:"width"`
 }
 
+// ImageAssetUpdate Partial update of ImageAsset. Every property is optional; an omitted property keeps its stored value.
+type ImageAssetUpdate struct {
+	// Description Image description
+	Description *string    `json:"description,omitempty"`
+	Exif        *ImageEXIF `json:"exif,omitempty"`
+
+	// Favourited Is favourited
+	Favourited *bool `json:"favourited,omitempty"`
+
+	// ImageMetadata Partial update of ImageMetadata. Every property is optional; an omitted property keeps its stored value.
+	ImageMetadata *ImageMetadataUpdate `json:"image_metadata,omitempty"`
+
+	// Keywords Keywords linked to this image
+	Keywords *[]KeywordUpdate `json:"keywords,omitempty"`
+
+	// Name Image name
+	Name *string `json:"name,omitempty"`
+
+	// OwnerUid The UID of the referenced User entity. Empty string clears the reference.
+	OwnerUid *string `json:"owner_uid,omitempty"`
+
+	// Private Is private
+	Private *bool `json:"private,omitempty"`
+
+	// TakenAt The most appropriate taken/creation timestamp for an image. Follows Priority: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
+	TakenAt *time.Time `json:"taken_at,omitempty"`
+}
+
 // ImageBitDepth Bit depth for transformation (8, 10, 12, or 16)
 type ImageBitDepth int
 
@@ -1307,6 +1337,15 @@ type ImageMetadata struct {
 	Thumbhash *string `json:"thumbhash,omitempty"`
 }
 
+// ImageMetadataUpdate Partial update of ImageMetadata. Every property is optional; an omitted property keeps its stored value.
+type ImageMetadataUpdate struct {
+	// Label User-assigned label for the image. Null = unlabeled
+	Label *Label `json:"label,omitempty"`
+
+	// Rating User-assigned rating (0-5). Null = unrated
+	Rating *int `json:"rating,omitempty"`
+}
+
 // ImagePaths defines model for ImagePaths.
 type ImagePaths struct {
 	// Original Path to original file
@@ -1359,36 +1398,6 @@ type ImageTransform struct {
 
 	// Width Width of the transformed image
 	Width int `json:"width"`
-}
-
-// ImageUpdate defines model for ImageUpdate.
-type ImageUpdate struct {
-	// Description Image description
-	Description *string    `json:"description,omitempty"`
-	Exif        *ImageEXIF `json:"exif,omitempty"`
-
-	// Favourited Is favourited
-	Favourited    *bool `json:"favourited,omitempty"`
-	ImageMetadata *struct {
-		// Label User-assigned label for the image. Null = unlabeled
-		Label *Label `json:"label,omitempty"`
-
-		// Rating User-assigned rating (0-5). Null = unrated
-		Rating *int `json:"rating,omitempty"`
-	} `json:"image_metadata,omitempty"`
-	Keywords *[]KeywordUpdate `json:"keywords,omitempty"`
-
-	// Name Image name
-	Name *string `json:"name,omitempty"`
-
-	// OwnerUid Owner UID
-	OwnerUid *string `json:"owner_uid,omitempty"`
-
-	// Private Is private
-	Private *bool `json:"private,omitempty"`
-
-	// TakenAt The most appropriate taken/creation timestamp for an image. Priority will be: EXIF Original -> EXIF Modify -> metadata file_created_at -> image.created_at
-	TakenAt *time.Time `json:"taken_at,omitempty"`
 }
 
 // ImageUploadRequest defines model for ImageUploadRequest.
@@ -1570,8 +1579,8 @@ type JobTypeConcurrency struct {
 	Max int `json:"max"`
 }
 
-// JobTypeConcurrencyPatch Partial runtime concurrency override for a registered job type. Only the fields present are applied.
-type JobTypeConcurrencyPatch struct {
+// JobTypeConcurrencyUpdate Partial update of JobTypeConcurrency. Every property is optional; an omitted property keeps its stored value.
+type JobTypeConcurrencyUpdate struct {
 	// Current Active runtime worker concurrency.
 	Current *int `json:"current,omitempty"`
 
@@ -1579,7 +1588,7 @@ type JobTypeConcurrencyPatch struct {
 	Max *int `json:"max,omitempty"`
 }
 
-// JobTypeConfig Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. The stored entity backing PATCH /jobs/types/{type}.
+// JobTypeConfig Administrative override for a registered job type. The stored entity backing PATCH /jobs/types/{type}; patch updates apply only the properties present in the body.
 type JobTypeConfig struct {
 	// BatchSize Job creation and enqueue batch limit.
 	BatchSize   int                `json:"batch_size"`
@@ -1598,13 +1607,13 @@ type JobTypeConfig struct {
 	Type JobTypeName `json:"type"`
 }
 
-// JobTypeConfigPatch Partial administrative override for a registered job type. Only the fields present in the body are applied to the stored configuration; omitted fields keep their stored values, and the concurrency object is merged field-by-field. At least one field must be present. The type is taken from the path parameter.
-type JobTypeConfigPatch struct {
+// JobTypeConfigUpdate Partial update of JobTypeConfig. Every property is optional; an omitted property keeps its stored value.
+type JobTypeConfigUpdate struct {
 	// BatchSize Job creation and enqueue batch limit.
 	BatchSize *int `json:"batch_size,omitempty"`
 
-	// Concurrency Partial runtime concurrency override for a registered job type. Only the fields present are applied.
-	Concurrency *JobTypeConcurrencyPatch `json:"concurrency,omitempty"`
+	// Concurrency Partial update of JobTypeConcurrency. Every property is optional; an omitted property keeps its stored value.
+	Concurrency *JobTypeConcurrencyUpdate `json:"concurrency,omitempty"`
 
 	// Enabled Whether dispatch and processing are active for this job type.
 	Enabled *bool `json:"enabled,omitempty"`
@@ -1684,7 +1693,7 @@ type KeywordListResponse struct {
 	Keywords []Keyword `json:"keywords"`
 }
 
-// KeywordUpdate defines model for KeywordUpdate.
+// KeywordUpdate Partial update of Keyword. Every property is optional; an omitted property keeps its stored value.
 type KeywordUpdate struct {
 	// Colour Hex color code for the keyword
 	Colour *string `json:"colour,omitempty"`
@@ -1926,12 +1935,12 @@ type Session struct {
 	UserUid string `json:"user_uid"`
 }
 
-// SessionUpdate defines model for SessionUpdate.
+// SessionUpdate Partial update of Session. Every property is optional; an omitted property keeps its stored value.
 type SessionUpdate struct {
-	// ClientName New client name
-	ClientName *string `json:"clientName,omitempty"`
+	// ClientName Client name
+	ClientName *string `json:"client_name,omitempty"`
 
-	// Status New status
+	// Status Session status
 	Status *int `json:"status,omitempty"`
 }
 
@@ -2224,10 +2233,10 @@ type UserSettingUpdateRequest struct {
 	} `json:"settings"`
 }
 
-// UserUpdate defines model for UserUpdate.
+// UserUpdate Partial update of User. Every property is optional; an omitted property keeps its stored value.
 type UserUpdate struct {
-	// Email Email address
-	Email *openapi_types.Email `json:"email,omitempty"`
+	// Email Email
+	Email *string `json:"email,omitempty"`
 
 	// FirstName First name
 	FirstName *string `json:"first_name,omitempty"`
@@ -2705,13 +2714,13 @@ type ImagesExportJSONRequestBody = ImageExportRequest
 type UploadImageByUrlTextRequestBody = UploadImageByUrlTextBody
 
 // UpdateImageJSONRequestBody defines body for UpdateImage for application/json ContentType.
-type UpdateImageJSONRequestBody = ImageUpdate
+type UpdateImageJSONRequestBody = ImageAssetUpdate
 
 // CreateJobJSONRequestBody defines body for CreateJob for application/json ContentType.
 type CreateJobJSONRequestBody = JobCreateRequest
 
 // UpdateJobTypeJSONRequestBody defines body for UpdateJobType for application/json ContentType.
-type UpdateJobTypeJSONRequestBody = JobTypeConfigPatch
+type UpdateJobTypeJSONRequestBody = JobTypeConfigUpdate
 
 // CreateKeywordJSONRequestBody defines body for CreateKeyword for application/json ContentType.
 type CreateKeywordJSONRequestBody = KeywordCreate

@@ -36,6 +36,264 @@ if (!existsSync(specPath)) {
     process.exit(1);
 }
 
+// ---------------------------------------------------------------------------
+// Derived partial update schemas
+//
+// Base schemas mark client-updatable properties with `x-updatable`:
+//   - `true`  - the property may be set from the wire. Scalars are copied
+//               with their constraints; a `$ref` to an entity (a schema with
+//               a `uid` property) becomes a `<prop>_uid: string` field (empty
+//               string clears the reference); anything else is copied as a
+//               whole-value assignment.
+//   - `patch` - the property is itself partially updatable. `$ref`s are
+//               rewritten to the referenced schema's `<Name>Update` derived
+//               schema; inline objects and arrays recurse with the same rules.
+//   - anything without the marker is not updatable and is omitted entirely.
+//
+// The derived `<Base>Update` schemas are checked into openapi.yaml in a
+// clearly marked generated section at the end of the file. Re-derivation is
+// idempotent: `make generate-types` rewrites the section (hand edits there
+// are overwritten); pass `--check` to fail instead of rewriting.
+// ---------------------------------------------------------------------------
+
+const GENERATED_PARTIALS_MARKER = "# ==== Generated partial update schemas (DO NOT EDIT) ====";
+
+type SchemaMap = Record<string, any>;
+
+function targetOf($ref: string): string {
+    return $ref.split("/").pop() as string;
+}
+
+function isEntitySchema(schemas: SchemaMap, name: string): boolean {
+    return Boolean(schemas[name]?.properties?.uid);
+}
+
+function updatablePropsOf(schemas: SchemaMap, name: string): number {
+    const props = schemas[name]?.properties;
+    if (!props) {
+        return 0;
+    }
+    return Object.values(props).filter((p: any) => p?.["x-updatable"]).length;
+}
+
+function stripMarker(prop: any): any {
+    const { ["x-updatable"]: _drop, ...rest } = prop;
+    return rest;
+}
+
+function patchRefTarget(schemas: SchemaMap, context: string, $ref: string): string {
+    const target = targetOf($ref);
+    if (updatablePropsOf(schemas, target) === 0) {
+        throw new Error(
+            `x-updatable: patch on ${context} references ${target}, but ${target} marks no properties as updatable`
+        );
+    }
+    return target;
+}
+
+function deriveTrue(schemas: SchemaMap, propName: string, prop: any): [string, any] {
+    if (prop.$ref) {
+        const target = targetOf(prop.$ref);
+        if (isEntitySchema(schemas, target)) {
+            const key = propName.endsWith("_uid") ? propName : `${propName}_uid`;
+            return [
+                key,
+                {
+                    type: "string",
+                    description: `The UID of the referenced ${target} entity. Empty string clears the reference.`
+                }
+            ];
+        }
+    }
+    return [propName, stripMarker(prop)];
+}
+
+function derivePatchRef(schemas: SchemaMap, schemaName: string, propName: string, prop: any): [string, any] {
+    const target = patchRefTarget(schemas, `${schemaName}.${propName}`, prop.$ref);
+    return [propName, { $ref: `#/components/schemas/${target}Update`, description: prop.description }];
+}
+
+function derivePatchArray(schemas: SchemaMap, schemaName: string, propName: string, prop: any): [string, any] {
+    const items = prop.items;
+    if (!items?.$ref) {
+        throw new Error(`x-updatable: patch on array ${schemaName}.${propName} requires items to be a $ref`);
+    }
+    const target = patchRefTarget(schemas, `${schemaName}.${propName}`, items.$ref);
+    const out: any = {
+        type: "array",
+        items: { $ref: `#/components/schemas/${target}Update` }
+    };
+    if (prop.description) {
+        out.description = prop.description;
+    }
+    return [propName, out];
+}
+
+function derivePatchObject(schemas: SchemaMap, schemaName: string, propName: string, prop: any): [string, any] {
+    const inner: Record<string, any> = {};
+    for (const [innerName, innerProp] of Object.entries<any>(prop.properties)) {
+        const [k, v] = deriveProp(schemas, schemaName, innerName, innerProp);
+        inner[k] = v;
+    }
+    return [
+        propName,
+        {
+            type: "object",
+            description: prop.description,
+            properties: inner
+        }
+    ];
+}
+
+function derivePatch(schemas: SchemaMap, schemaName: string, propName: string, prop: any): [string, any] {
+    if (prop.$ref) {
+        return derivePatchRef(schemas, schemaName, propName, prop);
+    }
+    if (prop.type === "array") {
+        return derivePatchArray(schemas, schemaName, propName, prop);
+    }
+    if (prop.type === "object" && prop.properties) {
+        return derivePatchObject(schemas, schemaName, propName, prop);
+    }
+    throw new Error(
+        `x-updatable: patch on ${schemaName}.${propName} requires a $ref, an array of $refs, or an inline object`
+    );
+}
+
+function deriveProp(schemas: SchemaMap, schemaName: string, propName: string, prop: any): [string, any] {
+    // js-yaml parses an unquoted `true` as a boolean; normalise modes.
+    const mode = prop?.["x-updatable"] == null ? undefined : String(prop["x-updatable"]);
+    if (mode === "true") {
+        return deriveTrue(schemas, propName, prop);
+    }
+    if (mode === "patch") {
+        return derivePatch(schemas, schemaName, propName, prop);
+    }
+    throw new Error(`x-updatable on ${schemaName}.${propName} must be "true" or "patch", got "${mode}"`);
+}
+
+function deriveBase(schemas: SchemaMap, baseName: string, base: any): [string, any] | undefined {
+    const props = base?.properties;
+    if (!props) {
+        return undefined;
+    }
+    const marked = Object.entries<any>(props).filter(([, p]) => p?.["x-updatable"]);
+    if (marked.length === 0) {
+        return undefined;
+    }
+    const derivedProps: Record<string, any> = {};
+    for (const [propName, prop] of marked) {
+        const [key, schema] = deriveProp(schemas, baseName, propName, prop);
+        derivedProps[key] = schema;
+    }
+    const updateName = `${baseName}Update`;
+    if (schemas[updateName]) {
+        throw new Error(
+            `Derived schema ${updateName} collides with an existing hand-written schema in openapi.yaml; remove or rename it`
+        );
+    }
+    return [
+        updateName,
+        {
+            type: "object",
+            description: `Partial update of ${baseName}. Every property is optional; an omitted property keeps its stored value.`,
+            "x-generated-partial-of": baseName,
+            properties: derivedProps
+        }
+    ];
+}
+
+function derivePartials(headDoc: any): { block: string; count: number } {
+    const schemas: SchemaMap = headDoc?.components?.schemas ?? {};
+    const derived: Record<string, any> = {};
+    for (const [baseName, base] of Object.entries<any>(schemas)) {
+        const entry = deriveBase(schemas, baseName, base);
+        if (!entry) {
+            continue;
+        }
+        derived[entry[0]] = entry[1];
+    }
+
+    let body = yaml.dump(derived, { indent: 4, lineWidth: -1, noRefs: true });
+    body = body
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => `        ${line}`)
+        .join("\n");
+    const block = [
+        `        ${GENERATED_PARTIALS_MARKER}`,
+        "        # Derived by scripts/js/gen-api.ts from x-updatable properties on the",
+        "        # base schemas above. Run make generate-types to re-derive; do not edit.",
+        "",
+        body,
+        ""
+    ].join("\n");
+    return { block, count: Object.keys(derived).length };
+}
+
+function assertDerivedSchemasResolve(finalSchemas: SchemaMap) {
+    // Derived schemas must reference only schemas that exist at the end.
+    for (const [name, schema] of Object.entries<any>(finalSchemas)) {
+        if (!schema?.["x-generated-partial-of"]) {
+            continue;
+        }
+        const refs = JSON.stringify(schema).match(/#\/components\/schemas\/[A-Za-z0-9]+/g) ?? [];
+        for (const ref of refs) {
+            const target = targetOf(ref);
+            if (finalSchemas[target]) {
+                continue;
+            }
+            throw new Error(`Derived schema ${name} references missing schema ${target}`);
+        }
+    }
+}
+
+function spliceGeneratedPartials(rawText: string): { next: string; count: number; changed: boolean } {
+    const markerIndex = rawText.indexOf(`        ${GENERATED_PARTIALS_MARKER}`);
+    const head = (markerIndex === -1 ? rawText : rawText.slice(0, markerIndex)).replace(/\s+$/, "");
+    const headDoc = yaml.load(head) as any;
+    const { block, count } = derivePartials(headDoc);
+    const next = `${head}\n\n${block}`;
+    // Sanity: the spliced document must parse and must resolve every reference.
+    const finalDoc = yaml.load(next) as any;
+    assertDerivedSchemasResolve(finalDoc?.components?.schemas ?? {});
+    return { next, count, changed: next !== rawText };
+}
+
+const checkOnly = args.includes("--check");
+
+function reportDerivedPartialsCheck(count: number, changed: boolean) {
+    if (changed) {
+        console.error(
+            `openapi.yaml: derived partial update schemas are out of date (${count} would be re-derived). Run make generate-types.`
+        );
+        process.exit(1);
+    }
+
+    console.log(`openapi.yaml: derived partial update schemas are up to date (${count} derived).`);
+    process.exit(0);
+}
+
+function applyDerivedPartials() {
+    try {
+        const rawSpec = readFileSync(specPath, "utf-8");
+        const { next, count, changed } = spliceGeneratedPartials(rawSpec);
+        if (checkOnly) {
+            reportDerivedPartialsCheck(count, changed);
+            return;
+        }
+        if (changed) {
+            writeFileSync(specPath, next, "utf-8");
+            console.log(`openapi.yaml: re-derived ${count} partial update schemas and rewrote the generated section.`);
+            return;
+        }
+        console.log(`openapi.yaml: derived partial update schemas unchanged (${count} derived).`);
+    } catch (err) {
+        console.error("Failed to derive partial update schemas:", err instanceof Error ? err.message : err);
+        process.exit(1);
+    }
+}
+
 function run(command: string, args: string[], cwd?: string, silent = false) {
     const result = spawnSync(command, args, {
         cwd: cwd || root,
@@ -56,209 +314,218 @@ function commandExists(cmd: string): boolean {
     return result.status === 0;
 }
 
-// Optionally install tools
-if (options.installTools) {
-    console.log("Ensuring oapi-codegen is installed...");
-    if (!commandExists("oapi-codegen")) {
-        console.log("Installing oapi-codegen...");
-        const installSuccess = run("go", [
-            "install",
-            "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest"
-        ]);
-        if (installSuccess) {
-            // Try to locate the installed binary and add it to PATH for this process so subsequent commands can find it.
-            const binName = process.platform === "win32" ? "oapi-codegen.exe" : "oapi-codegen";
-            const goBin =
-                process.env.GOBIN ||
-                (process.env.GOPATH ? join(process.env.GOPATH, "bin") : join(process.env.HOME || "", "go", "bin"));
-            const candidate = join(goBin, binName);
-            if (existsSync(candidate)) {
-                const pathSep = process.platform === "win32" ? ";" : ":";
-                process.env.PATH = `${goBin}${pathSep}${process.env.PATH || ""}`;
-                console.log(`Added ${goBin} to PATH for this process.`);
-            } else {
-                console.warn(
-                    `oapi-codegen installed but not found at ${candidate}. It may not be on PATH; consider adding ${goBin} to your PATH.`
-                );
-            }
-        } else {
-            console.warn(
-                "`go install` for oapi-codegen failed. The generator may still run via `go run`, but the binary was not installed."
-            );
-        }
+function goBinDir(): string {
+    if (process.env.GOBIN) {
+        return process.env.GOBIN;
     }
+    if (process.env.GOPATH) {
+        return join(process.env.GOPATH, "bin");
+    }
+    return join(process.env.HOME || "", "go", "bin");
+}
 
+function installOapiCodegen() {
+    console.log("Ensuring oapi-codegen is installed...");
+    if (commandExists("oapi-codegen")) {
+        return;
+    }
+    console.log("Installing oapi-codegen...");
+    const installed = run("go", ["install", "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest"]);
+    if (!installed) {
+        console.warn(
+            "`go install` for oapi-codegen failed. The generator may still run via `go run`, but the binary was not installed."
+        );
+        return;
+    }
+    // Try to locate the installed binary and add it to PATH for this process so subsequent commands can find it.
+    const binName = process.platform === "win32" ? "oapi-codegen.exe" : "oapi-codegen";
+    const goBin = goBinDir();
+    const candidate = join(goBin, binName);
+    if (!existsSync(candidate)) {
+        console.warn(
+            `oapi-codegen installed but not found at ${candidate}. It may not be on PATH; consider adding ${goBin} to your PATH.`
+        );
+        return;
+    }
+    const pathSep = process.platform === "win32" ? ";" : ":";
+    process.env.PATH = `${goBin}${pathSep}${process.env.PATH || ""}`;
+    console.log(`Added ${goBin} to PATH for this process.`);
+}
+
+function installTsTypes() {
     console.log("Ensuring pnpm dev dep openapi-typescript is installed...");
-    if (existsSync(packagesApiDir) && commandExists("pnpm")) {
+    const pnpmAvailable = commandExists("pnpm");
+    if (existsSync(packagesApiDir) && pnpmAvailable) {
         console.log("Adding openapi-typescript to packages/api...");
         run("pnpm", ["add", "-D", "openapi-typescript@^7.5.0"], packagesApiDir, true);
-    } else if (!commandExists("pnpm")) {
-        console.warn("pnpm not found. Skipping TS generator install; assuming it's available in PATH.");
+        return;
+    }
+    if (pnpmAvailable) {
+        return;
+    }
+    console.warn("pnpm not found. Skipping TS generator install; assuming it's available in PATH.");
+}
+
+function installToolsIfRequested() {
+    if (!options.installTools) {
+        return;
+    }
+    installOapiCodegen();
+    installTsTypes();
+}
+
+function ensureRuntimeDependency(): boolean {
+    console.log("Ensuring Go runtime dependency for oapi-codegen is present...");
+    const hasRuntime = run("go", ["list", "-m", "github.com/oapi-codegen/runtime"], root, true);
+    if (hasRuntime) {
+        return true;
+    }
+    console.log("Adding oapi-codegen runtime dependency...");
+    run("go", ["get", "github.com/oapi-codegen/runtime/types@v1.1.0"]);
+    return false;
+}
+
+function generateGoDtos(): boolean {
+    console.log(`Generating Go DTOs from ${specPath} -> ${dtoOutPath}`);
+    return run("go", [
+        "run",
+        "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
+        "-generate",
+        "types,skip-prune",
+        "-package",
+        "dto",
+        "-o",
+        dtoOutPath,
+        specPath
+    ]);
+}
+
+function ensureDir(dir: string) {
+    try {
+        mkdirSync(dir, { recursive: true });
+    } catch (e) {
+        /* ignore */
     }
 }
 
-// Ensure oapi runtime dependency exists
-console.log("Ensuring Go runtime dependency for oapi-codegen is present...");
-const hasRuntime = run("go", ["list", "-m", "github.com/oapi-codegen/runtime"], root, true);
-if (!hasRuntime) {
-    console.log("Adding oapi-codegen runtime dependency...");
-    run("go", ["get", "github.com/oapi-codegen/runtime/types@v1.1.0"]);
-}
-
-// Generate Go DTOs
-console.log(`Generating Go DTOs from ${specPath} -> ${dtoOutPath}`);
-const goGenSuccess = run("go", [
-    "run",
-    "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
-    "-generate",
-    "types,skip-prune",
-    "-package",
-    "dto",
-    "-o",
-    dtoOutPath,
-    specPath
-]);
-
-if (!goGenSuccess) {
-    console.error("Failed to generate Go DTOs");
-    process.exit(1);
-}
-
-// Generate Go types+client into pkg/openapi so package is self-contained for public use.
-const outDir = join(root, "pkg", "openapi");
-const typesOut = join(outDir, "types.gen.go");
-const clientOut = join(outDir, "client.gen.go");
-console.log(`Generating Go types + client into ${outDir}`);
-
-// ensure outDir exists
-try {
-    mkdirSync(outDir, { recursive: true });
-} catch (e) {
-    /* ignore */
-}
-
-// Generate types into pkg/openapi (keeps a local copy for the public package)
-const typesSuccess = run("go", [
-    "run",
-    "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
-    "-generate",
-    "types,skip-prune",
-    "-package",
-    "openapi",
-    "-o",
-    typesOut,
-    specPath
-]);
-if (!typesSuccess) {
+function generateOpenapiTypes(outDir: string): boolean {
+    const typesOut = join(outDir, "types.gen.go");
+    const typesSuccess = run("go", [
+        "run",
+        "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
+        "-generate",
+        "types,skip-prune",
+        "-package",
+        "openapi",
+        "-o",
+        typesOut,
+        specPath
+    ]);
+    if (typesSuccess) {
+        console.log("oapi-codegen types generated to", typesOut);
+        return true;
+    }
     console.warn("oapi-codegen types generation into pkg/openapi failed; pkg/openapi will not contain types");
-} else {
-    console.log("oapi-codegen types generated to", typesOut);
+    return false;
 }
 
-// Generate client into pkg/openapi
-const clientSuccess = run("go", [
-    "run",
-    "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
-    "-generate",
-    "client",
-    "-package",
-    "openapi",
-    "-o",
-    clientOut,
-    specPath
-]);
-
-if (!clientSuccess) {
+function generateOpenapiClient(outDir: string) {
+    const clientOut = join(outDir, "client.gen.go");
+    const clientSuccess = run("go", [
+        "run",
+        "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest",
+        "-generate",
+        "client",
+        "-package",
+        "openapi",
+        "-o",
+        clientOut,
+        specPath
+    ]);
+    if (clientSuccess) {
+        console.log("oapi-codegen client generated to", clientOut);
+        return;
+    }
     console.error("oapi-codegen client generation failed; skipping Go client generation");
-} else {
-    console.log("oapi-codegen client generated to", clientOut);
 }
 
-if (!typesSuccess && !existsSync(dtoOutPath)) {
+function warnIfNoGoTypesGenerated(typesSuccess: boolean) {
+    if (typesSuccess || existsSync(dtoOutPath)) {
+        return;
+    }
     console.warn("No types available in pkg/openapi OR internal/dto; ensure oapi-codegen types run succeeded earlier.");
 }
 
-// Tidy modules (optional, only if new dependencies were added)
-if (options.installTools || !hasRuntime) {
-    console.log("Running go mod tidy...");
-    run("go", ["mod", "tidy"]);
-} else {
+function tidyModulesIfNeeded(hasRuntime: boolean) {
+    if (options.installTools || !hasRuntime) {
+        console.log("Running go mod tidy...");
+        run("go", ["mod", "tidy"]);
+        return;
+    }
     console.log("Skipping go mod tidy (use --install-tools to force)");
 }
 
-// Generate GORM entities from DTOs
-const genEntitiesBinary = process.platform === "win32" ? "genentities.exe" : "genentities";
-const genEntitiesPath = join(root, "tools", "genentities", genEntitiesBinary);
-
-let genEntitiesSuccess = false;
-
-if (existsSync(genEntitiesPath)) {
-    console.log(`Generating GORM entities using binary (${genEntitiesPath})...`);
-    // On Windows/Shell, passing the absolute path usually works fine.
-    genEntitiesSuccess = run(genEntitiesPath, ["-openapi", specPath]);
-} else {
-    console.log("Generating GORM entities from DTOs (go run ./tools/genentities)...");
-    genEntitiesSuccess = run("go", ["run", "./tools/genentities", "-openapi", specPath]);
-}
-
-if (!genEntitiesSuccess) {
-    console.error("Failed to generate GORM entities");
-    process.exit(1);
-}
-
-// Generate TS API client with oazapfts
-console.log(`Generating TypeScript API client with oazapfts -> ${tsClientOutPath}`);
-try {
-    mkdirSync(packagesApiDir, { recursive: true });
-} catch (e) {
-    /* ignore */
-}
-
-if (commandExists("pnpm")) {
-    const tsGenSuccess = run("pnpm", ["dlx", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
-    if (!tsGenSuccess) {
-        console.warn("pnpm dlx oazapfts failed; trying npx fallback...");
-        run("npx", ["-y", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
+function generateEntities(): boolean {
+    const genEntitiesBinary = process.platform === "win32" ? "genentities.exe" : "genentities";
+    const genEntitiesPath = join(root, "tools", "genentities", genEntitiesBinary);
+    if (existsSync(genEntitiesPath)) {
+        console.log(`Generating GORM entities using binary (${genEntitiesPath})...`);
+        // On Windows/Shell, passing the absolute path usually works fine.
+        return run(genEntitiesPath, ["-openapi", specPath]);
     }
-} else {
-    console.warn("pnpm not found; trying npx oazapfts...");
+    console.log("Generating GORM entities from DTOs (go run ./tools/genentities)...");
+    return run("go", ["run", "./tools/genentities", "-openapi", specPath]);
+}
+
+function generateTsClient() {
+    console.log(`Generating TypeScript API client with oazapfts -> ${tsClientOutPath}`);
+    ensureDir(packagesApiDir);
+    if (!commandExists("pnpm")) {
+        console.warn("pnpm not found; trying npx oazapfts...");
+        run("npx", ["-y", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
+        return;
+    }
+    const tsGenSuccess = run("pnpm", ["dlx", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
+    if (tsGenSuccess) {
+        return;
+    }
+    console.warn("pnpm dlx oazapfts failed; trying npx fallback...");
     run("npx", ["-y", "oazapfts", specPath, tsClientOutPath, "--useEnumType"], root);
 }
 
-// Generate scopes from BearerAuth security scheme
-try {
-    console.log("Generating scopes.gen.ts from OpenAPI x-scopes...");
-    const specContent = readFileSync(specPath, "utf-8");
-    const doc = yaml.load(specContent) as Record<string, any>;
-    const scopesMap = doc?.components?.securitySchemes?.BearerAuth?.["x-scopes"];
+function scopePartToKey(part: string): string {
+    if (part === "api") {
+        return "API";
+    }
+    return part.charAt(0).toUpperCase() + part.slice(1);
+}
 
-    if (scopesMap) {
-        const scopeKeys: string[] = [];
-        const scopeItems: { value: string; label: string }[] = [];
+function scopeToKey(scope: string): string {
+    if (scope === "*") {
+        return "FullAccess";
+    }
+    return scope.split(/[:\-]/).map(scopePartToKey).join("");
+}
 
-        const scopeToKey = (scope: string): string => {
-            if (scope === "*") {
-                return "FullAccess";
-            }
+function scopePartToGoKey(part: string): string {
+    if (part === "APIKeys") {
+        return "APIKeys";
+    }
+    return part.charAt(0).toUpperCase() + part.slice(1);
+}
 
-            const parts = scope.split(/[:\-]/);
-            return parts
-                .map((part) => {
-                    if (part === "api") {
-                        return "API";
-                    }
-                    return part.charAt(0).toUpperCase() + part.slice(1);
-                })
-                .join("");
-        };
+function scopeToGoKey(scope: string): string {
+    if (scope === "*") {
+        return "AllScope";
+    }
+    const cleaned = scope.replace("api-keys", "APIKeys");
+    return cleaned.split(/[:\-]/).map(scopePartToGoKey).join("") + "Scope";
+}
 
-        for (const [value, label] of Object.entries(scopesMap)) {
-            const key = scopeToKey(value);
-            scopeKeys.push(`    ${key} = "${value}"`);
-            scopeItems.push({ value, label: label as string });
-        }
-
-        const scopesGenContent = `/**
+function writeTypeScriptScopes(scopes: [string, string][]) {
+    const scopeKeys = scopes.map(([value]) => `    ${scopeToKey(value)} = "${value}"`);
+    const scopeItems = scopes.map(([value, label]) => `    { value: Scope.${scopeToKey(value)}, label: "${label}" }`);
+    const scopesGenContent = `/**
  * DO NOT MODIFY - This file has been generated from OpenAPI spec.
  * See scripts/js/gen-api.ts
  */
@@ -273,40 +540,20 @@ export interface ScopeItem {
 }
 
 export const scopes: ScopeItem[] = [
-${scopeItems.map((item) => `    { value: Scope.${scopeToKey(item.value)}, label: "${item.label}" }`).join(",\n")}
+${scopeItems.join(",\n")}
 ];
 `;
-        writeFileSync(scopesGenPath, scopesGenContent, "utf-8");
-        console.log(`Successfully generated scopes to ${scopesGenPath}`);
+    writeFileSync(scopesGenPath, scopesGenContent, "utf-8");
+    console.log(`Successfully generated scopes to ${scopesGenPath}`);
+}
 
-        // Generate Go scopes
-        const scopeKeysGo: string[] = [];
-        const scopeItemsGo: string[] = [];
-
-        const scopeToGoKey = (scope: string): string => {
-            if (scope === "*") {
-                return "AllScope";
-            }
-            const cleaned = scope.replace("api-keys", "APIKeys");
-            const parts = cleaned.split(/[:\-]/);
-            const pascal = parts
-                .map((part) => {
-                    if (part === "APIKeys") {
-                        return "APIKeys";
-                    }
-                    return part.charAt(0).toUpperCase() + part.slice(1);
-                })
-                .join("");
-            return pascal + "Scope";
-        };
-
-        for (const [value, label] of Object.entries(scopesMap)) {
-            const goKey = scopeToGoKey(value);
-            scopeKeysGo.push(`\t// ${goKey} grants permission for ${value}.\n\t${goKey} Scope = "${value}"`);
-            scopeItemsGo.push(`\t{Value: ${goKey}, Label: "${label}"}`);
-        }
-
-        const goGenContent = `// Code generated by scripts/js/gen-api.ts. DO NOT EDIT.
+function writeGoScopes(scopes: [string, string][]) {
+    const scopeKeysGo = scopes.map(
+        ([value]) =>
+            `\t// ${scopeToGoKey(value)} grants permission for ${value}.\n\t${scopeToGoKey(value)} Scope = "${value}"`
+    );
+    const scopeItemsGo = scopes.map(([value, label]) => `\t{Value: ${scopeToGoKey(value)}, Label: "${label}"}`);
+    const goGenContent = `// Code generated by scripts/js/gen-api.ts. DO NOT EDIT.
 package auth
 
 const (
@@ -318,31 +565,75 @@ var AllScopes = []ScopeItem{
 ${scopeItemsGo.join(",\n")},
 }
 `;
-        const goGenPath = join(root, "internal", "auth", "scopes.gen.go");
-        writeFileSync(goGenPath, goGenContent, "utf-8");
-        console.log(`Successfully generated Go scopes to ${goGenPath}`);
-    } else {
-        console.warn("No x-scopes found in BearerAuth security scheme.");
-    }
-} catch (err) {
-    console.error("Failed to generate scopes.gen.ts:", err);
+    const goGenPath = join(root, "internal", "auth", "scopes.gen.go");
+    writeFileSync(goGenPath, goGenContent, "utf-8");
+    console.log(`Successfully generated Go scopes to ${goGenPath}`);
 }
 
-// Optional build checks
-if (options.build) {
+function generateScopes() {
+    try {
+        console.log("Generating scopes.gen.ts from OpenAPI x-scopes...");
+        const doc = yaml.load(readFileSync(specPath, "utf-8")) as Record<string, any>;
+        const scopesMap = doc?.components?.securitySchemes?.BearerAuth?.["x-scopes"];
+        if (!scopesMap) {
+            console.warn("No x-scopes found in BearerAuth security scheme.");
+            return;
+        }
+        const scopes = Object.entries(scopesMap).map(([value, label]) => [value, String(label)] as [string, string]);
+        writeTypeScriptScopes(scopes);
+        writeGoScopes(scopes);
+    } catch (err) {
+        console.error("Failed to generate scopes.gen.ts:", err);
+    }
+}
+
+function runBuildChecks() {
+    if (!options.build) {
+        return;
+    }
     console.log("Running Go build...");
     const goBuildSuccess = run("go", ["build", "./..."]);
     if (!goBuildSuccess) {
         console.warn("Go build failed.");
     }
-
-    if (commandExists("pnpm")) {
-        console.log("Running pnpm check...");
-        const checkSuccess = run("pnpm", ["run", "check"], root);
-        if (!checkSuccess) {
-            console.warn("pnpm check failed (this may be unrelated to API types).");
-        }
+    if (!commandExists("pnpm")) {
+        return;
+    }
+    console.log("Running pnpm check...");
+    const checkSuccess = run("pnpm", ["run", "check"], root);
+    if (!checkSuccess) {
+        console.warn("pnpm check failed (this may be unrelated to API types).");
     }
 }
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+applyDerivedPartials();
+installToolsIfRequested();
+const hasRuntime = ensureRuntimeDependency();
+
+if (!generateGoDtos()) {
+    console.error("Failed to generate Go DTOs");
+    process.exit(1);
+}
+
+const openapiOutDir = join(root, "pkg", "openapi");
+console.log(`Generating Go types + client into ${openapiOutDir}`);
+ensureDir(openapiOutDir);
+const typesSuccess = generateOpenapiTypes(openapiOutDir);
+generateOpenapiClient(openapiOutDir);
+warnIfNoGoTypesGenerated(typesSuccess);
+tidyModulesIfNeeded(hasRuntime);
+
+if (!generateEntities()) {
+    console.error("Failed to generate GORM entities");
+    process.exit(1);
+}
+
+generateTsClient();
+generateScopes();
+runBuildChecks();
 
 console.log("Done.");

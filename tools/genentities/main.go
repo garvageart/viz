@@ -227,6 +227,12 @@ func main() {
 		discovered = mergedDiscovered
 	}
 
+	// Emit entities in a deterministic (name-sorted) order so regenerated
+	// output produces minimal diffs
+	slices.SortFunc(discovered, func(a, b EntityConfig) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	// Infer fields for each entity
 	entities, err := populateEntityFields(*dtoFile, discovered)
 	if err != nil {
