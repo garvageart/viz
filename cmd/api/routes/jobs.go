@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"gorm.io/gorm"
 
 	"viz/internal/auth"
 	"viz/internal/dto"
@@ -17,16 +18,22 @@ import (
 	"viz/internal/jobs"
 )
 
-// JobsRouter exposes the admin jobs API. Callers are responsible for applying
-// AuthMiddleware and AdminMiddleware before mounting this router.
-func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
+// JobsRouter exposes the admin jobs API. It applies AuthMiddleware and
+// AdminMiddleware internally so jobs are an admin-only route regardless of
+// whether auth is done by cookie session or API key — the same pattern as
+// AdminRouter. On top of that, individual API keys must carry the matching
+// jobs scope; cookie sessions are role-gated by AdminMiddleware alone. Jobs
+// live under their own base route.
+func JobsRouter(db *gorm.DB, service *jobs.Service, logger *slog.Logger) *chi.Mux {
 	router := chi.NewRouter()
+	router.Use(libhttp.AuthMiddleware(db, logger))
+	router.Use(libhttp.AdminMiddleware)
 
-	router.With(scope(auth.JobsReadScope)).Get("/types", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsReadScope})).Get("/types", func(res http.ResponseWriter, req *http.Request) {
 		render.JSON(res, req, dto.JobTypeListResponse{Items: service.ListTypes()})
 	})
 
-	router.With(scope(auth.JobsUpdateScope)).Patch("/types/{type}", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsUpdateScope})).Patch("/types/{type}", func(res http.ResponseWriter, req *http.Request) {
 		jobType, err := parseJobType(chi.URLParam(req, "type"))
 		if err != nil {
 			renderBadRequest(res, req, err.Error())
@@ -48,27 +55,24 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, updated)
 	})
 
-	router.With(scope(auth.JobsCreateScope)).Post("/", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsCreateScope})).Post("/", func(res http.ResponseWriter, req *http.Request) {
 		var body dto.JobCreateRequest
 		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			renderBadRequest(res, req, "Invalid request body")
 			return
 		}
 
-		jobs_created, err := service.CreateJob(req.Context(), body.Type, body.Data)
+		created, err := service.CreateJob(req.Context(), body.Type, body.Data)
 		if err != nil {
 			renderJobError(res, req, err)
 			return
 		}
 
 		render.Status(req, http.StatusCreated)
-		render.JSON(res, req, dto.JobCreateResponse{
-			Message: "Job created",
-			Jobs:    jobDTOs(jobs_created),
-		})
+		render.JSON(res, req, created)
 	})
 
-	router.With(scope(auth.JobsReadScope)).Get("/", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsReadScope})).Get("/", func(res http.ResponseWriter, req *http.Request) {
 		limit, page, err := parsePagination(req)
 		if err != nil {
 			renderBadRequest(res, req, err.Error())
@@ -110,7 +114,7 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		})
 	})
 
-	router.With(scope(auth.JobsDeleteScope)).Delete("/", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsDeleteScope})).Delete("/", func(res http.ResponseWriter, req *http.Request) {
 		jobType, err := parseJobType(req.URL.Query().Get("type"))
 		if err != nil {
 			renderBadRequest(res, req, err.Error())
@@ -142,7 +146,7 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		})
 	})
 
-	router.With(scope(auth.JobsReadScope)).Get("/stats", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsReadScope})).Get("/stats", func(res http.ResponseWriter, req *http.Request) {
 		stats, err := service.Stats(req.Context())
 		if err != nil {
 			renderJobError(res, req, err)
@@ -152,7 +156,7 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, stats)
 	})
 
-	router.With(scope(auth.JobsReadScope)).Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsReadScope})).Get("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		job, err := service.GetJob(req.Context(), chi.URLParam(req, "uid"))
 		if err != nil {
 			renderJobError(res, req, err)
@@ -162,7 +166,7 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 		render.JSON(res, req, job.DTO())
 	})
 
-	router.With(scope(auth.JobsDeleteScope)).Delete("/{uid}", func(res http.ResponseWriter, req *http.Request) {
+	router.With(libhttp.ScopeMiddleware([]auth.Scope{auth.JobsDeleteScope})).Delete("/{uid}", func(res http.ResponseWriter, req *http.Request) {
 		if err := service.CancelJob(req.Context(), chi.URLParam(req, "uid")); err != nil {
 			renderJobError(res, req, err)
 			return
@@ -173,10 +177,6 @@ func JobsRouter(service *jobs.Service, logger *slog.Logger) *chi.Mux {
 	})
 
 	return router
-}
-
-func scope(required ...auth.Scope) func(http.Handler) http.Handler {
-	return libhttp.ScopeMiddleware(required)
 }
 
 func jobDTOs(items []entities.WorkerJob) []dto.WorkerJob {

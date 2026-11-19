@@ -162,11 +162,7 @@ func (server APIServer) Launch(router *chi.Mux, jobService *jobs.Service) *http.
 
 		// Admin routes (auth + admin required)
 		r.Mount("/admin", routes.AdminRouter(dbClient, logger, StorageStatsHolder))
-		r.Group(func(r chi.Router) {
-			r.Use(libhttp.AuthMiddleware(dbClient, logger))
-			r.Use(libhttp.AdminMiddleware)
-			r.Mount("/jobs", routes.JobsRouter(jobService, logger))
-		})
+		r.Mount("/jobs", routes.JobsRouter(dbClient, jobService, logger))
 	})
 
 	// Serve Frontend (SPA + Static Files)
@@ -333,7 +329,7 @@ func main() {
 
 	apiServer.WSBroker = libhttp.NewWSBroker(logger)
 
-	defs := workers.Definitions(client, apiServer.WSBroker)
+	defs := workers.Definitions(client, apiServer.WSBroker, logger)
 
 	catalog, err := jobs.NewCatalog(defs...)
 	if err != nil {
