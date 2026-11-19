@@ -607,7 +607,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 
 		for _, img := range updatedImages {
-			_, err = jobs.Enqueue(db, dto.XmpGeneration, &workers.XMPGenerationPayload{Image: img}, jobs.EnqueueOptions{Source: dto.Update})
+			_, err = jobs.Enqueue(db, dto.XmpGeneration, &workers.XMPGenerationPayload{Image: &img}, jobs.EnqueueOptions{Source: dto.JobSourceUpdate})
 			if err != nil {
 				logger.Error("failed to enqueue xmp generation job", slog.String("uid", img.Uid), slog.Any("error", err))
 			}
@@ -700,7 +700,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 		}
 
 		logger.Info("triggering background xmp update", slog.String("uid", img.Uid))
-		_, err = jobs.Enqueue(db, dto.XmpGeneration, &workers.XMPGenerationPayload{Image: img}, jobs.EnqueueOptions{Source: dto.Update})
+		_, err = jobs.Enqueue(db, dto.XmpGeneration, &workers.XMPGenerationPayload{Image: &img}, jobs.EnqueueOptions{Source: dto.JobSourceUpdate})
 		if err != nil {
 			logger.Error("failed to enqueue xmp generation job", slog.Any("error", err))
 		}
@@ -856,7 +856,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 		logger.Info("starting image processing", slog.String("uid", imageEntity.Uid))
 		workerJob := &workers.ImageProcessJob{
-			Image: *imageEntity,
+			Image: imageEntity,
 		}
 
 		err = images.SaveImage(imageFileData, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
@@ -867,7 +867,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			return
 		}
 
-		jobUid, err := jobs.Enqueue(db, dto.ImageProcess, workerJob, jobs.EnqueueOptions{Source: dto.Upload})
+		jobUid, err := jobs.Enqueue(db, dto.ImageProcess, workerJob, jobs.EnqueueOptions{Source: dto.JobSourceUpload})
 		if err != nil {
 			logger.Error("Failed to create image", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
@@ -1001,7 +1001,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 
 		logger.Info("starting image processing", slog.String("id", imageEntity.Uid))
 		workerJob := &workers.ImageProcessJob{
-			Image: *imageEntity,
+			Image: imageEntity,
 		}
 
 		err = images.SaveImage(fileBytes, imageEntity.Uid, imageEntity.ImageMetadata.FileName)
@@ -1012,7 +1012,7 @@ func ImagesRouter(db *gorm.DB, logger *slog.Logger, wsBroker *libhttp.WSBroker) 
 			return
 		}
 
-		_, err = jobs.Enqueue(db, dto.ImageProcess, workerJob, jobs.EnqueueOptions{Source: dto.Upload})
+		_, err = jobs.Enqueue(db, dto.ImageProcess, workerJob, jobs.EnqueueOptions{Source: dto.JobSourceUpload})
 		if err != nil {
 			logger.Error("Failed to process image", slog.Any("error", err))
 			render.Status(req, http.StatusInternalServerError)
