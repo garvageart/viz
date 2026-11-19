@@ -1,4 +1,4 @@
-import { getJobStats, listJobTypes, listJobs, WorkerJobStatus } from "@viz/api";
+import { WorkerJobStatus, getJobStats, listJobTypes, listJobs } from "@viz/api";
 import { jobsService } from "#lib/services/jobs.svelte.js";
 import { sendVizAPIRequest } from "#lib/utils/http.js";
 import type { PageLoad } from "./$types";

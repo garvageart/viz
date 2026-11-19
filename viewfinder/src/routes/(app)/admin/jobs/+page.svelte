@@ -112,11 +112,7 @@
         <div class="worker-header">
             <div class="worker-id">
                 <span class="worker-name">{jobsService.getTopicForJobType(job.type)}</span>
-                <span
-                    class="worker-dot {(jobsService.liveRunning(job.type)) > 0
-                        ? 'active'
-                        : 'idle'}"
-                ></span>
+                <span class="worker-dot {jobsService.liveRunning(job.type) > 0 ? 'active' : 'idle'}"></span>
             </div>
             <div class="worker-stats">
                 <span class="stat-badge running" title="Active">
@@ -155,20 +151,14 @@
                 <Button
                     class="step-btn"
                     onclick={() => {
-                        jobsService.saveConcurrency(
-                            job,
-                            Math.max(1, job.concurrency.current - 1)
-                        );
+                        jobsService.saveConcurrency(job, Math.max(1, job.concurrency.current - 1));
                     }}>-</Button
                 >
                 <span class="step-value">{job.concurrency.current}</span>
                 <Button
                     class="step-btn"
                     onclick={() => {
-                        jobsService.saveConcurrency(
-                            job,
-                            Math.min(job.concurrency.max, job.concurrency.current + 1)
-                        );
+                        jobsService.saveConcurrency(job, Math.min(job.concurrency.max, job.concurrency.current + 1));
                     }}>+</Button
                 >
             </div>
@@ -193,7 +183,7 @@
 {/snippet}
 
 {#snippet typeCell(job: any)}
-    <Badge variant="neutral" size="standard">{(job.type).toUpperCase()}</Badge>
+    <Badge variant="neutral" size="standard">{job.type.toUpperCase()}</Badge>
 {/snippet}
 
 {#snippet durationCell(job: any)}
@@ -353,10 +343,15 @@
                                     <div class="job-progress-section">
                                         <div class="progress-info">
                                             <span class="job-step">Processing</span>
-                                            <span class="progress-value">{jobsService.progressByJob.get(job.uid) ?? 0}%</span>
+                                            <span class="progress-value"
+                                                >{jobsService.progressByJob.get(job.uid) ?? 0}%</span
+                                            >
                                         </div>
                                         <div class="progress-bar-container">
-                                            <div class="progress-bar-fill" style="width: {jobsService.progressByJob.get(job.uid) ?? 0}%"></div>
+                                            <div
+                                                class="progress-bar-fill"
+                                                style="width: {jobsService.progressByJob.get(job.uid) ?? 0}%"
+                                            ></div>
                                         </div>
                                     </div>
                                 </div>
