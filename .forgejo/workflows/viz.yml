@@ -425,6 +425,20 @@ jobs:
                     exit $E2E_STATUS
                   fi
 
+            - name: Collect E2E container diagnostics
+              if: failure() || cancelled()
+              run: |
+                  echo "=== E2E container state ==="
+                  for c in viz-ci-server viz-ci-db viz-ci-redis; do
+                    name="${c}-${{ github.run_id }}"
+                    echo "--- ${name} ---"
+                    docker inspect --format 'status={{.State.Status}} exit={{.State.ExitCode}} oom_killed={{.State.OOMKilled}} error={{.State.Error}} started={{.State.StartedAt}} finished={{.State.FinishedAt}}' "$name" 2>&1 || echo "unavailable"
+                  done
+
+                  echo
+                  echo "=== viz-ci-server logs (tail 200) ==="
+                  docker logs --tail 200 "viz-ci-server-${{ github.run_id }}" 2>&1 || echo "unavailable"
+
             - name: Cleanup E2E Containers
               if: always()
               run: |
