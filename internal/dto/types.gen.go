@@ -194,25 +194,43 @@ func (e ImageUploadStatus) Valid() bool {
 
 // Defines values for JobSource.
 const (
-	Manual   JobSource = "manual"
-	Schedule JobSource = "schedule"
-	System   JobSource = "system"
-	Update   JobSource = "update"
-	Upload   JobSource = "upload"
+	JobSourceManual   JobSource = "manual"
+	JobSourceSchedule JobSource = "schedule"
+	JobSourceSystem   JobSource = "system"
+	JobSourceUpdate   JobSource = "update"
+	JobSourceUpload   JobSource = "upload"
 )
 
 // Valid indicates whether the value is a known member of the JobSource enum.
 func (e JobSource) Valid() bool {
 	switch e {
-	case Manual:
+	case JobSourceManual:
 		return true
-	case Schedule:
+	case JobSourceSchedule:
 		return true
-	case System:
+	case JobSourceSystem:
 		return true
-	case Update:
+	case JobSourceUpdate:
 		return true
-	case Upload:
+	case JobSourceUpload:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for JobTypeClass.
+const (
+	JobTypeClassAsset  JobTypeClass = "asset"
+	JobTypeClassSystem JobTypeClass = "system"
+)
+
+// Valid indicates whether the value is a known member of the JobTypeClass enum.
+func (e JobTypeClass) Valid() bool {
+	switch e {
+	case JobTypeClassAsset:
+		return true
+	case JobTypeClassSystem:
 		return true
 	default:
 		return false
@@ -1441,7 +1459,19 @@ type JobCancelResponse struct {
 
 // JobCreateRequest defines model for JobCreateRequest.
 type JobCreateRequest struct {
-	// Data Required input data shape defined and validated by the target worker type.
+	// Data Worker-specific payload. Required input data shape defined and validated by the target worker type.
+	//
+	// For asset-class jobs the payload may carry either one concrete target or a target selection:
+	//
+	//     {"type": "ImageProcess", "data": {"image": {"uid": "01H..."}}}
+	//     {"type": "ImageProcess", "data": {"selection": {"mode": "selected", "uids": ["01H...", "01H..."]}}}
+	//     {"type": "ImageProcess", "data": {"selection": {"mode": "missing"}}}
+	//     {"type": "ImageProcess", "data": {"selection": {"mode": "all"}}}
+	//
+	// A selection fans out into one concrete single-asset job per target in a background pass after
+	// the response is sent. `selected` names the target uids; unknown or duplicate uids produce no
+	// job and are reported as `skipped`. `missing` enqueues the assets that lack the worker's output.
+	// `all` enqueues every asset. Selection and a concrete target are mutually exclusive.
 	Data map[string]interface{} `json:"data"`
 
 	// Type Unique TitleCase identifier for a registered job type.
@@ -1450,8 +1480,15 @@ type JobCreateRequest struct {
 
 // JobCreateResponse defines model for JobCreateResponse.
 type JobCreateResponse struct {
-	Jobs    []WorkerJob `json:"jobs"`
-	Message string      `json:"message"`
+	// Count Number of jobs this request will enqueue. Always 1 for system jobs and concrete (single-asset) requests.
+	// For asset selection requests it is the number of targets resolved when the request was accepted;
+	// the concrete jobs are enqueued in the background. `all` counts every asset in the library.
+	Count   int64  `json:"count"`
+	Message string `json:"message"`
+
+	// Skipped Requested uids that produced no job: unknown uids and duplicates collapse to one job,
+	// and every surplus request is reported here. 0 for `missing`, `all` and concrete requests.
+	Skipped int64 `json:"skipped"`
 }
 
 // JobError defines model for JobError.
@@ -1493,7 +1530,10 @@ type JobStatusCounts struct {
 // JobType defines model for JobType.
 type JobType struct {
 	// BatchSize Job creation and enqueue batch limit.
-	BatchSize   *int               `json:"batch_size,omitempty"`
+	BatchSize *int `json:"batch_size,omitempty"`
+
+	// Class Registered class of the worker. Asset jobs operate on one or more library assets and accept a target selection in their payload. System jobs do neither. The class is a property of the registered definition and cannot be changed via the API.
+	Class       JobTypeClass       `json:"class"`
 	Concurrency JobTypeConcurrency `json:"concurrency"`
 	Description string             `json:"description"`
 	DisplayName string             `json:"display_name"`
@@ -1514,6 +1554,9 @@ type JobType struct {
 	// Type Unique TitleCase identifier for a registered job type.
 	Type JobTypeName `json:"type"`
 }
+
+// JobTypeClass Registered class of the worker. Asset jobs operate on one or more library assets and accept a target selection in their payload. System jobs do neither. The class is a property of the registered definition and cannot be changed via the API.
+type JobTypeClass string
 
 // JobTypeConcurrency defines model for JobTypeConcurrency.
 type JobTypeConcurrency struct {

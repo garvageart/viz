@@ -908,6 +908,7 @@ export type JobType = {
     "type": JobTypeName;
     display_name: string;
     description: string;
+    "class": JobTypeClass;
     /** Whether dispatch and processing are active for this job type. */
     enabled: boolean;
     concurrency: JobTypeConcurrency;
@@ -942,10 +943,32 @@ export type JobTypeConfig = {
 };
 export type JobCreateRequest = {
     "type": JobTypeName;
-    /** Required input data shape defined and validated by the target worker type. */
+    /** Worker-specific payload. Required input data shape defined and validated by the target worker type.
+    
+    For asset-class jobs the payload may carry either one concrete target or a target selection:
+    
+        {"type": "ImageProcess", "data": {"image": {"uid": "01H..."}}}
+        {"type": "ImageProcess", "data": {"selection": {"mode": "selected", "uids": ["01H...", "01H..."]}}}
+        {"type": "ImageProcess", "data": {"selection": {"mode": "missing"}}}
+        {"type": "ImageProcess", "data": {"selection": {"mode": "all"}}}
+    
+    A selection fans out into one concrete single-asset job per target in a background pass after
+    the response is sent. `selected` names the target uids; unknown or duplicate uids produce no
+    job and are reported as `skipped`. `missing` enqueues the assets that lack the worker's output.
+    `all` enqueues every asset. Selection and a concrete target are mutually exclusive. */
     data: {
         [key: string]: any;
     };
+};
+export type JobCreateResponse = {
+    message: string;
+    /** Number of jobs this request will enqueue. Always 1 for system jobs and concrete (single-asset) requests.
+    For asset selection requests it is the number of targets resolved when the request was accepted;
+    the concrete jobs are enqueued in the background. `all` counts every asset in the library. */
+    count: number;
+    /** Requested uids that produced no job: unknown uids and duplicates collapse to one job,
+    and every surplus request is reported here. 0 for `missing`, `all` and concrete requests. */
+    skipped: number;
 };
 export type JobError = {
     /** Machine-readable error code. Known values: `unknown_job_type`, `invalid_data`, `dispatch_failed`, `publish_failed`, `worker_error`. */
@@ -969,10 +992,6 @@ export type WorkerJob = {
     created_at: string;
     started_at?: string | null;
     completed_at?: string | null;
-};
-export type JobCreateResponse = {
-    message: string;
-    jobs: WorkerJob[];
 };
 export type JobListResponse = {
     items: WorkerJob[];
@@ -3102,6 +3121,10 @@ export enum JobTypeName {
     ImageProcess = "ImageProcess",
     ExifProcess = "ExifProcess",
     XmpGeneration = "XmpGeneration"
+}
+export enum JobTypeClass {
+    System = "system",
+    Asset = "asset"
 }
 export enum WorkerJobStatus {
     Queued = "queued",

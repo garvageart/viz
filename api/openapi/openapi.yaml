@@ -3013,7 +3013,7 @@ paths:
                             $ref: "#/components/schemas/JobCreateRequest"
             responses:
                 "201":
-                    description: Job created
+                    description: Job created (or accepted for background fan-out when the payload carries an asset selection)
                     content:
                         application/json:
                             schema:
@@ -3979,6 +3979,12 @@ components:
             enum: [ImageProcess, ExifProcess, XmpGeneration]
             description: Unique TitleCase identifier for a registered job type.
 
+        JobTypeClass:
+            type: string
+            enum: [system, asset]
+            description: |-
+                Registered class of the worker. Asset jobs operate on one or more library assets and accept a target selection in their payload. System jobs do neither. The class is a property of the registered definition and cannot be changed via the API.
+
         JobSource:
             type: string
             enum: [manual, upload, update, schedule, system]
@@ -3996,7 +4002,20 @@ components:
                 data:
                     type: object
                     additionalProperties: true
-                    description: Required input data shape defined and validated by the target worker type.
+                    description: |-
+                        Worker-specific payload. Required input data shape defined and validated by the target worker type.
+
+                        For asset-class jobs the payload may carry either one concrete target or a target selection:
+
+                            {"type": "ImageProcess", "data": {"image": {"uid": "01H..."}}}
+                            {"type": "ImageProcess", "data": {"selection": {"mode": "selected", "uids": ["01H...", "01H..."]}}}
+                            {"type": "ImageProcess", "data": {"selection": {"mode": "missing"}}}
+                            {"type": "ImageProcess", "data": {"selection": {"mode": "all"}}}
+
+                        A selection fans out into one concrete single-asset job per target in a background pass after
+                        the response is sent. `selected` names the target uids; unknown or duplicate uids produce no
+                        job and are reported as `skipped`. `missing` enqueues the assets that lack the worker's output.
+                        `all` enqueues every asset. Selection and a concrete target are mutually exclusive.
             required: [type, data]
 
         JobCreateResponse:
@@ -4004,11 +4023,20 @@ components:
             properties:
                 message:
                     type: string
-                jobs:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/WorkerJob"
-            required: [message, jobs]
+                count:
+                    type: integer
+                    format: int64
+                    description: |-
+                        Number of jobs this request will enqueue. Always 1 for system jobs and concrete (single-asset) requests.
+                        For asset selection requests it is the number of targets resolved when the request was accepted;
+                        the concrete jobs are enqueued in the background. `all` counts every asset in the library.
+                skipped:
+                    type: integer
+                    format: int64
+                    description: |-
+                        Requested uids that produced no job: unknown uids and duplicates collapse to one job,
+                        and every surplus request is reported here. 0 for `missing`, `all` and concrete requests.
+            required: [message, count, skipped]
 
         JobCancelResponse:
             type: object
@@ -4158,6 +4186,8 @@ components:
                     type: string
                 description:
                     type: string
+                class:
+                    $ref: "#/components/schemas/JobTypeClass"
                 enabled:
                     type: boolean
                     description: Whether dispatch and processing are active for this job type.
@@ -4177,7 +4207,7 @@ components:
                     description: Whether this worker supports automatic retries of transient failures.
                 supports_cancel:
                     type: boolean
-            required: [type, display_name, description, enabled, concurrency]
+            required: [type, display_name, description, class, enabled, concurrency]
 
         JobTypeListResponse:
             type: object
