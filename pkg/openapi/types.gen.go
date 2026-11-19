@@ -1570,16 +1570,20 @@ type JobTypeConcurrency struct {
 	Max int `json:"max"`
 }
 
-// JobTypeConfig Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. Also accepted as the body of PATCH /jobs/types/{type}; any `type` field in the body is ignored in favour of the path parameter.
+// JobTypeConcurrencyPatch Partial runtime concurrency override for a registered job type. Only the fields present are applied.
+type JobTypeConcurrencyPatch struct {
+	// Current Active runtime worker concurrency.
+	Current *int `json:"current,omitempty"`
+
+	// Max Maximum concurrency ceiling allowed for this job type.
+	Max *int `json:"max,omitempty"`
+}
+
+// JobTypeConfig Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. The stored entity backing PATCH /jobs/types/{type}.
 type JobTypeConfig struct {
 	// BatchSize Job creation and enqueue batch limit.
-	BatchSize int `json:"batch_size"`
-
-	// ConcurrencyCurrent Active runtime worker concurrency.
-	ConcurrencyCurrent int `json:"concurrency_current"`
-
-	// ConcurrencyMax Maximum concurrency ceiling for this job type.
-	ConcurrencyMax int `json:"concurrency_max"`
+	BatchSize   int                `json:"batch_size"`
+	Concurrency JobTypeConcurrency `json:"concurrency"`
 
 	// Enabled Whether dispatch and processing are active for this job type.
 	Enabled bool `json:"enabled"`
@@ -1592,6 +1596,24 @@ type JobTypeConfig struct {
 
 	// Type Unique TitleCase identifier for a registered job type.
 	Type JobTypeName `json:"type"`
+}
+
+// JobTypeConfigPatch Partial administrative override for a registered job type. Only the fields present in the body are applied to the stored configuration; omitted fields keep their stored values, and the concurrency object is merged field-by-field. At least one field must be present. The type is taken from the path parameter.
+type JobTypeConfigPatch struct {
+	// BatchSize Job creation and enqueue batch limit.
+	BatchSize *int `json:"batch_size,omitempty"`
+
+	// Concurrency Partial runtime concurrency override for a registered job type. Only the fields present are applied.
+	Concurrency *JobTypeConcurrencyPatch `json:"concurrency,omitempty"`
+
+	// Enabled Whether dispatch and processing are active for this job type.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// MaxRetries Default maximum automatic retry attempts.
+	MaxRetries *int `json:"max_retries,omitempty"`
+
+	// TimeoutMs Per-job execution timeout in milliseconds.
+	TimeoutMs *int `json:"timeout_ms,omitempty"`
 }
 
 // JobTypeListResponse defines model for JobTypeListResponse.
@@ -2689,7 +2711,7 @@ type UpdateImageJSONRequestBody = ImageUpdate
 type CreateJobJSONRequestBody = JobCreateRequest
 
 // UpdateJobTypeJSONRequestBody defines body for UpdateJobType for application/json ContentType.
-type UpdateJobTypeJSONRequestBody = JobTypeConfig
+type UpdateJobTypeJSONRequestBody = JobTypeConfigPatch
 
 // CreateKeywordJSONRequestBody defines body for CreateKeyword for application/json ContentType.
 type CreateKeywordJSONRequestBody = KeywordCreate

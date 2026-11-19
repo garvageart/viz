@@ -2943,7 +2943,7 @@ paths:
     /jobs/types/{type}:
         patch:
             summary: Update configuration for a job type
-            description: Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+            description: Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
             operationId: updateJobType
             security:
                 - BearerAuth: [jobs:update]
@@ -2959,7 +2959,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/JobTypeConfig"
+                            $ref: "#/components/schemas/JobTypeConfigPatch"
             responses:
                 "200":
                     description: Updated job type
@@ -4136,31 +4136,31 @@ components:
                     description: System baseline concurrency initialized from the definition.
             required: [current, max, default]
 
-        JobTypeConfig:
-            x-entity: true
-            x-go-gorm-index:
-                - name: idx_job_type_configs_type
-                  unique: true
-                  fields: [type]
+        JobTypeConcurrencyPatch:
             type: object
-            description: Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. Also accepted as the body of PATCH /jobs/types/{type}; any `type` field in the body is ignored in favour of the path parameter.
+            description: Partial runtime concurrency override for a registered job type. Only the fields present are applied.
             properties:
-                type:
-                    $ref: "#/components/schemas/JobTypeName"
-                    description: Unique TitleCase identifier for a registered job type.
-                enabled:
-                    type: boolean
-                    description: Whether dispatch and processing are active for this job type.
-                concurrency_current:
+                current:
                     type: integer
                     minimum: 1
                     maximum: 100
                     description: Active runtime worker concurrency.
-                concurrency_max:
+                max:
                     type: integer
                     minimum: 1
                     maximum: 100
-                    description: Maximum concurrency ceiling for this job type.
+                    description: Maximum concurrency ceiling allowed for this job type.
+
+        JobTypeConfigPatch:
+            type: object
+            description: Partial administrative override for a registered job type. Only the fields present in the body are applied to the stored configuration; omitted fields keep their stored values, and the concurrency object is merged field-by-field. At least one field must be present. The type is taken from the path parameter.
+            properties:
+                enabled:
+                    type: boolean
+                    description: Whether dispatch and processing are active for this job type.
+                concurrency:
+                    $ref: "#/components/schemas/JobTypeConcurrencyPatch"
+                    description: Partial concurrency override, merged field-by-field onto the stored concurrency.
                 batch_size:
                     type: integer
                     minimum: 1
@@ -4175,7 +4175,40 @@ components:
                     minimum: 0
                     maximum: 10
                     description: Default maximum automatic retry attempts.
-            required: [type, enabled, concurrency_current, concurrency_max, batch_size, timeout_ms, max_retries]
+
+        JobTypeConfig:
+            x-entity: true
+            x-go-gorm-index:
+                - name: idx_job_type_configs_type
+                  unique: true
+                  fields: [type]
+            type: object
+            description: Administrative override for a registered job type. Every field is concrete; creating or patching a row replaces the definition defaults entirely. The stored entity backing PATCH /jobs/types/{type}.
+            properties:
+                type:
+                    $ref: "#/components/schemas/JobTypeName"
+                    description: Unique TitleCase identifier for a registered job type.
+                enabled:
+                    type: boolean
+                    description: Whether dispatch and processing are active for this job type.
+                concurrency:
+                    $ref: "#/components/schemas/JobTypeConcurrency"
+                    description: Active runtime worker concurrency for this job type and its ceiling.
+                batch_size:
+                    type: integer
+                    minimum: 1
+                    maximum: 1000
+                    description: Job creation and enqueue batch limit.
+                timeout_ms:
+                    type: integer
+                    minimum: 1
+                    description: Per-job execution timeout in milliseconds.
+                max_retries:
+                    type: integer
+                    minimum: 0
+                    maximum: 10
+                    description: Default maximum automatic retry attempts.
+            required: [type, enabled, concurrency, batch_size, timeout_ms, max_retries]
 
         JobType:
             type: object

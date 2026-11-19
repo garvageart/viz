@@ -724,7 +724,7 @@ type ClientInterface interface {
 
 	// UpdateJobTypeWithBody Update configuration for a job type
 	//
-	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+	// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -733,7 +733,7 @@ type ClientInterface interface {
 
 	// UpdateJobType Update configuration for a job type
 	//
-	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+	// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -2519,7 +2519,7 @@ func (c *Client) ListJobTypes(ctx context.Context, reqEditors ...RequestEditorFn
 
 // UpdateJobTypeWithBody Update configuration for a job type
 //
-// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 //
 // Takes any type of body and a specified content type.
 //
@@ -2538,7 +2538,7 @@ func (c *Client) UpdateJobTypeWithBody(ctx context.Context, pType JobTypeName, c
 
 // UpdateJobType Update configuration for a job type
 //
-// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -8064,7 +8064,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateJobTypeWithBodyWithResponse Update configuration for a job type
 	//
-	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+	// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -8073,7 +8073,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateJobTypeWithResponse Update configuration for a job type
 	//
-	// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+	// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -15040,7 +15040,7 @@ func (c *ClientWithResponses) ListJobTypesWithResponse(ctx context.Context, reqE
 
 // UpdateJobTypeWithBodyWithResponse Update configuration for a job type
 //
-// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -15055,7 +15055,7 @@ func (c *ClientWithResponses) UpdateJobTypeWithBodyWithResponse(ctx context.Cont
 
 // UpdateJobTypeWithResponse Update configuration for a job type
 //
-// Replaces the job type's stored configuration wholesale. Every field of JobTypeConfig is required; the type in the body, if present, must match the path parameter.
+// Applies a partial override to the job type's stored configuration. Only the fields present in the body are changed; omitted fields keep their stored values, and concurrency is merged field-by-field. At least one field must be present.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

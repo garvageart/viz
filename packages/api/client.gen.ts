@@ -925,21 +925,23 @@ export type JobType = {
 export type JobTypeListResponse = {
     items: JobType[];
 };
-export type JobTypeConfig = {
-    /** Unique TitleCase identifier for a registered job type. */
-    "type": JobTypeName;
-    /** Whether dispatch and processing are active for this job type. */
-    enabled: boolean;
+export type JobTypeConcurrencyPatch = {
     /** Active runtime worker concurrency. */
-    concurrency_current: number;
-    /** Maximum concurrency ceiling for this job type. */
-    concurrency_max: number;
+    current?: number;
+    /** Maximum concurrency ceiling allowed for this job type. */
+    max?: number;
+};
+export type JobTypeConfigPatch = {
+    /** Whether dispatch and processing are active for this job type. */
+    enabled?: boolean;
+    /** Partial concurrency override, merged field-by-field onto the stored concurrency. */
+    concurrency?: JobTypeConcurrencyPatch;
     /** Job creation and enqueue batch limit. */
-    batch_size: number;
+    batch_size?: number;
     /** Per-job execution timeout in milliseconds. */
-    timeout_ms: number;
+    timeout_ms?: number;
     /** Default maximum automatic retry attempts. */
-    max_retries: number;
+    max_retries?: number;
 };
 export type JobCreateRequest = {
     "type": JobTypeName;
@@ -2722,7 +2724,7 @@ export function listJobTypes(opts?: Oazapfts.RequestOpts) {
 /**
  * Update configuration for a job type
  */
-export function updateJobType($type: JobTypeName, jobTypeConfig: JobTypeConfig, opts?: Oazapfts.RequestOpts) {
+export function updateJobType($type: JobTypeName, jobTypeConfigPatch: JobTypeConfigPatch, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchJson<{
         status: 200;
         data: JobType;
@@ -2744,7 +2746,7 @@ export function updateJobType($type: JobTypeName, jobTypeConfig: JobTypeConfig, 
     }>(`/jobs/types/${encodeURIComponent($type)}`, oazapfts.json({
         ...opts,
         method: "PATCH",
-        body: jobTypeConfig
+        body: jobTypeConfigPatch
     }));
 }
 /**
