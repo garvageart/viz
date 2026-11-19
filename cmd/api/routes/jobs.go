@@ -40,13 +40,13 @@ func JobsRouter(db *gorm.DB, service *jobs.Service, logger *slog.Logger) *chi.Mu
 			return
 		}
 
-		var body dto.JobTypeConfig
+		var body dto.JobTypeConfigPatch
 		if err := render.DecodeJSON(req.Body, &body); err != nil {
 			renderBadRequest(res, req, "Invalid request body")
 			return
 		}
 
-		updated, err := service.UpdateType(req.Context(), jobType, body)
+		updated, err := service.PatchType(req.Context(), jobType, body)
 		if err != nil {
 			renderJobError(res, req, err)
 			return

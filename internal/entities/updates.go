@@ -55,6 +55,21 @@ func (image *ImageAsset) ApplyUpdate(update dto.ImageUpdate) {
 	}
 }
 
+// ApplyUpdate updates JobTypeConfig fields from a JobTypeConfigPatch. Only
+// the fields present in the patch are applied; the concurrency object is
+// merged field-by-field. The caller is responsible for validating the
+// merged configuration before persisting.
+func (config *JobTypeConfig) ApplyUpdate(patch dto.JobTypeConfigPatch) {
+	utils.AssignIf(&config.Enabled, patch.Enabled)
+	utils.AssignIf(&config.BatchSize, patch.BatchSize)
+	utils.AssignIf(&config.TimeoutMs, patch.TimeoutMs)
+	utils.AssignIf(&config.MaxRetries, patch.MaxRetries)
+	if concurrency := patch.Concurrency; concurrency != nil {
+		utils.AssignIf(&config.Concurrency.Current, concurrency.Current)
+		utils.AssignIf(&config.Concurrency.Max, concurrency.Max)
+	}
+}
+
 // ApplyUpdate updates Collection fields from a CollectionUpdate DTO.
 func (collection *Collection) ApplyUpdate(update dto.CollectionUpdate) {
 	utils.AssignIf(&collection.Name, update.Name)

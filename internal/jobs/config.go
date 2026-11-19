@@ -26,13 +26,16 @@ func configFromDefinition(def Definition) entities.JobTypeConfig {
 	}
 
 	return entities.JobTypeConfig{
-		Type:               def.Name,
-		Enabled:            true,
-		ConcurrencyCurrent: current,
-		ConcurrencyMax:     maxConcurrency,
-		BatchSize:          batchSize,
-		TimeoutMs:          timeoutMs,
-		MaxRetries:         def.MaxRetries,
+		Type:    def.Name,
+		Enabled: true,
+		Concurrency: dto.JobTypeConcurrency{
+			Current: current,
+			Max:     maxConcurrency,
+			Default: max(def.DefaultConcurrency, 1),
+		},
+		BatchSize:  batchSize,
+		TimeoutMs:  timeoutMs,
+		MaxRetries: def.MaxRetries,
 	}
 }
 
@@ -58,8 +61,8 @@ func toJobType(def Definition, config entities.JobTypeConfig) dto.JobType {
 		SupportsRetry:  &supportsRetry,
 		SupportsCancel: &supportsCancel,
 		Concurrency: dto.JobTypeConcurrency{
-			Current: config.ConcurrencyCurrent,
-			Max:     config.ConcurrencyMax,
+			Current: config.Concurrency.Current,
+			Max:     config.Concurrency.Max,
 			Default: max(def.DefaultConcurrency, 1),
 		},
 	}
@@ -80,73 +83,94 @@ func (s *Service) ListTypes() []dto.JobType {
 	return items
 }
 
-// UpdateType validates, persists, and applies a configuration override. The
-// body replaces the stored configuration wholesale; every field is required.
-func (s *Service) UpdateType(ctx context.Context, name dto.JobTypeName, req dto.JobTypeConfig) (dto.JobType, error) {
+// patchIsEmpty reports whether the patch sets no fields at all.
+func patchIsEmpty(req dto.JobTypeConfigPatch) bool {
+	return req.Enabled == nil && req.Concurrency == nil && req.BatchSize == nil && req.TimeoutMs == nil && req.MaxRetries == nil
+}
+
+// concurrencyPatchIsEmpty reports whether a present concurrency patch sets
+// neither of its fields.
+func concurrencyPatchIsEmpty(patch *dto.JobTypeConcurrencyPatch) bool {
+	return patch.Current == nil && patch.Max == nil
+}
+
+// validateConfig checks the merged configuration against the bounds the API
+// documents. The first failing rule wins, preserving the previous error
+// messages.
+func validateConfig(config dto.JobTypeConfig) error {
+	rules := []struct {
+		ok      bool
+		message string
+	}{
+		{config.Concurrency.Current >= 1 && config.Concurrency.Current <= 100, "concurrency.current must be between 1 and 100"},
+		{config.Concurrency.Max >= 1 && config.Concurrency.Max <= 100, "concurrency.max must be between 1 and 100"},
+		{config.Concurrency.Max >= config.Concurrency.Current, "concurrency.max must be greater than or equal to current"},
+		{config.BatchSize >= 1 && config.BatchSize <= 1000, "batch_size must be between 1 and 1000"},
+		{config.TimeoutMs >= 1, "timeout_ms must be positive"},
+		{config.MaxRetries >= 0 && config.MaxRetries <= 10, "max_retries must be between 0 and 10"},
+	}
+
+	for _, rule := range rules {
+		if !rule.ok {
+			return fmt.Errorf("%w: %s", ErrInvalidData, rule.message)
+		}
+	}
+
+	return nil
+}
+
+// PatchType merges a partial override onto the stored configuration. Only
+// the fields present in the patch are applied, and the concurrency object
+// is merged field-by-field. The merged result is validated, then persisted
+// as the concrete stored row.
+func (s *Service) PatchType(ctx context.Context, name dto.JobTypeName, req dto.JobTypeConfigPatch) (dto.JobType, error) {
 	def, ok := s.catalog.Get(name)
 	if !ok {
 		return dto.JobType{}, fmt.Errorf("%w: %q", ErrUnknownJobType, name)
 	}
 
-	if req.ConcurrencyCurrent < 1 || req.ConcurrencyCurrent > 100 {
-		return dto.JobType{}, fmt.Errorf("%w: concurrency.current must be between 1 and 100", ErrInvalidData)
+	if patchIsEmpty(req) {
+		return dto.JobType{}, fmt.Errorf("%w: patch body is empty", ErrInvalidData)
+	}
+	if req.Concurrency != nil && concurrencyPatchIsEmpty(req.Concurrency) {
+		return dto.JobType{}, fmt.Errorf("%w: concurrency patch must set current or max", ErrInvalidData)
 	}
 
-	if req.ConcurrencyMax < 1 || req.ConcurrencyMax > 100 {
-		return dto.JobType{}, fmt.Errorf("%w: concurrency.max must be between 1 and 100", ErrInvalidData)
-	}
-
-	if req.ConcurrencyMax < req.ConcurrencyCurrent {
-		return dto.JobType{}, fmt.Errorf("%w: concurrency.max must be greater than or equal to current", ErrInvalidData)
-	}
-
-	if req.BatchSize < 1 || req.BatchSize > 1000 {
-		return dto.JobType{}, fmt.Errorf("%w: batch_size must be between 1 and 1000", ErrInvalidData)
-	}
-
-	if req.TimeoutMs < 1 {
-		return dto.JobType{}, fmt.Errorf("%w: timeout_ms must be positive", ErrInvalidData)
-	}
-
-	if req.MaxRetries < 0 || req.MaxRetries > 10 {
-		return dto.JobType{}, fmt.Errorf("%w: max_retries must be between 0 and 10", ErrInvalidData)
-	}
-
-	patch := entities.JobTypeConfig{
-		Type:               name,
-		Enabled:            req.Enabled,
-		ConcurrencyCurrent: req.ConcurrencyCurrent,
-		ConcurrencyMax:     req.ConcurrencyMax,
-		BatchSize:          req.BatchSize,
-		TimeoutMs:          req.TimeoutMs,
-		MaxRetries:         req.MaxRetries,
-	}
-
-	var existing entities.JobTypeConfig
-	err := s.db.WithContext(ctx).Where("type = ?", string(name)).First(&existing).Error
+	var stored entities.JobTypeConfig
+	err := s.db.WithContext(ctx).Where("type = ?", string(name)).First(&stored).Error
 	switch {
 	case err == nil:
-		patch.ID = existing.ID
-		patch.CreatedAt = existing.CreatedAt
-		if err := s.db.WithContext(ctx).Save(&patch).Error; err != nil {
-			return dto.JobType{}, fmt.Errorf("save job type configuration: %w", err)
-		}
+		// Apply onto the row loaded from the database.
 	case errors.Is(err, gorm.ErrRecordNotFound):
-		if err := s.db.WithContext(ctx).Create(&patch).Error; err != nil {
-			return dto.JobType{}, fmt.Errorf("save job type configuration: %w", err)
-		}
+		stored = configFromDefinition(def)
 	default:
 		return dto.JobType{}, fmt.Errorf("load job type configuration: %w", err)
 	}
 
+	// The entity is mutated in place, so persistence identity (ID,
+	// CreatedAt, UpdatedAt) is never round-tripped through the DTO and
+	// lost. Validation happens after the merge, on the stored shape.
+	stored.ApplyUpdate(req)
+
+	if err := validateConfig(stored.DTO()); err != nil {
+		return dto.JobType{}, err
+	}
+
+	// Save inserts when the primary key is zero and updates in place
+	// otherwise, so a row seeded from the definition is created rather
+	// than lost.
+	if err := s.db.WithContext(ctx).Save(&stored).Error; err != nil {
+		return dto.JobType{}, fmt.Errorf("save job type configuration: %w", err)
+	}
+
 	s.mu.Lock()
-	s.configs[name] = patch
+	s.configs[name] = stored
 	s.mu.Unlock()
-	SetConcurrency(string(name), patch.ConcurrencyCurrent)
+	SetConcurrency(string(name), stored.Concurrency.Current)
 
-	s.broadcast("job-type-updated", map[string]any{"type": name, "enabled": patch.Enabled})
+	s.broadcast("job-type-updated", map[string]any{"type": name, "enabled": stored.Enabled})
 
-	return toJobType(def, patch), nil
+	return toJobType(def, stored), nil
 }
 
 // isEnabled reports whether dispatch is active for a job type.

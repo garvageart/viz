@@ -75,7 +75,7 @@ func (s *Service) loadConfigs() error {
 		}
 
 		s.configs[def.Name] = config
-		SetConcurrency(string(def.Name), config.ConcurrencyCurrent)
+		SetConcurrency(string(def.Name), config.Concurrency.Current)
 	}
 
 	return nil
