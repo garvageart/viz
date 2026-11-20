@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.0] - 2026-11-20
+
+- chore(images): upgrade libvips bindings and adapt to vipsgen v2 (70495198)
+- ci(e2e): collect container diagnostics on failure (63f4e6da)
+- refactor(viewfinder): use normalized update payload fields (1a456b11)
+- refactor(entities): migrate update appliers to derived DTO names (dfb8086c)
+- feat(api): derive update schemas from x-updatable annotations (f214952a)
+- chore: formatting (f4249ed5)
+- feat(viewfinder): repair admin jobs dashboard against new API (ed7eec42)
+- feat(jobs): merge partial config patches in place (d7d517a5)
+- feat(api): make job type config updates partial (83b78596)
+- feat(api): regenerate spec, DTOs, entities, and client (9762a4df)
+- fix(images): align permanent transform cache keys (2e2df46c)
+- feat(jobs): standardize admin-only route enforcement (5f04ea7e)
+- feat(xmp): shared merge pipeline with degraded base (6a9c6d87)
+- feat(jobs): asset selection fan-out, class system, XMP worker (b8e57612)
+- feat(jobs): drop the snapshot bootstrap and run ledger (89b2ea1e)
+- fix(db): batch MigrateLegacyWorkerJobs instead of scanning whole table (c0382fea)
+- feat(jobs): redesign jobs API and worker backend (dd0783bd)
+- test(viewfinder): expect 0.4 minimum zoom in zoom utility test (953a3eaf)
+- fix(viewfinder): pass correct image prop when opening ImageLightbox (401b46cd)
+- chore(viewfinder): remove unused API error subclasses (9317793b)
+- refactor(viewfinder): unwrap all non-error API response statuses (e8743907)
+
 ## [0.37.7] - 2026-11-16
 
 - brah? (9d442577)
